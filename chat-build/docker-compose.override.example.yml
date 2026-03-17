@@ -1,0 +1,7 @@
+services:
+  webapi:
+    build: .
+    env_file:
+      - .env.agentai.local
+    ports:
+      - "8000:8000"

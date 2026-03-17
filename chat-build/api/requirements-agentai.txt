@@ -1,0 +1,16 @@
+django
+djangorestframework
+djangorestframework-simplejwt
+drf-spectacular
+langchain
+langgraph
+langchain-openai
+langchain-anthropic
+langchain-huggingface
+openai
+anthropic
+pinecone
+weaviate-client
+redis
+kafka-python
+python-dotenv
