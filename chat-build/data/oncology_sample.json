@@ -1,0 +1,20 @@
+[
+  {
+    "source": "paper-001",
+    "title": "Breast cancer subtype overview",
+    "text": "Triple-negative breast cancer often lacks ER, PR, and HER2 expression and requires distinct research strategies.",
+    "cancer_type": "breast cancer",
+    "biomarkers": ["ER", "PR", "HER2"],
+    "evidence_type": "review",
+    "publication_year": 2024
+  },
+  {
+    "source": "paper-002",
+    "title": "Lung cancer biomarker landscape",
+    "text": "Lung cancer research often evaluates EGFR, ALK, ROS1, and PD-L1 pathways to guide targeted strategies.",
+    "cancer_type": "lung cancer",
+    "biomarkers": ["EGFR", "ALK", "ROS1", "PD-L1"],
+    "evidence_type": "guideline",
+    "publication_year": 2025
+  }
+]

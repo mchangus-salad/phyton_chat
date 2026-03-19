@@ -10,6 +10,27 @@ This module implements an AgentAI pipeline with:
 - Cache: Redis
 - Queue: Kafka
 
+## What This Program Does Today
+
+At this stage, the program provides a production-oriented Django + DRF API for retrieval-augmented answers and oncology-focused research support.
+
+Current capabilities:
+
+- Runs a configurable AgentAI stack with pluggable LLM, embeddings, and vector database providers.
+- Exposes secure API endpoints with JWT bearer auth and API key support.
+- Supports general agent Q&A (`/api/v1/agent/query/`) with caching and request tracing.
+- Supports oncology corpus ingestion by JSON payload, multipart upload, or management command import.
+- Supports oncology evidence search with metadata filters (`subdomain`, `cancer_type`, `biomarker`, `evidence_type`, publication year range).
+- Supports ingestion controls for deduplication and versioning (`upsert`, `batch-dedup`, `versioned`, `version_tag`).
+- Supports optional reranking and structured evidence outputs with citation IDs, labels, and scores.
+- Includes local reproducible infrastructure (Redis, Kafka, Weaviate) with automation scripts for setup, testing, and CI-like smoke flows.
+
+## Mermaid Diagrams
+
+Detailed diagrams for architecture, execution flow, request lifecycle, and data movement are available here:
+
+- [AgentAI Mermaid Diagrams](./MERMAID_DIAGRAMS.md)
+
 ## Sandbox mode (no-cost local dev)
 
 This project supports a local sandbox LLM mode with no external API calls:
@@ -165,6 +186,134 @@ OpenAPI and Swagger docs:
 
 - GET /api/schema/
 - GET /api/docs/
+
+## Oncology knowledge training
+
+This project can ingest an oncology-specific knowledge corpus into the vector store and then query it through a dedicated endpoint.
+
+Training endpoint:
+
+- POST /api/v1/agent/oncology/train/
+
+Multipart upload endpoint:
+
+- POST /api/v1/agent/oncology/upload/
+
+Research query endpoint:
+
+- POST /api/v1/agent/oncology/query/
+
+Structured evidence endpoint:
+
+- POST /api/v1/agent/oncology/evidence/
+
+Bulk import command:
+
+- .venv\Scripts\python.exe manage.py import_oncology_corpus <path-to-file>
+
+Bulk import helper script:
+
+- .\scripts\import-oncology.ps1
+
+Sample corpus file:
+
+- .\data\oncology_sample.json
+
+Example training request:
+
+{
+  "corpus_name": "oncology-research",
+  "subdomain": "lung-cancer",
+  "dedup_mode": "versioned",
+  "version_tag": "2026-q1",
+  "documents": [
+    {
+      "source": "paper-001",
+      "title": "Breast cancer subtype notes",
+      "text": "Triple-negative breast cancer often lacks ER, PR, and HER2 expression.",
+      "subdomain": "breast-cancer",
+      "cancer_type": "breast cancer",
+      "biomarkers": ["ER", "PR", "HER2"],
+      "evidence_type": "review",
+      "publication_year": 2024,
+      "created_at": "2026-03-19T12:00:00Z"
+    },
+    {
+      "source": "paper-002",
+      "title": "Targeted therapy planning",
+      "text": "Targeted therapies depend on validated biomarkers and specialist review.",
+      "cancer_type": "lung cancer",
+      "biomarkers": ["EGFR", "ALK", "ROS1"],
+      "evidence_type": "guideline",
+      "publication_year": 2025
+    }
+  ]
+}
+
+Example oncology query request:
+
+{
+  "question": "Summarize common oncology biomarkers for research planning.",
+  "subdomain": "lung-cancer",
+  "user_id": "researcher-42"
+}
+
+Example evidence search request:
+
+{
+  "query": "EGFR resistance pathways",
+  "subdomain": "lung-cancer",
+  "cancer_type": "lung cancer",
+  "biomarker": "EGFR",
+  "evidence_type": "review",
+  "publication_year_from": 2020,
+  "publication_year_to": 2026,
+  "rerank": true,
+  "max_results": 3
+}
+
+Evidence response fields now include:
+
+- `citation_id`: stable source-oriented traceability identifier
+- `citation_label`: human-readable citation label
+- `score`: retrieval score used for ranking
+- `rerank_score`: optional lexical+vector blended score when rerank is enabled
+- `subdomain`: oncology subdomain such as `lung-cancer` or `breast-cancer`
+
+Ingestion response fields now include:
+
+- `documents_received`: number of incoming documents in the request
+- `duplicates_dropped`: dropped items when `dedup_mode=batch-dedup`
+- `documents_indexed`: documents persisted after preprocessing
+- `dedup_mode`: `upsert`, `batch-dedup`, or `versioned`
+- `version_tag`: applied version suffix when `dedup_mode=versioned`
+
+Suggested oncology subdomains:
+
+- `breast-cancer`
+- `lung-cancer`
+- `colorectal-cancer`
+- `hematologic-malignancies`
+- `immunotherapy`
+
+Supported corpus import formats:
+
+- JSON: a list of document objects, or an object with a `documents` array
+- CSV: columns such as `source`, `title`, `text`, `cancer_type`, `biomarkers`, `evidence_type`, `publication_year`
+- TXT: plain text split into sections with `---` delimiters
+
+Example local import commands:
+
+```powershell
+.\scripts\import-oncology.ps1
+.\scripts\import-oncology.ps1 -Subdomain lung-cancer
+.\scripts\import-oncology.ps1 -Path .\data\oncology_sample.json
+.venv\Scripts\python.exe manage.py import_oncology_corpus .\data\oncology_sample.json --subdomain lung-cancer
+```
+
+Safety note:
+
+- The oncology workflow is intended for research support and knowledge retrieval, not for diagnosis, treatment selection, or clinical decision-making.
 
 Body:
 

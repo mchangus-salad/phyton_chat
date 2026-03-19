@@ -15,12 +15,14 @@ class AgentState(TypedDict, total=False):
     context: str
     answer: str
     cache_key: str
+    domain: str
+    subdomain: str
 
 
-def build_agent_graph():
+def build_agent_graph(domain: str | None = None, subdomain: str | None = None):
     llm = build_llm()
     embeddings = build_embeddings()
-    retriever = build_retriever(embeddings)
+    retriever = build_retriever(embeddings, domain=domain, subdomain=subdomain)
     cache = RedisCache()
     queue = KafkaEventQueue()
 
@@ -33,9 +35,23 @@ def build_agent_graph():
     def generate_answer(state: AgentState) -> AgentState:
         question = state["question"]
         context = state.get("context", "")
+        active_domain = state.get("domain") or domain
+        active_subdomain = state.get("subdomain") or subdomain
+        domain_instruction = ""
+        if active_domain == "oncology":
+            domain_instruction = (
+                "You support oncology knowledge discovery for research workflows. "
+                "Do not present your answer as diagnosis or treatment advice. "
+                "Call out uncertainty and recommend specialist review for clinical decisions. "
+            )
+        subdomain_instruction = ""
+        if active_subdomain:
+            subdomain_instruction = f"Focus on the oncology subdomain '{active_subdomain}'. "
         prompt = (
             "You are an assistant for a Web API. Use the retrieved context when useful. "
             "If context is empty, answer from model knowledge and mention assumptions.\n\n"
+            f"{domain_instruction}"
+            f"{subdomain_instruction}"
             f"Context:\n{context}\n\nQuestion:\n{question}"
         )
         answer = llm.invoke(prompt).content
@@ -51,6 +67,8 @@ def build_agent_graph():
                 "user_id": state.get("user_id", "anonymous"),
                 "question": state["question"],
                 "answer": answer,
+                "domain": state.get("domain") or domain,
+                "subdomain": state.get("subdomain") or subdomain,
             }
         )
         return state
