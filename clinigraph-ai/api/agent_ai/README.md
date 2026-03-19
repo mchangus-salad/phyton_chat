@@ -6,7 +6,7 @@
 - Category: Clinical Evidence Intelligence Platform
 - Repository codename: clinigraph-ai
 
-This module implements an AgentAI pipeline with:
+This module implements the CliniGraph AI pipeline with:
 
 - LLM: GPT, Claude, or Ollama (local)
 - Embeddings: OpenAI or HuggingFace
@@ -35,7 +35,7 @@ Current capabilities:
 
 Detailed diagrams for architecture, execution flow, request lifecycle, and data movement are available here:
 
-- [AgentAI Mermaid Diagrams](./MERMAID_DIAGRAMS.md)
+- [CliniGraph AI Mermaid Diagrams](./MERMAID_DIAGRAMS.md)
 
 ## Sandbox mode (no-cost local dev)
 

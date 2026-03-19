@@ -2,11 +2,11 @@
 
 Clinical Evidence Intelligence Platform
 
-Legacy workspace codename: chat-build (renamed to clinigraph-ai)
+Workspace directory: clinigraph-ai
 
 ## What The Program Does Today
 
-This repository currently includes the CliniGraph AI backend, a Django-based AgentAI platform focused on RAG workflows and medical research support.
+This repository currently includes the CliniGraph AI backend, a Django-based platform focused on RAG workflows and medical research support.
 
 Implemented so far:
 
