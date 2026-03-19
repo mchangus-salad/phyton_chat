@@ -1,0 +1,20 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Local databases
+db.sqlite3
+
+# Environment overrides
+.env
+.env.agentai.local
+
+# Django development artifacts
+*.log
+
+# VS Code local settings
+.vscode/
