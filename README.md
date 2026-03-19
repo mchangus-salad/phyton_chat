@@ -22,3 +22,4 @@ Implemented so far:
 - AgentAI module docs: [chat-build/api/agent_ai/README.md](chat-build/api/agent_ai/README.md)
 - Mermaid architecture and flow diagrams: [chat-build/api/agent_ai/MERMAID_DIAGRAMS.md](chat-build/api/agent_ai/MERMAID_DIAGRAMS.md)
 - Product branding guide: [chat-build/BRANDING.md](chat-build/BRANDING.md)
+- Technical renaming roadmap: [chat-build/RENAMING_PLAN.md](chat-build/RENAMING_PLAN.md)

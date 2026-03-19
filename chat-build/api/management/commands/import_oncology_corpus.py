@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 
 from api.agent_ai.oncology_corpus import load_oncology_corpus
-from api.agent_ai.service import AgentAIService
+from api.agent_ai.service import CliniGraphService
 
 
 class Command(BaseCommand):
@@ -25,7 +25,7 @@ class Command(BaseCommand):
         if not documents:
             raise CommandError("Corpus file did not contain any importable documents")
 
-        service = AgentAIService(domain=domain, subdomain=subdomain, initialize_graph=False)
+        service = CliniGraphService(domain=domain, subdomain=subdomain, initialize_graph=False)
         try:
             result = service.ingest_documents(documents=documents, domain=domain, subdomain=subdomain)
             self.stdout.write(

@@ -46,3 +46,7 @@ class AgentAISettings:
 
 
 settings = AgentAISettings()
+
+# Progressive internal rebrand aliases (non-breaking).
+CliniGraphSettings = AgentAISettings
+clinigraph_settings = settings

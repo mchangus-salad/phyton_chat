@@ -215,3 +215,26 @@ class AgentAIService:
         close_retriever = getattr(self.retriever, 'close', None)
         if callable(close_retriever) and self.retriever is not self.ingestor:
             close_retriever()
+
+
+# Progressive internal rebrand aliases (non-breaking):
+# Existing AgentAI* symbols remain the canonical implementation for compatibility.
+CliniGraphResult = AgentAIResult
+CliniGraphIngestionResult = KnowledgeIngestionResult
+CliniGraphEvidenceResult = EvidenceSearchResult
+
+
+class CliniGraphService(AgentAIService):
+    """Alias class for the CliniGraph AI brand while preserving AgentAI compatibility."""
+
+
+__all__ = [
+    "AgentAIResult",
+    "KnowledgeIngestionResult",
+    "EvidenceSearchResult",
+    "AgentAIService",
+    "CliniGraphResult",
+    "CliniGraphIngestionResult",
+    "CliniGraphEvidenceResult",
+    "CliniGraphService",
+]

@@ -47,9 +47,9 @@ def _get_service(domain: str | None = None, subdomain: str | None = None):
 	"""Create a single service instance per worker process and domain."""
 	service_key = f"{domain or 'general'}::{subdomain or 'default'}"
 	if service_key not in SERVICES:
-		from .agent_ai.service import AgentAIService
+		from .agent_ai.service import CliniGraphService
 
-		SERVICES[service_key] = AgentAIService(domain=domain, subdomain=subdomain)
+		SERVICES[service_key] = CliniGraphService(domain=domain, subdomain=subdomain)
 	return SERVICES[service_key]
 
 
