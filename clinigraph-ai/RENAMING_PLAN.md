@@ -2,7 +2,7 @@
 
 ## Goal
 
-Migrate technical naming from legacy `chat-build` / `AgentAI` to `CliniGraph AI` without downtime or integration breakage.
+Migrate technical naming from legacy `AgentAI` patterns to `CliniGraph AI` without downtime or integration breakage.
 
 ## Phase 1: Brand-First (Completed)
 
@@ -24,10 +24,10 @@ Migrate technical naming from legacy `chat-build` / `AgentAI` to `CliniGraph AI`
 - Add compatibility tests for both old and new imports.
 - Keep endpoint paths stable while API docs highlight v2 generic medical routes.
 
-## Phase 4: Repository and Folder Rename (Planned)
+## Phase 4: Repository and Folder Rename (In Progress)
 
 - Rename repository from `phyton_chat` to a product-aligned name when CI/CD and deployment references are ready.
-- Rename workspace folder `chat-build` only after script path migration is complete.
+- Workspace folder rename completed: `chat-build` -> `clinigraph-ai`.
 - Update all hardcoded paths in PowerShell scripts and documentation.
 
 ## Phase 5: Cleanup Window (Planned)

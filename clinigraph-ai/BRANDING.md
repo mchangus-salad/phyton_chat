@@ -19,6 +19,6 @@ CliniGraph AI turns fragmented medical documents into explainable, citation-back
 
 ## Naming Strategy
 
-- Keep repository codename `chat-build` during technical migration to avoid path breakage.
+- Workspace directory has been renamed from `chat-build` to `clinigraph-ai`.
 - Use "CliniGraph AI" in product-facing docs, demos, and stakeholder communication.
 - Plan a future repository rename only after CI/CD and script path review.

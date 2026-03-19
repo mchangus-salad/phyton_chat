@@ -2,7 +2,7 @@
 
 Clinical Evidence Intelligence Platform
 
-Legacy workspace codename: chat-build
+Legacy workspace codename: chat-build (renamed to clinigraph-ai)
 
 ## What The Program Does Today
 
@@ -19,7 +19,7 @@ Implemented so far:
 
 ## Documentation
 
-- AgentAI module docs: [chat-build/api/agent_ai/README.md](chat-build/api/agent_ai/README.md)
-- Mermaid architecture and flow diagrams: [chat-build/api/agent_ai/MERMAID_DIAGRAMS.md](chat-build/api/agent_ai/MERMAID_DIAGRAMS.md)
-- Product branding guide: [chat-build/BRANDING.md](chat-build/BRANDING.md)
-- Technical renaming roadmap: [chat-build/RENAMING_PLAN.md](chat-build/RENAMING_PLAN.md)
+- AgentAI module docs: [clinigraph-ai/api/agent_ai/README.md](clinigraph-ai/api/agent_ai/README.md)
+- Mermaid architecture and flow diagrams: [clinigraph-ai/api/agent_ai/MERMAID_DIAGRAMS.md](clinigraph-ai/api/agent_ai/MERMAID_DIAGRAMS.md)
+- Product branding guide: [clinigraph-ai/BRANDING.md](clinigraph-ai/BRANDING.md)
+- Technical renaming roadmap: [clinigraph-ai/RENAMING_PLAN.md](clinigraph-ai/RENAMING_PLAN.md)

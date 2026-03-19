@@ -4,7 +4,7 @@
 
 - Product name: CliniGraph AI
 - Category: Clinical Evidence Intelligence Platform
-- Repository codename: chat-build
+- Repository codename: clinigraph-ai
 
 This module implements an AgentAI pipeline with:
 
@@ -71,14 +71,14 @@ Set these before using the endpoint:
 
 ## Local Docker stack
 
-The repository includes [docker-compose.local.yml](d:/study-python/chat-build/docker-compose.local.yml) for local infrastructure:
+The repository includes [docker-compose.local.yml](d:/study-python/clinigraph-ai/docker-compose.local.yml) for local infrastructure:
 
 - Redis on 127.0.0.1:6379
 - Kafka on 127.0.0.1:9094
 - Kafka UI on http://127.0.0.1:8085
 - Weaviate on http://127.0.0.1:8088
 
-The file [.env.agentai.local](d:/study-python/chat-build/.env.agentai.local) is loaded automatically by the app and points to those local services.
+The file [.env.agentai.local](d:/study-python/clinigraph-ai/.env.agentai.local) is loaded automatically by the app and points to those local services.
 
 Start local services with:
 
