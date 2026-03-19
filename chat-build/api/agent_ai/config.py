@@ -17,6 +17,7 @@ class AgentAISettings:
     llm_model: str = os.getenv("AGENT_LLM_MODEL", "gpt-4o-mini")
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
+    ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 
     embeddings_provider: str = os.getenv("AGENT_EMBEDDINGS_PROVIDER", "openai")
     embeddings_model: str = os.getenv("AGENT_EMBEDDINGS_MODEL", "text-embedding-3-small")

@@ -6,6 +6,7 @@ langchain
 langgraph
 langchain-openai
 langchain-anthropic
+langchain-ollama
 langchain-huggingface
 openai
 anthropic

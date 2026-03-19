@@ -2,7 +2,7 @@
 
 This module implements an AgentAI pipeline with:
 
-- LLM: GPT or Claude
+- LLM: GPT, Claude, or Ollama (local)
 - Embeddings: OpenAI or HuggingFace
 - Vector DB: Pinecone or Weaviate
 - Orchestration: LangChain
@@ -45,10 +45,11 @@ This lets the team develop and test end-to-end flows without paying for GPT/Clau
 
 Set these before using the endpoint:
 
-- AGENT_LLM_PROVIDER=gpt|claude|mock|sandbox
+- AGENT_LLM_PROVIDER=gpt|claude|ollama|mock|sandbox
 - AGENT_LLM_MODEL=<model name>
 - OPENAI_API_KEY=<key>
 - ANTHROPIC_API_KEY=<key>
+- OLLAMA_BASE_URL=http://127.0.0.1:11434
 - AGENT_EMBEDDINGS_PROVIDER=openai|huggingface|local
 - AGENT_EMBEDDINGS_MODEL=<embedding model>
 - AGENT_VECTOR_DB_PROVIDER=pinecone|weaviate
@@ -99,6 +100,12 @@ Run a quick end-to-end API check (health -> auth -> agent query):
 ```powershell
 .\scripts\quick-test.ps1
 .\scripts\quick-test.ps1 -UseApiKey
+```
+
+Run an Ollama + oncology real smoke flow (health -> import -> evidence -> oncology query):
+
+```powershell
+.\scripts\smoke-ollama-oncology.ps1
 ```
 
 Run a local CI-style flow (bootstrap -> temporary server -> quick test -> cleanup):
@@ -154,6 +161,7 @@ docker compose -f docker-compose.local.yml down
 Notes:
 
 - GPT and Claude are not local services. You still need OPENAI_API_KEY or ANTHROPIC_API_KEY when provider is `gpt` or `claude`.
+- Ollama can run fully local models (for example, `llama3.1:8b`) when provider is `ollama`.
 - Use `AGENT_LLM_PROVIDER=mock` for local sandbox without paid APIs.
 - Pinecone is not self-hosted locally, so the local environment is configured to use Weaviate instead.
 
