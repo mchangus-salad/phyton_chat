@@ -14,6 +14,12 @@ from .serializers import (
 	DomainQueryResponseSerializer,
 	ErrorResponseSerializer,
 	HealthResponseSerializer,
+	MedicalEvidenceSearchResponseSerializer,
+	MedicalEvidenceSearchSerializer,
+	MedicalFileUploadSerializer,
+	MedicalQuerySerializer,
+	MedicalTrainingResponseSerializer,
+	MedicalTrainingSerializer,
 	OncologyEvidenceSearchResponseSerializer,
 	OncologyEvidenceSearchSerializer,
 	OncologyFileUploadSerializer,
@@ -29,6 +35,10 @@ logger = logging.getLogger(__name__)
 SERVICES = {}
 ONCOLOGY_SAFETY_NOTICE = (
 	'This oncology workflow is intended for research support only and does not replace medical diagnosis, '
+	'treatment planning, or specialist review.'
+)
+MEDICAL_SAFETY_NOTICE = (
+	'This medical workflow is intended for research support only and does not replace medical diagnosis, '
 	'treatment planning, or specialist review.'
 )
 
@@ -428,5 +438,276 @@ def oncology_upload(request):
 		logger.exception('oncology upload failed request_id=%s', request_id)
 		return Response(
 			{'error': 'oncology upload failed', 'request_id': request_id},
+			status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+		)
+
+
+@extend_schema(
+	operation_id='medical_train_v2',
+	description='Ingest a medical corpus for any disease domain. V2 generic endpoint.',
+	request=MedicalTrainingSerializer,
+	parameters=[
+		OpenApiParameter(
+			name='X-API-Key',
+			type=OpenApiTypes.STR,
+			location=OpenApiParameter.HEADER,
+			required=False,
+			description='API key alternative to JWT bearer authentication.',
+		),
+	],
+	responses={
+		200: MedicalTrainingResponseSerializer,
+		400: ErrorResponseSerializer,
+		401: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+		429: ErrorResponseSerializer,
+		500: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth', 'ApiKeyAuth'],
+)
+@api_view(['POST'])
+@permission_classes([HasAgentApiKeyOrAuthenticated])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+def medical_train(request):
+	"""V2 generic medical ingestion endpoint that supports any disease domain."""
+	serializer = MedicalTrainingSerializer(data=request.data or {})
+	if not serializer.is_valid():
+		return _validation_error_response(serializer)
+
+	payload = serializer.validated_data
+	domain = (payload.get('domain') or 'medical').strip() or 'medical'
+	subdomain = payload.get('subdomain') or None
+	request_id = getattr(request, 'request_id', 'n/a')
+
+	try:
+		service = _get_service(domain=domain, subdomain=subdomain)
+		result = service.ingest_documents(
+			documents=payload['documents'],
+			domain=domain,
+			subdomain=subdomain,
+			dedup_mode=payload.get('dedup_mode', 'upsert'),
+			version_tag=payload.get('version_tag') or None,
+		)
+		return Response(
+			{
+				'domain': result.domain,
+				'subdomain': result.subdomain or '',
+				'corpus_name': payload['corpus_name'],
+				'documents_received': result.documents_received,
+				'duplicates_dropped': result.duplicates_dropped,
+				'documents_indexed': result.documents_indexed,
+				'dedup_mode': result.dedup_mode,
+				'version_tag': result.version_tag,
+				'request_id': request_id,
+			},
+			status=status.HTTP_200_OK,
+		)
+	except Exception:
+		logger.exception('medical ingestion failed request_id=%s domain=%s', request_id, domain)
+		return Response(
+			{'error': 'medical ingestion failed', 'request_id': request_id},
+			status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+		)
+
+
+@extend_schema(
+	operation_id='medical_query_v2',
+	description='Run a domain-scoped medical retrieval workflow for any disease area. V2 generic endpoint.',
+	request=MedicalQuerySerializer,
+	parameters=[
+		OpenApiParameter(
+			name='X-API-Key',
+			type=OpenApiTypes.STR,
+			location=OpenApiParameter.HEADER,
+			required=False,
+			description='API key alternative to JWT bearer authentication.',
+		),
+	],
+	responses={
+		200: DomainQueryResponseSerializer,
+		400: ErrorResponseSerializer,
+		401: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+		429: ErrorResponseSerializer,
+		500: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth', 'ApiKeyAuth'],
+)
+@api_view(['POST'])
+@permission_classes([HasAgentApiKeyOrAuthenticated])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+def medical_query(request):
+	"""V2 generic medical query endpoint for any configured domain and subdomain."""
+	serializer = MedicalQuerySerializer(data=request.data or {})
+	if not serializer.is_valid():
+		return _validation_error_response(serializer)
+
+	payload = serializer.validated_data
+	question = payload['question']
+	user_id = payload.get('user_id', 'anonymous')
+	domain = (payload.get('domain') or 'medical').strip() or 'medical'
+	subdomain = payload.get('subdomain') or None
+	request_id = getattr(request, 'request_id', 'n/a')
+
+	try:
+		service = _get_service(domain=domain, subdomain=subdomain)
+		result = service.ask(question=question, user_id=user_id)
+		return Response(
+			{
+				'answer': result.answer,
+				'cache_hit': result.cache_hit,
+				'request_id': request_id,
+				'domain': domain,
+				'subdomain': subdomain or '',
+				'safety_notice': MEDICAL_SAFETY_NOTICE,
+			},
+			status=status.HTTP_200_OK,
+		)
+	except Exception:
+		return _agent_failure_response(request_id=request_id, user_id=user_id)
+
+
+@extend_schema(
+	operation_id='medical_evidence_search_v2',
+	description='Retrieve structured evidence for any disease domain with metadata filters. V2 generic endpoint.',
+	request=MedicalEvidenceSearchSerializer,
+	parameters=[
+		OpenApiParameter(
+			name='X-API-Key',
+			type=OpenApiTypes.STR,
+			location=OpenApiParameter.HEADER,
+			required=False,
+			description='API key alternative to JWT bearer authentication.',
+		),
+	],
+	responses={
+		200: MedicalEvidenceSearchResponseSerializer,
+		400: ErrorResponseSerializer,
+		401: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+		429: ErrorResponseSerializer,
+		500: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth', 'ApiKeyAuth'],
+)
+@api_view(['POST'])
+@permission_classes([HasAgentApiKeyOrAuthenticated])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+def medical_evidence_search(request):
+	"""V2 generic evidence search endpoint with condition/marker filters."""
+	serializer = MedicalEvidenceSearchSerializer(data=request.data or {})
+	if not serializer.is_valid():
+		return _validation_error_response(serializer)
+
+	payload = serializer.validated_data
+	request_id = getattr(request, 'request_id', 'n/a')
+	domain = (payload.get('domain') or 'medical').strip() or 'medical'
+	subdomain = payload.get('subdomain') or None
+
+	try:
+		service = _get_service(domain=domain, subdomain=subdomain)
+		result = service.search_evidence(
+			query=payload['query'],
+			max_results=payload['max_results'],
+			condition=payload.get('condition') or None,
+			marker=payload.get('marker') or None,
+			cancer_type=payload.get('cancer_type') or None,
+			biomarker=payload.get('biomarker') or None,
+			subdomain=subdomain,
+			evidence_type=payload.get('evidence_type') or None,
+			publication_year_from=payload.get('publication_year_from'),
+			publication_year_to=payload.get('publication_year_to'),
+			rerank=payload.get('rerank', True),
+		)
+		return Response(
+			{
+				'domain': result.domain,
+				'subdomain': result.subdomain or '',
+				'query': payload['query'],
+				'evidence': result.evidence,
+				'request_id': request_id,
+				'safety_notice': MEDICAL_SAFETY_NOTICE,
+			},
+			status=status.HTTP_200_OK,
+		)
+	except Exception:
+		logger.exception('medical evidence search failed request_id=%s domain=%s', request_id, domain)
+		return Response(
+			{'error': 'medical evidence search failed', 'request_id': request_id},
+			status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+		)
+
+
+@extend_schema(
+	operation_id='medical_upload_v2',
+	description='Upload and ingest a generic medical corpus file for any disease domain. V2 generic endpoint.',
+	request=MedicalFileUploadSerializer,
+	parameters=[
+		OpenApiParameter(
+			name='X-API-Key',
+			type=OpenApiTypes.STR,
+			location=OpenApiParameter.HEADER,
+			required=False,
+			description='API key alternative to JWT bearer authentication.',
+		),
+	],
+	responses={
+		200: MedicalTrainingResponseSerializer,
+		400: ErrorResponseSerializer,
+		401: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+		429: ErrorResponseSerializer,
+		500: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth', 'ApiKeyAuth'],
+)
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
+@permission_classes([HasAgentApiKeyOrAuthenticated])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+def medical_upload(request):
+	"""V2 generic upload endpoint for non-oncology disease corpora."""
+	serializer = MedicalFileUploadSerializer(data=request.data)
+	if not serializer.is_valid():
+		return _validation_error_response(serializer)
+
+	payload = serializer.validated_data
+	request_id = getattr(request, 'request_id', 'n/a')
+	uploaded_file = payload['file']
+	domain = (payload.get('domain') or 'medical').strip() or 'medical'
+	subdomain = payload.get('subdomain') or None
+
+	try:
+		documents = load_oncology_corpus_content(uploaded_file.name, uploaded_file.read())
+		service = _get_service(domain=domain, subdomain=subdomain)
+		result = service.ingest_documents(
+			documents=documents,
+			domain=domain,
+			subdomain=subdomain,
+			dedup_mode='batch-dedup',
+		)
+		return Response(
+			{
+				'domain': result.domain,
+				'subdomain': result.subdomain or '',
+				'corpus_name': payload['corpus_name'],
+				'documents_received': result.documents_received,
+				'duplicates_dropped': result.duplicates_dropped,
+				'documents_indexed': result.documents_indexed,
+				'dedup_mode': result.dedup_mode,
+				'version_tag': result.version_tag,
+				'request_id': request_id,
+			},
+			status=status.HTTP_200_OK,
+		)
+	except ValueError as exc:
+		return Response(
+			{'error': 'invalid upload file', 'detail': str(exc), 'request_id': request_id},
+			status=status.HTTP_400_BAD_REQUEST,
+		)
+	except Exception:
+		logger.exception('medical upload failed request_id=%s domain=%s', request_id, domain)
+		return Response(
+			{'error': 'medical upload failed', 'request_id': request_id},
 			status=status.HTTP_500_INTERNAL_SERVER_ERROR,
 		)

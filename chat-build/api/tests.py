@@ -206,6 +206,104 @@ class AgentApiTests(APITestCase):
         self.assertIn('safety_notice', response.data)
 
     @override_settings(AGENT_API_KEY='test-key')
+    def test_medical_train_accepts_generic_domain(self):
+        def fake_ingest_documents(documents, domain='medical', subdomain=None, **kwargs):
+            return SimpleNamespace(
+                domain=domain,
+                subdomain=subdomain,
+                documents_received=len(documents),
+                duplicates_dropped=0,
+                documents_indexed=len(documents),
+                dedup_mode=kwargs.get('dedup_mode', 'upsert'),
+                version_tag=kwargs.get('version_tag') or '',
+            )
+
+        fake_service = SimpleNamespace(ingest_documents=fake_ingest_documents)
+        with patch('api.views._get_service', return_value=fake_service):
+            response = self.client.post(
+                '/api/v1/agent/medical/train/',
+                {
+                    'domain': 'cardiology',
+                    'subdomain': 'heart-failure',
+                    'documents': [
+                        {'source': 'guideline-1', 'text': 'Heart failure management overview.'},
+                    ],
+                },
+                format='json',
+                HTTP_X_API_KEY='test-key',
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get('domain'), 'cardiology')
+        self.assertEqual(response.data.get('subdomain'), 'heart-failure')
+        self.assertEqual(response.data.get('documents_indexed'), 1)
+
+    @override_settings(AGENT_API_KEY='test-key')
+    def test_medical_query_returns_domain_and_notice(self):
+        fake_service = SimpleNamespace(
+            ask=lambda question, user_id='anonymous': SimpleNamespace(answer='medical-ok', cache_hit=False)
+        )
+        with patch('api.views._get_service', return_value=fake_service):
+            response = self.client.post(
+                '/api/v1/agent/medical/query/',
+                {'question': 'Summarize heart failure markers.', 'domain': 'cardiology', 'subdomain': 'heart-failure'},
+                format='json',
+                HTTP_X_API_KEY='test-key',
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get('domain'), 'cardiology')
+        self.assertEqual(response.data.get('subdomain'), 'heart-failure')
+        self.assertIn('safety_notice', response.data)
+
+    @override_settings(AGENT_API_KEY='test-key')
+    def test_medical_evidence_supports_condition_and_marker_filters(self):
+        captured = {}
+
+        def fake_search_evidence(query, max_results=5, subdomain=None, **kwargs):
+            captured['condition'] = kwargs.get('condition')
+            captured['marker'] = kwargs.get('marker')
+            return SimpleNamespace(
+                domain='cardiology',
+                subdomain=subdomain,
+                evidence=[
+                    {
+                        'citation_id': 'cardiology/heart-failure/guideline-1',
+                        'citation_label': 'Heart failure biomarkers (2024, guideline)',
+                        'source': 'cardiology/heart-failure/guideline-1',
+                        'title': 'Heart failure biomarkers',
+                        'text': 'NT-proBNP supports risk stratification in heart failure research.',
+                        'condition': 'heart failure',
+                        'markers': ['NT-proBNP'],
+                        'evidence_type': 'guideline',
+                        'publication_year': 2024,
+                    }
+                ],
+            )
+
+        fake_service = SimpleNamespace(search_evidence=fake_search_evidence)
+        with patch('api.views._get_service', return_value=fake_service):
+            response = self.client.post(
+                '/api/v1/agent/medical/evidence/',
+                {
+                    'domain': 'cardiology',
+                    'subdomain': 'heart-failure',
+                    'query': 'NT-proBNP evidence',
+                    'condition': 'heart failure',
+                    'marker': 'NT-proBNP',
+                    'max_results': 3,
+                },
+                format='json',
+                HTTP_X_API_KEY='test-key',
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get('domain'), 'cardiology')
+        self.assertEqual(captured.get('condition'), 'heart failure')
+        self.assertEqual(captured.get('marker'), 'NT-proBNP')
+        self.assertEqual(response.data['evidence'][0]['condition'], 'heart failure')
+
+    @override_settings(AGENT_API_KEY='test-key')
     def test_oncology_train_passes_versioned_dedup_parameters(self):
         captured = {}
 

@@ -107,6 +107,8 @@ class AgentAIService:
         self,
         query: str,
         max_results: int = 5,
+        condition: str | None = None,
+        marker: str | None = None,
         cancer_type: str | None = None,
         biomarker: str | None = None,
         subdomain: str | None = None,
@@ -121,6 +123,8 @@ class AgentAIService:
         docs = self.retriever.search_documents(
             query=query,
             max_results=max_results,
+            condition=condition,
+            marker=marker,
             cancer_type=cancer_type,
             biomarker=biomarker,
             subdomain=subdomain if subdomain is not None else self.subdomain,

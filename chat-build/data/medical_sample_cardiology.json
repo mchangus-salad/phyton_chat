@@ -1,0 +1,22 @@
+[
+  {
+    "source": "cardio-guideline-001",
+    "title": "Heart failure biomarker guidance",
+    "text": "Heart failure research frequently uses NT-proBNP to support risk stratification and longitudinal follow-up.",
+    "subdomain": "heart-failure",
+    "condition": "heart failure",
+    "markers": ["NT-proBNP", "BNP"],
+    "evidence_type": "guideline",
+    "publication_year": 2024
+  },
+  {
+    "source": "cardio-review-002",
+    "title": "Atrial fibrillation risk factors",
+    "text": "Atrial fibrillation studies often evaluate inflammation markers including CRP alongside rhythm burden metrics.",
+    "subdomain": "arrhythmia",
+    "condition": "atrial fibrillation",
+    "markers": ["CRP"],
+    "evidence_type": "review",
+    "publication_year": 2023
+  }
+]

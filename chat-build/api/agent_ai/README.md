@@ -195,6 +195,85 @@ OpenAPI and Swagger docs:
 - GET /api/schema/
 - GET /api/docs/
 
+## V2 Generic Medical Endpoints
+
+Version 2 adds generic disease-domain endpoints so the same platform can be used beyond oncology.
+
+V2 endpoints:
+
+- POST /api/v1/agent/medical/train/
+- POST /api/v1/agent/medical/upload/
+- POST /api/v1/agent/medical/query/
+- POST /api/v1/agent/medical/evidence/
+
+Generic import command:
+
+- .venv\Scripts\python.exe manage.py import_medical_corpus <path-to-file>
+
+Generic import helper script:
+
+- .\scripts\import-medical.ps1
+
+V2 sample dataset:
+
+- .\data\medical_sample_cardiology.json
+
+V2 real smoke test script (Ollama + medical endpoints):
+
+- .\scripts\smoke-ollama-medical.ps1
+
+V2 metadata supports both generic and oncology-compatible fields:
+
+- Generic: `domain`, `condition`, `marker`, `markers`
+- Oncology-compatible: `cancer_type`, `biomarker`, `biomarkers`
+
+Migration note:
+
+- Existing oncology endpoints remain available and backward compatible.
+- New use cases should prefer the `/agent/medical/*` endpoints for non-oncology domains.
+
+Example V2 medical train request:
+
+{
+  "domain": "cardiology",
+  "subdomain": "heart-failure",
+  "corpus_name": "cardiology-research",
+  "documents": [
+    {
+      "source": "cardio-guideline-001",
+      "title": "Heart failure biomarker guidance",
+      "text": "Heart failure research frequently uses NT-proBNP to support risk stratification.",
+      "condition": "heart failure",
+      "markers": ["NT-proBNP", "BNP"],
+      "evidence_type": "guideline",
+      "publication_year": 2024
+    }
+  ]
+}
+
+Example V2 medical evidence request:
+
+{
+  "domain": "cardiology",
+  "subdomain": "heart-failure",
+  "query": "heart failure marker evidence",
+  "condition": "heart failure",
+  "marker": "NT-proBNP",
+  "evidence_type": "guideline",
+  "publication_year_from": 2020,
+  "publication_year_to": 2026,
+  "rerank": true,
+  "max_results": 3
+}
+
+Example V2 helper commands:
+
+```powershell
+.\scripts\import-medical.ps1
+.\scripts\import-medical.ps1 -Domain cardiology -Subdomain heart-failure -Path .\data\medical_sample_cardiology.json
+.\scripts\smoke-ollama-medical.ps1
+```
+
 ## Oncology knowledge training
 
 This project can ingest an oncology-specific knowledge corpus into the vector store and then query it through a dedicated endpoint.

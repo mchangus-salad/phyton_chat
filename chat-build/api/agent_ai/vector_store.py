@@ -32,11 +32,17 @@ def _matches_domain(metadata: dict, domain: str | None = None, subdomain: str | 
 
 def _document_payload(raw_doc: dict, domain: str | None = None, subdomain: str | None = None) -> dict:
     active_subdomain = (raw_doc.get("subdomain") or subdomain or "").strip()
+    condition = raw_doc.get("condition") or raw_doc.get("cancer_type") or ""
+    markers = raw_doc.get("markers") or raw_doc.get("biomarkers") or []
+    if not isinstance(markers, list):
+        markers = [str(markers)]
     return {
         "source": _normalize_source(raw_doc.get("source", "document"), domain=domain, subdomain=active_subdomain or None),
         "title": raw_doc.get("title", ""),
         "text": raw_doc.get("text", ""),
         "subdomain": active_subdomain,
+        "condition": condition,
+        "markers": markers,
         "cancer_type": raw_doc.get("cancer_type", ""),
         "biomarkers": raw_doc.get("biomarkers", []) or [],
         "evidence_type": raw_doc.get("evidence_type", ""),
@@ -47,6 +53,8 @@ def _document_payload(raw_doc: dict, domain: str | None = None, subdomain: str |
 
 def _matches_filters(
     metadata: dict,
+    condition: str | None = None,
+    marker: str | None = None,
     cancer_type: str | None = None,
     biomarker: str | None = None,
     subdomain: str | None = None,
@@ -59,9 +67,25 @@ def _matches_filters(
         if actual_subdomain.strip().lower() != subdomain.strip().lower():
             return False
 
+    if condition:
+        actual_condition = str((metadata or {}).get("condition") or (metadata or {}).get("cancer_type") or "")
+        if actual_condition.strip().lower() != condition.strip().lower():
+            return False
+
     if cancer_type:
         actual_cancer_type = str((metadata or {}).get("cancer_type") or "")
         if actual_cancer_type.strip().lower() != cancer_type.strip().lower():
+            return False
+
+    if marker:
+        merged_markers = []
+        for key in ("markers", "biomarkers"):
+            values = (metadata or {}).get(key, []) or []
+            if not isinstance(values, list):
+                values = [str(values)]
+            merged_markers.extend(values)
+        normalized = {item.strip().lower() for item in merged_markers if isinstance(item, str)}
+        if marker.strip().lower() not in normalized:
             return False
 
     if biomarker:
@@ -103,6 +127,8 @@ class EmptyRetriever:
         self,
         query: str,
         max_results: int = 5,
+        condition: str | None = None,
+        marker: str | None = None,
         cancer_type: str | None = None,
         biomarker: str | None = None,
         subdomain: str | None = None,
@@ -150,6 +176,8 @@ class PineconeRetriever:
         self,
         query: str,
         max_results: int = 5,
+        condition: str | None = None,
+        marker: str | None = None,
         cancer_type: str | None = None,
         biomarker: str | None = None,
         subdomain: str | None = None,
@@ -163,6 +191,8 @@ class PineconeRetriever:
             metadata = doc.metadata or {}
             if _matches_filters(
                 metadata,
+                condition=condition,
+                marker=marker,
                 cancer_type=cancer_type,
                 biomarker=biomarker,
                 subdomain=subdomain or self.subdomain,
@@ -248,6 +278,8 @@ class WeaviateRetriever:
         self,
         query: str,
         max_results: int = 5,
+        condition: str | None = None,
+        marker: str | None = None,
         cancer_type: str | None = None,
         biomarker: str | None = None,
         subdomain: str | None = None,
@@ -261,6 +293,8 @@ class WeaviateRetriever:
             metadata = doc.metadata or {}
             if _matches_filters(
                 metadata,
+                condition=condition,
+                marker=marker,
                 cancer_type=cancer_type,
                 biomarker=biomarker,
                 subdomain=subdomain or self.subdomain,
@@ -340,28 +374,44 @@ class WeaviateRetriever:
         return f"http://{settings.weaviate_http_host}:{settings.weaviate_http_port}"
 
     def _ensure_schema(self, session, base_url: str, class_name: str):
+        required_properties = [
+            {"name": "text", "dataType": ["text"]},
+            {"name": "source", "dataType": ["text"]},
+            {"name": "title", "dataType": ["text"]},
+            {"name": "subdomain", "dataType": ["text"]},
+            {"name": "condition", "dataType": ["text"]},
+            {"name": "markers", "dataType": ["text[]"]},
+            {"name": "cancer_type", "dataType": ["text"]},
+            {"name": "biomarkers", "dataType": ["text[]"]},
+            {"name": "evidence_type", "dataType": ["text"]},
+            {"name": "publication_year", "dataType": ["int"]},
+            {"name": "created_at", "dataType": ["date"]},
+        ]
+
         schema = session.get(f"{base_url}/v1/schema", headers=self._headers(), timeout=20)
         schema.raise_for_status()
         body = schema.json()
-        classes = [item.get("class") for item in body.get("classes", [])]
-        if class_name in classes:
+        classes = body.get("classes", [])
+        class_body = next((item for item in classes if item.get("class") == class_name), None)
+        if class_body:
+            existing_names = {item.get("name") for item in class_body.get("properties", [])}
+            for prop in required_properties:
+                if prop["name"] in existing_names:
+                    continue
+                response = session.post(
+                    f"{base_url}/v1/schema/{class_name}/properties",
+                    headers=self._headers(),
+                    json=prop,
+                    timeout=20,
+                )
+                response.raise_for_status()
             return
 
         payload = {
             "class": class_name,
             "description": "Collection for AgentAI local RAG documents",
             "vectorizer": "none",
-            "properties": [
-                {"name": "text", "dataType": ["text"]},
-                {"name": "source", "dataType": ["text"]},
-                {"name": "title", "dataType": ["text"]},
-                {"name": "subdomain", "dataType": ["text"]},
-                {"name": "cancer_type", "dataType": ["text"]},
-                {"name": "biomarkers", "dataType": ["text[]"]},
-                {"name": "evidence_type", "dataType": ["text"]},
-                {"name": "publication_year", "dataType": ["int"]},
-                {"name": "created_at", "dataType": ["date"]},
-            ],
+            "properties": required_properties,
         }
         response = session.post(f"{base_url}/v1/schema", headers=self._headers(), json=payload, timeout=20)
         response.raise_for_status()

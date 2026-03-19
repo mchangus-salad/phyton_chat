@@ -28,6 +28,12 @@ class KnowledgeDocumentSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255, required=False, allow_blank=True, trim_whitespace=True)
     text = serializers.CharField(max_length=12000, allow_blank=False, trim_whitespace=True)
     subdomain = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
+    condition = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
+    markers = serializers.ListField(
+        child=serializers.CharField(max_length=128, trim_whitespace=True),
+        required=False,
+        allow_empty=True,
+    )
     cancer_type = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
     biomarkers = serializers.ListField(
         child=serializers.CharField(max_length=128, trim_whitespace=True),
@@ -47,6 +53,11 @@ class OncologyTrainingSerializer(serializers.Serializer):
     documents = KnowledgeDocumentSerializer(many=True, allow_empty=False)
 
 
+class MedicalTrainingSerializer(OncologyTrainingSerializer):
+    corpus_name = serializers.CharField(max_length=128, required=False, default="medical-research")
+    domain = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
+
+
 class OncologyTrainingResponseSerializer(serializers.Serializer):
     domain = serializers.CharField()
     subdomain = serializers.CharField(required=False, allow_blank=True)
@@ -59,8 +70,16 @@ class OncologyTrainingResponseSerializer(serializers.Serializer):
     request_id = serializers.CharField()
 
 
+class MedicalTrainingResponseSerializer(OncologyTrainingResponseSerializer):
+    pass
+
+
 class OncologyQuerySerializer(AgentQuerySerializer):
     subdomain = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
+
+
+class MedicalQuerySerializer(OncologyQuerySerializer):
+    domain = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
 
 
 class OncologyFileUploadSerializer(serializers.Serializer):
@@ -69,9 +88,17 @@ class OncologyFileUploadSerializer(serializers.Serializer):
     file = serializers.FileField()
 
 
+class MedicalFileUploadSerializer(OncologyFileUploadSerializer):
+    corpus_name = serializers.CharField(max_length=128, required=False, default="medical-upload")
+    domain = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
+
+
 class OncologyEvidenceSearchSerializer(serializers.Serializer):
     query = serializers.CharField(max_length=2000, allow_blank=False, trim_whitespace=True)
+    domain = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
     subdomain = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
+    condition = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
+    marker = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
     cancer_type = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
     biomarker = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
     evidence_type = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
@@ -81,6 +108,10 @@ class OncologyEvidenceSearchSerializer(serializers.Serializer):
     max_results = serializers.IntegerField(required=False, min_value=1, max_value=20, default=5)
 
 
+class MedicalEvidenceSearchSerializer(OncologyEvidenceSearchSerializer):
+    pass
+
+
 class EvidenceDocumentSerializer(serializers.Serializer):
     citation_id = serializers.CharField()
     citation_label = serializers.CharField()
@@ -88,6 +119,8 @@ class EvidenceDocumentSerializer(serializers.Serializer):
     title = serializers.CharField(required=False, allow_blank=True)
     text = serializers.CharField()
     subdomain = serializers.CharField(required=False, allow_blank=True)
+    condition = serializers.CharField(required=False, allow_blank=True)
+    markers = serializers.ListField(child=serializers.CharField(), required=False)
     cancer_type = serializers.CharField(required=False, allow_blank=True)
     biomarkers = serializers.ListField(child=serializers.CharField(), required=False)
     evidence_type = serializers.CharField(required=False, allow_blank=True)
@@ -103,6 +136,10 @@ class OncologyEvidenceSearchResponseSerializer(serializers.Serializer):
     evidence = EvidenceDocumentSerializer(many=True)
     request_id = serializers.CharField()
     safety_notice = serializers.CharField()
+
+
+class MedicalEvidenceSearchResponseSerializer(OncologyEvidenceSearchResponseSerializer):
+    pass
 
 
 class ErrorResponseSerializer(serializers.Serializer):

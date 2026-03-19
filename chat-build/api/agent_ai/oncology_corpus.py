@@ -68,6 +68,8 @@ def _load_txt_text(text: str, stem: str) -> list[dict]:
                 "source": f"{stem}-{index}",
                 "title": f"{stem} section {index}",
                 "text": chunk,
+                "condition": "",
+                "markers": [],
                 "biomarkers": [],
             }
         )
@@ -78,6 +80,10 @@ def _normalize_document(item: dict, index: int) -> dict:
     biomarkers = item.get("biomarkers", [])
     if isinstance(biomarkers, str):
         biomarkers = [part.strip() for part in biomarkers.split("|") if part.strip()]
+
+    markers = item.get("markers", [])
+    if isinstance(markers, str):
+        markers = [part.strip() for part in markers.split("|") if part.strip()]
 
     publication_year = item.get("publication_year")
     if publication_year in ("", None):
@@ -90,6 +96,8 @@ def _normalize_document(item: dict, index: int) -> dict:
         "title": item.get("title", ""),
         "text": item.get("text", ""),
         "subdomain": item.get("subdomain", ""),
+        "condition": item.get("condition") or item.get("cancer_type", ""),
+        "markers": markers or biomarkers,
         "cancer_type": item.get("cancer_type", ""),
         "biomarkers": biomarkers,
         "evidence_type": item.get("evidence_type", ""),
