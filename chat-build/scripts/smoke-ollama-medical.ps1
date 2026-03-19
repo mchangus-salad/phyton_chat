@@ -134,4 +134,4 @@ Write-Host "cache_hit            : $($queryResponse.cache_hit)"
 Write-Host "domain/subdomain     : $($queryResponse.domain)/$($queryResponse.subdomain)"
 Write-Host "first evidence id    : $($evidenceResponse.evidence[0].citation_id)"
 Write-Host "---------------------" -ForegroundColor Cyan
-Write-Host "Ollama medical smoke test passed." -ForegroundColor Green
+Write-Host "CliniGraph AI medical smoke test passed." -ForegroundColor Green

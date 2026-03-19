@@ -1,4 +1,10 @@
-# AgentAI Architecture
+# CliniGraph AI Architecture
+
+## Product Identity
+
+- Product name: CliniGraph AI
+- Category: Clinical Evidence Intelligence Platform
+- Repository codename: chat-build
 
 This module implements an AgentAI pipeline with:
 

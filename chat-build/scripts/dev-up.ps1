@@ -250,7 +250,7 @@ $venvDir = Join-Path $repoRoot ".venv"
 $venvPython = Join-Path $venvDir "Scripts\python.exe"
 $requirementsFile = Join-Path $repoRoot "api\requirements-agentai.txt"
 
-Write-Step "Bootstrap local de chat-build"
+Write-Step "Bootstrap local de CliniGraph AI"
 
 if (-not (Test-Path $envLocalFile)) {
     Write-Step "Creating .env.agentai.local from .env.agentai.example"

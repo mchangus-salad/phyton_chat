@@ -1,8 +1,12 @@
-# phyton_chat
+# CliniGraph AI
+
+Clinical Evidence Intelligence Platform
+
+Legacy workspace codename: chat-build
 
 ## What The Program Does Today
 
-This repository currently includes a Django-based AgentAI backend focused on RAG workflows and oncology research support.
+This repository currently includes the CliniGraph AI backend, a Django-based AgentAI platform focused on RAG workflows and medical research support.
 
 Implemented so far:
 
@@ -17,3 +21,4 @@ Implemented so far:
 
 - AgentAI module docs: [chat-build/api/agent_ai/README.md](chat-build/api/agent_ai/README.md)
 - Mermaid architecture and flow diagrams: [chat-build/api/agent_ai/MERMAID_DIAGRAMS.md](chat-build/api/agent_ai/MERMAID_DIAGRAMS.md)
+- Product branding guide: [chat-build/BRANDING.md](chat-build/BRANDING.md)
