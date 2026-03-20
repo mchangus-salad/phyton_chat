@@ -238,6 +238,28 @@ h1 {
   border: 1px solid var(--line);
 }
 
+.billing-export-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 12px 0 16px;
+}
+
+.billing-export-filters label {
+  margin-bottom: 0;
+}
+
+@media (max-width: 720px) {
+  .billing-export-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-secondary-button {
+    margin-left: 0;
+    margin-top: 10px;
+  }
+}
+
 .billing-card button:disabled {
   opacity: 0.7;
   cursor: not-allowed;

@@ -626,7 +626,9 @@ class AgentApiTests(APITestCase):
         old_invoice = BillingInvoice.objects.get(invoice_id=invoice_id)
         old_invoice.generated_at = timezone.now() - timedelta(days=40)
         old_invoice.status = BillingInvoice.Status.PAID
-        old_invoice.save(update_fields=['generated_at', 'status'])
+        old_invoice.period_start = timezone.now() - timedelta(days=60)
+        old_invoice.period_end = timezone.now() - timedelta(days=30)
+        old_invoice.save(update_fields=['generated_at', 'status', 'period_start', 'period_end'])
 
         pdf_response = self.client.get(
             f'/api/v1/billing/invoices/{invoice_id}/receipt.pdf',
@@ -668,6 +670,24 @@ class AgentApiTests(APITestCase):
         self.assertEqual(date_filtered_csv.status_code, status.HTTP_200_OK)
         date_filtered_content = date_filtered_csv.content.decode('utf-8')
         self.assertNotIn(str(invoice_id), date_filtered_content)
+
+        period_filtered_csv = self.client.get(
+            f'/api/v1/billing/invoices/export.csv?period_start={(timezone.now() - timedelta(days=10)).date().isoformat()}',
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(period_filtered_csv.status_code, status.HTTP_200_OK)
+        period_filtered_content = period_filtered_csv.content.decode('utf-8')
+        self.assertNotIn(str(invoice_id), period_filtered_content)
+
+        invalid_period_csv = self.client.get(
+            '/api/v1/billing/invoices/export.csv?period_start=2026-01-10&period_end=2025-12-01',
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(invalid_period_csv.status_code, status.HTTP_400_BAD_REQUEST)
 
         invalid_date_csv = self.client.get(
             '/api/v1/billing/invoices/export.csv?start_date=2026-99-99',

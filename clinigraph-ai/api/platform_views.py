@@ -510,6 +510,20 @@ def billing_invoice_receipt_pdf(request, invoice_id):
             required=False,
             description="Include invoices generated on/before date (YYYY-MM-DD).",
         ),
+        OpenApiParameter(
+            name="period_start",
+            type=OpenApiTypes.DATE,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Include invoices whose billed period starts on/after date (YYYY-MM-DD).",
+        ),
+        OpenApiParameter(
+            name="period_end",
+            type=OpenApiTypes.DATE,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Include invoices whose billed period ends on/before date (YYYY-MM-DD).",
+        ),
     ],
 )
 @api_view(["GET"])
@@ -524,6 +538,13 @@ def billing_invoice_export_csv(request):
     currency_filter = (request.query_params.get("currency") or "").strip().upper()
     start_date_raw = (request.query_params.get("start_date") or "").strip()
     end_date_raw = (request.query_params.get("end_date") or "").strip()
+    period_start_raw = (request.query_params.get("period_start") or "").strip()
+    period_end_raw = (request.query_params.get("period_end") or "").strip()
+
+    start_date = None
+    end_date = None
+    period_start_filter = None
+    period_end_filter = None
 
     if start_date_raw:
         try:
@@ -543,8 +564,29 @@ def billing_invoice_export_csv(request):
             return Response({"error": "invalid end_date format", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
         invoices_qs = invoices_qs.filter(generated_at__date__lte=end_date)
 
+    if period_start_raw:
+        try:
+            period_start_filter = parse_date(period_start_raw)
+        except ValueError:
+            period_start_filter = None
+        if period_start_filter is None:
+            return Response({"error": "invalid period_start format", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+        invoices_qs = invoices_qs.filter(period_start__date__gte=period_start_filter)
+
+    if period_end_raw:
+        try:
+            period_end_filter = parse_date(period_end_raw)
+        except ValueError:
+            period_end_filter = None
+        if period_end_filter is None:
+            return Response({"error": "invalid period_end format", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+        invoices_qs = invoices_qs.filter(period_end__date__lte=period_end_filter)
+
     if start_date_raw and end_date_raw and start_date > end_date:
         return Response({"error": "start_date must be <= end_date", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+
+    if period_start_raw and period_end_raw and period_start_filter > period_end_filter:
+        return Response({"error": "period_start must be <= period_end", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
 
     if status_filter:
         invoices_qs = invoices_qs.filter(status=status_filter)

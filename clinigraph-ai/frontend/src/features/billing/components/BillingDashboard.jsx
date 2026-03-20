@@ -24,6 +24,8 @@ export function BillingDashboard() {
     setAuthToken,
     tenantId,
     setTenantId,
+    exportFilters,
+    setExportFilters,
     refreshTenantData,
     exportTenantCsv,
     loading,
@@ -108,6 +110,68 @@ export function BillingDashboard() {
               onChange={(event) => setTenantId(event.target.value)}
             />
           </label>
+
+          <div className="billing-export-filters">
+            <label>
+              Status
+              <select
+                value={exportFilters.status}
+                onChange={(event) => setExportFilters((current) => ({ ...current, status: event.target.value }))}
+              >
+                <option value="">All</option>
+                <option value="draft">Draft</option>
+                <option value="finalized">Finalized</option>
+                <option value="paid">Paid</option>
+                <option value="void">Void</option>
+              </select>
+            </label>
+
+            <label>
+              Currency
+              <input
+                type="text"
+                maxLength="3"
+                value={exportFilters.currency}
+                onChange={(event) => setExportFilters((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
+              />
+            </label>
+
+            <label>
+              Generated from
+              <input
+                type="date"
+                value={exportFilters.startDate}
+                onChange={(event) => setExportFilters((current) => ({ ...current, startDate: event.target.value }))}
+              />
+            </label>
+
+            <label>
+              Generated to
+              <input
+                type="date"
+                value={exportFilters.endDate}
+                onChange={(event) => setExportFilters((current) => ({ ...current, endDate: event.target.value }))}
+              />
+            </label>
+
+            <label>
+              Billed period start
+              <input
+                type="date"
+                value={exportFilters.periodStart}
+                onChange={(event) => setExportFilters((current) => ({ ...current, periodStart: event.target.value }))}
+              />
+            </label>
+
+            <label>
+              Billed period end
+              <input
+                type="date"
+                value={exportFilters.periodEnd}
+                onChange={(event) => setExportFilters((current) => ({ ...current, periodEnd: event.target.value }))}
+              />
+            </label>
+          </div>
 
           <button type="button" onClick={refreshTenantData} disabled={loading}>
             {loading ? 'Loading...' : 'Refresh usage and overage'}

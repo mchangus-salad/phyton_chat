@@ -116,7 +116,7 @@ Purpose:
 
 1. Export invoice-level financial data for accounting workflows.
 2. Allow filtering by invoice status via query string.
-3. Allow filtering by `currency`, `start_date`, and `end_date` (`YYYY-MM-DD`).
+3. Allow filtering by `currency`, `start_date`, `end_date`, `period_start`, and `period_end` (`YYYY-MM-DD`).
 
 Supported query params:
 
@@ -124,6 +124,8 @@ Supported query params:
 2. `currency`: ISO currency code (example `USD`).
 3. `start_date`: include invoices generated on/after this date.
 4. `end_date`: include invoices generated on/before this date.
+5. `period_start`: include invoices whose billed period starts on/after this date.
+6. `period_end`: include invoices whose billed period ends on/before this date.
 
 ### Stripe Customer Portal
 
@@ -202,5 +204,6 @@ The React app now includes a billing cockpit section with:
 3. Current estimate retrieval from tenant-protected billing estimate endpoint.
 4. Direct invoice receipt download (TXT and PDF).
 5. Tenant CSV export action for finance operations.
+6. Visible export filters for status, currency, generated dates, and billed period dates.
 
 This dashboard is designed as operational support and pricing transparency tooling.

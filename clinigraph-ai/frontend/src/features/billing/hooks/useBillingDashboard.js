@@ -8,6 +8,15 @@ const defaultEstimateInput = {
   apiRequests: 0,
 };
 
+const defaultExportFilters = {
+  status: '',
+  currency: 'USD',
+  startDate: '',
+  endDate: '',
+  periodStart: '',
+  periodEnd: '',
+};
+
 export function useBillingDashboard() {
   const [plans, setPlans] = useState([]);
   const [selectedPlanCode, setSelectedPlanCode] = useState('');
@@ -16,6 +25,7 @@ export function useBillingDashboard() {
   const [usageSummary, setUsageSummary] = useState(null);
   const [authToken, setAuthToken] = useState('');
   const [tenantId, setTenantId] = useState('');
+  const [exportFilters, setExportFilters] = useState(defaultExportFilters);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -117,9 +127,38 @@ export function useBillingDashboard() {
       setError('JWT token and tenant id are required to export CSV.');
       return;
     }
+    if (exportFilters.startDate && exportFilters.endDate && exportFilters.startDate > exportFilters.endDate) {
+      setError('Generated date range is invalid.');
+      return;
+    }
+    if (exportFilters.periodStart && exportFilters.periodEnd && exportFilters.periodStart > exportFilters.periodEnd) {
+      setError('Billed period range is invalid.');
+      return;
+    }
     setError('');
     try {
-      const response = await fetch(`${appConfig.apiBaseUrl}/billing/invoices/export.csv`, {
+      const params = new URLSearchParams();
+      if (exportFilters.status.trim()) {
+        params.set('status', exportFilters.status.trim());
+      }
+      if (exportFilters.currency.trim()) {
+        params.set('currency', exportFilters.currency.trim().toUpperCase());
+      }
+      if (exportFilters.startDate) {
+        params.set('start_date', exportFilters.startDate);
+      }
+      if (exportFilters.endDate) {
+        params.set('end_date', exportFilters.endDate);
+      }
+      if (exportFilters.periodStart) {
+        params.set('period_start', exportFilters.periodStart);
+      }
+      if (exportFilters.periodEnd) {
+        params.set('period_end', exportFilters.periodEnd);
+      }
+
+      const query = params.toString();
+      const response = await fetch(`${appConfig.apiBaseUrl}/billing/invoices/export.csv${query ? `?${query}` : ''}`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authToken.trim()}`,
@@ -157,6 +196,8 @@ export function useBillingDashboard() {
     setAuthToken,
     tenantId,
     setTenantId,
+    exportFilters,
+    setExportFilters,
     refreshTenantData,
     exportTenantCsv,
     loading,
