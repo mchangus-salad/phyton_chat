@@ -1,0 +1,82 @@
+[
+  {
+    "source": "trial-IRIS-CML-2003",
+    "title": "Imatinib versus Interferon alfa in Chronic Myeloid Leukemia: IRIS Trial",
+    "text": "STUDY: IRIS (NCT00006343): Phase 3 RCT, 1,106 newly diagnosed CML chronic phase patients. Imatinib 400mg QD vs interferon-alpha+cytarabine. RESULTS: At 18 months: CCyR (complete cytogenetic response) 76% vs 14.5% (P<0.001). 5-year EFS 83% imatinib. Estimated 8-year OS 85% imatinib (similar to age-matched normal population). 45% of patients switched from IFN arm to imatinib. Subsequent 2nd-gen TKIs (dasatinib, nilotinib, bosutinib) achieve faster deeper responses. ENESTnd (nilotinib): MMR at 12 months 44% vs 22% imatinib (P<0.001). ASSETtrial (asciminib): third-line CML. BIOMARKER: BCR-ABL1 fusion gene (Philadelphia chromosome t(9;22)): diagnostic. BCR-ABL1 IS% (International Scale, quantitative RT-PCR): major molecular response (MMR or MR3) = BCR-ABL IS <=0.1%; deep molecular response MR4 <=0.01%, MR4.5 <=0.0032%. Fluorescence in situ hybridization (FISH) for cytogenetic response. Cytogenetics (karyotype): CCyR = 0 Ph+ metaphases. Complete hematologic response (CHR): normalization of CBC and differential. ABL kinase domain mutations (T315I, F359V, etc.) detected by Sanger or NGS at resistance. RECOMMENDATION: TKI (imatinib, dasatinib, nilotinib, bosutinib, or ponatinib for T315I) is curative treatment for CML. Treatment-free remission (TFR) feasible when MR4.5 sustained for >=2 years: EURO-SKI study - 40-60% maintain remission off TKI. Annual bone marrow evaluation until CCyR, then molecular monitoring Q3-6 months.",
+    "subdomain": "myeloid-malignancy",
+    "condition": "chronic myeloid leukemia",
+    "markers": ["BCR-ABL1 IS%", "CCyR", "MMR", "MR4", "ABL kinase domain mutations", "CBC"],
+    "evidence_type": "rct",
+    "publication_year": 2003
+  },
+  {
+    "source": "trial-MURANO-CLL-2018",
+    "title": "Venetoclax-Rituximab versus Bendamustine-Rituximab in Relapsed CLL: MURANO Trial",
+    "text": "STUDY: MURANO (NCT02005471): Phase 3 RCT, 389 relapsed/refractory CLL patients. Venetoclax (BCL-2 inhibitor) 400mg QD for 24 months + rituximab 6 cycles vs bendamustine+rituximab for 6 cycles. RESULTS: PFS at 2 years: 84.9% vs 36.3% (HR 0.17; P<0.001). Overall survival: HR 0.48 (P=0.0003). uMRD (undetectable minimal residual disease by peripheral blood flow cytometry) at month 9: 62.4% vs 13.3% (P<0.001). Overall response rate: 92.3% vs 72.3%. CLL13/GAIA (venetoclax+obinutuzumab+ibrutinib): 56% MRD negativity in BM. BIOMARKER: MRD (minimal residual disease) by multiparameter flow cytometry or PCR/NGS: undetectable MRD (<10-4) predicts PFS. IGHV mutation status: unmutated IGHV = worse prognosis; TP53 mutation/del17p = poor response to chemoimmunotherapy. FISH: del(17)(p13.1) [TP53 locus], del(11)(q23) [ATM], del(13)(q14), trisomy 12 - prognostic. ZAP-70, CD38: older prognostic markers largely replaced by IGHV/cytogenetics. Beta-2 microglobulin (B2M): elevated = worse prognosis (>3.5mg/L). CBC with differential: absolute lymphocyte count, Gumprecht shadows (smear artifact). IBRUTINIB (RESONATE-2): First-line, older patients: ibrutinib vs chlorambucil: PFS HR 0.16 (P<0.001). FLAIR (ibrutinib+venetoclax): deep MRD negativity. RECOMMENDATION: Fixed-duration venetoclax+obinutuzumab or venetoclax+rituximab for eligible relapsed/refractory CLL. First-line non-TP53: ibrutinib or venetoclax+obinutuzumab. TP53/del17p: venetoclax+obinutuzumab or ibrutinib (chemoimmunotherapy largely ineffective).",
+    "subdomain": "lymphoid-malignancy",
+    "condition": "chronic lymphocytic leukemia",
+    "markers": ["MRD", "IGHV mutation", "TP53 mutation", "del17p", "del11q", "beta-2 microglobulin", "CBC"],
+    "evidence_type": "rct",
+    "publication_year": 2018
+  },
+  {
+    "source": "trial-POLARIX-DLBCL-2022",
+    "title": "Polatuzumab Vedotin plus R-CHP versus R-CHOP in Diffuse Large B-Cell Lymphoma: POLARIX Trial",
+    "text": "STUDY: POLARIX (NCT03274492): Phase 3 RCT, 879 previously untreated DLBCL patients (IPI 2-5). Polatuzumab vedotin 1.8mg/kg IV + R-CHP (rituximab, cyclophosphamide, doxorubicin, prednisone) vs R-CHOP (standard). RESULTS: PFS at 2 years: 76.7% vs 70.2% (HR 0.73; P=0.02). OS: HR 0.94 (not significant - OS not powered). Grade 3-4 adverse events similar; peripheral neuropathy (anti-CD79b polatuzumab ADC) 43% any grade. Benefit consistent across IPI groups. BIOMARKER: DLBCL COO (cell of origin): GCB vs ABC/non-GCB (Hans algorithm on IHC: CD10+BCL6+MUM1; or NanoString L/M/U/M): ABC associated with worse prognosis in R-CHOP but may not predict OS benefit with POLA-R-CHP. MYC/BCL2/BCL6 rearrangements (FISH): double-hit (DHL) or triple-hit lymphoma (THL) = high-grade B-cell lymphoma with very poor prognosis - not adequately treated by R-CHOP or POLA-R-CHP; dose-intensive regimens (DA-EPOCH-R) or clinical trials needed. IPI (International Prognostic Index): age>60, LDH>ULN, ECOG status 2-4, advanced stage, extranodal sites>1 - 1 point each; aggressive disease >=3. LDH: elevated in aggressive lymphoma; monitor during treatment. Beta-2 microglobulin (B2M). PET-CT (Deauville 5-point scale): interim after 2-4 cycles and end of treatment. Complete metabolic remission (CMR) = Deauville 1-3. RECOMMENDATION: Pola-R-CHP preferred over R-CHOP for newly diagnosed DLBCL (IPI>=2) based on PFS benefit. R-CHOP remains acceptable (OS benefit not proven for Pola). DHL/THL: consider DA-EPOCH-R or clinical trial.",
+    "subdomain": "lymphoid-malignancy",
+    "condition": "diffuse large B-cell lymphoma",
+    "markers": ["IPI", "LDH", "beta-2 microglobulin", "MYC/BCL2/BCL6 FISH", "PET-CT Deauville score", "COO"],
+    "evidence_type": "rct",
+    "publication_year": 2022
+  },
+  {
+    "source": "trial-MAIA-MM-2019",
+    "title": "Daratumumab plus Lenalidomide/Dexamethasone versus Rd Alone in Transplant-Ineligible Myeloma: MAIA",
+    "text": "STUDY: MAIA (NCT02252172): Phase 3 RCT, 737 transplant-ineligible newly diagnosed multiple myeloma (NDMM) patients. Daratumumab 16mg/kg IV QW/Q2W/Q4W + lenalidomide 25mg + dexamethasone (DRd) vs lenalidomide 25mg + dexamethasone (Rd). RESULTS: PFS at 30 months: 70.6% vs 55.6% (HR 0.56; P<0.001). OS at 36 months: 78.0% vs 67.9% (HR 0.68; P<0.001). CR or better: 47.6% vs 24.9%. MRD-negative rate: 24.2% vs 7.3% (P<0.001). Infusion reactions 40% with daratumumab (mostly first dose). BIOMARKER: SPEP (serum protein electrophoresis) + SIFE (immunofixation electrophoresis): monoclonal protein (M-protein) quantification. UPEP/UIFE: Bence Jones protein (free light chains) in urine. Serum free light chain (SFLC) ratio: normal 0.26-1.65; abnormal ratio distinguishes kappa vs lambda predominance. LDH: elevated in plasma cell proliferative disease. Beta-2 microglobulin (B2M) + albumin: R-ISS staging (I: B2M<3.5+alb>=3.5+no del17p/t(4;14)+LDH normal; III: B2M>5.5 + del17p/t(4;14)). FISH: del(17)(p13)/TP53, t(4;14)/FGFR3-NSD2, t(14;16)/MAF, gain(1q21) - high-risk cytogenetics. Bone marrow plasma cell percentage. CT/PET-CT for osseous lesions. MRD by next-generation flow (NGF, sensitivity 10-5): MRD negativity is deep response marker predicting long PFS. RECOMMENDATION: DRd (daratumumab+Rd) for transplant-ineligible NDMM. VRd (bortezomib+Rd) or VMP alternatives. Autologous SCT eligible: induction VRd x4 then ASCT, then RVd consolidation. Daratumumab-based maintenance. MRD guidance emerging.",
+    "subdomain": "plasma-cell-malignancy",
+    "condition": "multiple myeloma",
+    "markers": ["M-protein", "SFLC ratio", "beta-2 microglobulin", "albumin", "LDH", "del17p", "t(4;14)", "gain1q21", "MRD"],
+    "evidence_type": "rct",
+    "publication_year": 2019
+  },
+  {
+    "source": "trial-VIALE-A-AML-2020",
+    "title": "Venetoclax plus Azacitidine versus Azacitidine Alone in Untreated AML: VIALE-A Trial",
+    "text": "STUDY: VIALE-A (NCT02993523): Phase 3 RCT, 433 newly diagnosed AML patients ineligible for intensive chemotherapy (age>=75 or comorbidities). Venetoclax 400mg QD days 1-28 + azacitidine 75mg/m2 days 1-7 Q28D vs azacitidine+placebo. RESULTS: OS: 14.7 vs 9.6 months (HR 0.66; P<0.001). CR+CRi: 66.4% vs 28.3% (P<0.001). MRD negativity: 30% vs 7.4%. Time to first response: 1.3 vs 2.5 months. Grade 3-4 thrombocytopenia 45% and neutropenia 42% with Ven+Aza. Differentiation syndrome 3% vs 1%. BIOMARKER: Bone marrow biopsy: blast percentage, cytogenetics, European LeukemiaNet (ELN-2022) risk classification. Favorable: NPM1 mutated without FLT3-ITD, or biallelic CEBPA mutation. Adverse: TP53, RUNX1, ASXL1 mutations; monosomies; complex karyotype; t(6;9), inv(3). Intermediate: FLT3-ITD/TKD alone, others. AML molecular panel (NGS or targeted): FLT3-ITD/TKD, NPM1, IDH1 (isocitrate dehydrogenase 1), IDH2, CEBPA, TP53, RUNX1, ASXL1, KIT, DNMT3A, TET2. Enasidenib (AG-221): IDH2 inhibitor, 40% ORR in relapsed IDH2-mutated AML. Olutasidenib/ivosidenib: IDH1 inhibitors. Gilteritinib: FLT3 inhibitor, 21% OS benefit in FLT3+ R/R AML. RECOMMENDATION: Venetoclax+azacitidine is standard first-line for AML in patients not eligible for intensive chemotherapy. Ivosidenib+azacitidine (AG120-C-001) for IDH1-mutated. FLT3 inhibitor (midostaurin) added to intensive chemotherapy for eligible FLT3-mutated younger patients.",
+    "subdomain": "myeloid-malignancy",
+    "condition": "acute myeloid leukemia",
+    "markers": ["NPM1 mutation", "FLT3-ITD", "IDH1", "IDH2", "TP53", "blast%", "ELN risk", "MRD"],
+    "evidence_type": "rct",
+    "publication_year": 2020
+  },
+  {
+    "source": "trial-BELIEVE-BETA-THAL-2020",
+    "title": "Luspatercept for Red Blood Cell Transfusions in Beta-Thalassemia: BELIEVE Trial",
+    "text": "STUDY: BELIEVE (NCT02604433): Phase 3 RCT, 336 adults with transfusion-dependent beta-thalassemia, >=6 RBC units/24 weeks. Luspatercept 1mg/kg SC Q3W (titrated to 1.25mg/kg) vs placebo for 48 weeks. RESULTS: RBC transfusion burden reduction >=33% from baseline: 21.4% vs 4.5% (P<0.001). Transfusion independence for >=12 consecutive weeks: 10.3% vs 0% (P=0.0002). Mean reduction in RBC transfusion burden: -1.0 vs -0.3 units/12 weeks. Bone pain, arthralgia, hypertension among adverse events. BIOMARKER: Hemoglobin (Hb): baseline transfusion-dependent thalassemia typically <7-8g/dL. Ferritin: elevated iron overload from chronic transfusions (typically >1000-2500ng/mL); liver MRI T2* and cardiac MRI T2* quantify organ iron. Transferrin saturation (>45% indicates iron overload). NTBI (non-transferrin-bound iron) reflects free radical injury. Hemoglobin electrophoresis: HbF (alpha2gamma2), HbA (alpha2beta2), HbA2 (alpha2delta2), variant Hbs. Beta-globin gene mutations. Erythropoietin levels (elevated due to chronic anemia). LDH, indirect bilirubin, haptoglobin (hemolysis markers). Reticulocyte count. Ferriscan (liver iron concentration by MRI). CHELATION: Deferasirox or deferoxamine to reduce iron overload. GENE THERAPY: LentiGlobin (BetaGene): 91% of 35 pts transfusion-free at 2y. CRISPR/Cas9 (Casgevy): sickle cell/thalassemia - induction of HbF by BCL11A editing. RECOMMENDATION: Luspatercept for transfusion-dependent beta-thalassemia to reduce transfusion burden. Gene therapy (betibeglogene/Casgevy) potentially curative for eligible patients. Iron chelation mandatory in all transfusion-dependent thalassemia.",
+    "subdomain": "hemoglobinopathy",
+    "condition": "beta-thalassemia",
+    "markers": ["hemoglobin", "ferritin", "transferrin saturation", "LDH", "bilirubin", "reticulocyte count", "Hb electrophoresis"],
+    "evidence_type": "rct",
+    "publication_year": 2020
+  },
+  {
+    "source": "trial-SICKLE-CELL-HOPE-2021",
+    "title": "Voxelotor for Sickle Cell Disease: HOPE Trial and Sickle Cell Biomarker Framework",
+    "text": "STUDY: HOPE (NCT03036813): Phase 3 RCT, 274 patients with SCD (HbSS or HbSbeta0, aged 12+) and hemoglobin <10.5g/dL. Voxelotor (HbS polymerization inhibitor, GBT440) 1500mg QD vs 900mg or placebo. RESULTS: Hemoglobin increase >=1g/dL at 24 weeks: 51.1% vs 25.5% vs 6.5% (P<0.001). Hemolysis markers: LDH and reticulocyte count reduced. Anemia-related outcomes improved. HYDROXYUREA evidence: BABY HUG (infants): HU reduced dactylitis, acute chest, pain crises. Multiple adult RCTs: HU reduces VOC, acute chest syndrome, transfusion requirement, HU-induced HbF increases by 15-20%. BIOMARKER: Complete blood count: Hb (steady-state 6-9g/dL in HbSS), MCV (elevated with HU due to macrocytosis), reticulocyte count (elevated = ongoing hemolysis). LDH, bilirubin, haptoglobin (hemolysis). HbF% (fetal hemoglobin): HbF>15% reduces veno-occlusive crises; HU increases HbF. HbS% by HPLC/electrophoresis. Ferritin: if frequently transfused. Transcranial Doppler (TCD) ultrasonography in children: velocity >=200cm/s = high stroke risk (STOP trial: prophylactic transfusion reduces stroke by 90%). RDW (red cell distribution width) and MCHC (mean corpuscular Hb concentration). RECOMMENDATION: Hydroxyurea for all patients with >=3 VOC/year, history of acute chest, stroke, or severe SCD manifestations. Crizanlizumab (anti-P-selectin, SUSTAIN trial) reduces VOC. Voxelotor reduces hemolysis. Gene therapy (LentiGlobin, Casgevy) for eligible candidates.",
+    "subdomain": "hemoglobinopathy",
+    "condition": "sickle cell disease",
+    "markers": ["hemoglobin", "HbF%", "HbS%", "LDH", "bilirubin", "reticulocyte count", "ferritin", "TCD velocity"],
+    "evidence_type": "rct",
+    "publication_year": 2021
+  },
+  {
+    "source": "trial-TRIANGLE-MCL-2022",
+    "title": "Ibrutinib Combined with Standard Therapy versus Autologous Transplant in Mantle Cell Lymphoma: TRIANGLE",
+    "text": "STUDY: TRIANGLE (NCT02858258): Phase 3 RCT, 870 younger MCL patients (18-65y). Three arms: induction±R-CHOP/R-DHAP then ASCT (A), add ibrutinib to induction+ASCT then ibrutinib 2y maintenance (A+I), add ibrutinib replace ASCT (I alone). RESULTS: 3-year FFS: A+I 88%, I (no ASCT) 86%, A (ASCT alone) 72% (A+I vs A: HR 0.52; I vs A: HR 0.60). A+I and I alone both superior to ASCT alone. OS not significantly different. BIOMARKER: MCL IPI (MIPI): WBC, age, LDH, ECOG - low/intermediate/high risk. Ki-67% (proliferation marker): >=30% = blastoid/aggressive. SOX11: nuclear transcription factor expressed in classic MCL; negative in indolent MCL subset. IGHV mutation: mutated = better prognosis. TP53 mutation/del17p: high-risk MCL unresponsive to ASCT or ibrutinib. Cyclin D1 (by IHC): positive in 90-95% MCL (t(11;14) CCND1/IGH). FISH for t(11;14). MRD by ASO-PCR or NGS: MRD negativity predicts better outcome. BTK mutations (C481S): ibrutinib resistance. RECOMMENDATION: Ibrutinib-containing regimens (add to induction and replace ASCT in eligible patients) based on TRIANGLE. MCL management depends on TP53 status: TP53 mutated is very poor prognosis - venetoclax combinations, clinical trials. Ibrutinib+venetoclax (SYMPATICO): active in relapsed MCL.",
+    "subdomain": "lymphoid-malignancy",
+    "condition": "mantle cell lymphoma",
+    "markers": ["Ki-67%", "SOX11", "TP53 mutation", "cyclin D1", "MIPI", "MRD", "LDH", "BTK mutation"],
+    "evidence_type": "rct",
+    "publication_year": 2022
+  }
+]

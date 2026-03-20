@@ -1,0 +1,82 @@
+[
+  {
+    "source": "trial-PARTNER-HIV-2016",
+    "title": "Risk of HIV Transmission in Serodiscordant Couples on Antiretroviral Therapy: PARTNER Study",
+    "text": "STUDY: PARTNER (NCT01127035): 1,166 serodiscordant couple-years follow-up. HIV-positive partner on ART with viral load <200 copies/mL. Condomless sex: zero HIV transmissions in MSM and heterosexual couples (0 linked transmissions, 95% CI 0-0.30 per 100 couple-years for HIV-positive men). U=U (Undetectable=Untransmittable) confirmed. HPTN 052 (START trial): early ART (CD4>500) vs deferred: 96% reduction in HIV transmission; early treatment superior for clinical outcomes. HIV TREATMENT BIOMARKERS: HIV-1 RNA viral load: target <50 copies/mL undetectable (<200 is virologic suppression). CD4 count (absolute and %): immune status; ART initiation no longer requires CD4 threshold - treat all. CD4 nadir guides OI prophylaxis thresholds. Resistance testing: genotype (Sanger) at diagnosis and treatment failure; HIV-1 tropism (co-receptor: R5 vs X4 for maraviroc). HIV-1 subtype. Hepatitis B (HBsAg, HBcAb, HBeAg), HCV co-infection screening mandatory. Syphilis/gonorrhea/chlamydia STI screening annually. HLA-B*57:01 testing before abacavir (hypersensitivity allergy). PrEP (pre-exposure prophylaxis): TDF/FTC daily (IPERGAY, PROUD, Partners PrEP): HIV transmission reduced by 86-99%. Injectable CAB (cabotegravir) PrEP Q8W non-inferior to daily TDF/FTC (HPTN 083/084). RECOMMENDATION: Start ART immediately in all PLWH regardless of CD4 count. Preferred first-line: BIC/TAF/FTC (bictegravir/tenofovir alafenamide/emtricitabine) or DTG+3TC. Quarterly viral load and annual metabolic/STI monitoring. U=U messaging for transmission prevention.",
+    "subdomain": "HIV",
+    "condition": "HIV infection",
+    "markers": ["HIV-1 RNA viral load", "CD4 count", "CD4%", "resistance genotype", "HLA-B*57:01", "HBsAg", "HCV antibody"],
+    "evidence_type": "rct",
+    "publication_year": 2016
+  },
+  {
+    "source": "trial-ASTRAL1-2015",
+    "title": "Sofosbuvir/Velpatasvir for Hepatitis C Genotypes 1-6: ASTRAL-1 Trial",
+    "text": "STUDY: ASTRAL-1 (NCT02201940): 740 patients with HCV genotypes 1, 2, 4, 5, 6 (including prior treatment experience, cirrhosis). Sofosbuvir 400mg/velpatasvir 100mg QD for 12 weeks vs placebo (genotype 2 active arm). RESULTS: SVR12 (sustained virologic response at 12 weeks post-treatment = cure): 98.5% overall (range: GT1a 98.5%, GT1b 99.5%, GT2 99.3%, GT4 100%, GT5 97.1%, GT6 100%). Placebo arm SVR12 0.7%. GT3 (ASTRAL-3): sofosbuvir/velpatasvir 12 weeks vs sofosbuvir+ribavirin: 95% vs 80% (P<0.001). Adverse effects minimal: headache 22%, fatigue 15%. BIOMARKER: HCV RNA quantitative (IU/mL): monitor at baseline, week 4 (RVR: rapid virologic response), end of treatment, and 12 weeks post (SVR12 = cure). SVR12 durable cure in 99.7%. HCV genotype (1-6) required for drug selection. NS5A resistance-associated substitutions (RAS): relevant in GT1a NS5A high-resistance mutations (for certain regimens). Liver fibrosis staging critical: FIB-4 index = age x AST / (platelets x sqrt-ALT); FIB-4 <1.45 = F0-F1 (low risk); liver elastography (FibroScan/Transient Elastography) defines cirrhosis (>12.5kPa). HBsAg testing before NS5A inhibitor - HBV reactivation risk. RECOMMENDATION: Sofosbuvir/velpatasvir (Epclusa) pangenotypic 12-week regimen is recommended first-line for all HCV genotypes including cirrhosis (compensated). Glecaprevir/pibrentasvir (Mavyret) 8 weeks is alternative. Check for HBV coinfection and treat. SVR eliminates cirrhosis progression risk substantially.",
+    "subdomain": "hepatitis",
+    "condition": "hepatitis C",
+    "markers": ["HCV RNA", "HCV genotype", "SVR12", "FIB-4", "FibroScan", "ALT", "AST", "platelets", "HBsAg"],
+    "evidence_type": "rct",
+    "publication_year": 2015
+  },
+  {
+    "source": "trial-SEPSIS3-2016",
+    "title": "Sepsis and Septic Shock: The Third International Consensus Definitions and Management",
+    "text": "DEFINITIONS (Sepsis-3, JAMA 2016): Sepsis: life-threatening organ dysfunction caused by dysregulated host response to infection (SOFA score increase>=2). Septic shock: sepsis + vasopressor requirement for MAP>=65mmHg + serum lactate >2mmol/L despite adequate volume resuscitation. BIOMARKERS: SOFA score: PaO2/FiO2, GCS, MAP/vasopressors, bilirubin, creatinine, platelets - 6 organ systems. qSOFA (quick SOFA): RR>=22, altered mentation, SBP<=100 - 2/3 criteria outside ICU predict poor outcome. Lactate: >2mmol/L = occult hypoperfusion; >4mmol/L = severe shock; serial lactate clearance (reduction >=10-20%) guides resuscitation. Procalcitonin (PCT): >0.5ng/mL suggests bacterial infection; serial PCT-guided care reduces antibiotic duration (PRORATA, SAPS-2). CRP, WBC, differential. Blood cultures (2 sets before antibiotics; aerobic and anaerobic). Urinalysis and urine cultures. Respiratory cultures if pneumonia suspected. MANAGEMENT: SURVIVING SEPSIS CAMPAIGN BUNDLES: Hour-1 bundle: measure lactate, blood cultures x2 before antibiotics, broad-spectrum antibiotics within 1 hour, 30mL/kg crystalloid IV for hypotension or lactate>=4mmol/L, vasopressors if no response. Norepinephrine first-line vasopressor. Hydrocortisone 200mg/day IV for refractory septic shock. RECOMMENDATION: Early recognition (qSOFA/SOFA + clinical assessment), early broad-spectrum antibiotics, early fluid resuscitation, and vasopressors are the cornerstones. De-escalate antibiotics with PCT guidance at 5-7 days. Source control essential.",
+    "subdomain": "infectious-disease-critical-care",
+    "condition": "sepsis",
+    "markers": ["lactate", "procalcitonin", "CRP", "WBC", "SOFA score", "qSOFA", "blood cultures", "creatinine", "bilirubin"],
+    "evidence_type": "guideline",
+    "publication_year": 2016
+  },
+  {
+    "source": "trial-COV-HIV-2021",
+    "title": "SARS-CoV-2 Antiviral Therapy: Paxlovid, Lagevrio, and Remdesivir Clinical Evidence",
+    "text": "EPIC-HR (nirmatrelvir/ritonavir, Paxlovid, NCT04960202): 2,246 non-hospitalized symptomatic COVID-19 adults with risk factors for severe disease. Treated within 3 days of symptom onset. RESULTS: Hospitalization or death: 0.8% vs 6.3% (RRR 89%; P<0.001) - profound reduction. Viral load decline faster. Adverse effects: dysgeusia 5.6% (metallic taste from ritonavir), diarrhea. Significant drug-drug interactions from ritonavir CYP3A4 inhibition. MOVE-OUT (molnupiravir, LAGEVRIO, NCT04575597): 1,433 at-risk non-hospitalized COVID. Hospitalization/death: 6.8% vs 9.7% (30% reduction; P=0.001). Less effective in OMICRON era. ACTT-1 (remdesivir, RCT, NEJM 2020): hospitalized COVID, viral RNA synthesis inhibitor: median recovery 10 vs 15 days (P<0.001); mortality not significant. BIOMARKER: SARS-CoV-2 PCR (RT-PCR) from NP swab: Ct value inversely correlates with viral load (Ct<25 = high viral load, Ct>35 = low/negative). Rapid antigen test: 85% sensitivity vs PCR. Serum SARS-CoV-2 IgG/IgM/IgA. Neutralizing antibody titers. Lymphocyte count, ferritin, CRP, D-dimer, LDH for severity prediction. RECOMMENDATION: Nirmatrelvir/ritonavir (Paxlovid) within 5 days of symptom onset for high-risk non-hospitalized COVID-19. Check DDIs (statins, immunosuppressants, anticoagulants require dose adjustments). Remdesivir for hospitalized patients requiring oxygen. Dexamethasone 6mg for patients requiring supplemental oxygen.",
+    "subdomain": "viral-infections",
+    "condition": "COVID-19",
+    "markers": ["SARS-CoV-2 PCR Ct value", "SARS-CoV-2 IgG", "CRP", "D-dimer", "ferritin", "lymphocyte count", "LDH"],
+    "evidence_type": "rct",
+    "publication_year": 2021
+  },
+  {
+    "source": "trial-MERINO-ESBL-2018",
+    "title": "Piperacillin-Tazobactam versus Meropenem for ESBL Bacteremia: MERINO Trial",
+    "text": "STUDY: MERINO (NCT02176122) - Phase 3 RCT, 391 patients with E. coli or Klebsiella bloodstream infection from ESBL-producing or AmpC-producing organisms, who had received >=1 dose of a beta-lactam with in vitro susceptibility. Piperacillin-tazobactam (TZP) 4.5g IV Q6H vs meropenem 1g IV Q8H for >=4 days. RESULTS: 30-day mortality: 12.3% TZP vs 3.7% meropenem (risk difference 8.6%; P=0.004). PRIMARY ENDPOINT MET - superiority of meropenem confirmed. INOCULUM EFFECT: TZP treatment of ESBL bacteremia has high inoculum effect risk (clinical failure despite in vitro susceptibility). BIOMARKER: Blood cultures: 2 sets (aerobic/anaerobic), obtain before antibiotics. Colony morphology, Gram stain guides empirical therapy. Antibiotic susceptibility testing (MIC determination): broth microdilution gold standard; EUCAST/CLSI breakpoints. ESBL detection: phenotypic (DDST, combined disk) or molecular (CTX-M genes most common). Modified Hodge test for KPC carbapenemase. CRE/CRKP: Carbapenem-resistant Enterobacteraceae: meropenem/imipenem MIC >=4mcg/mL or carbapenemase gene present (KPC, NDM, OXA-48, VIM). MDRO: Multi-drug resistant organisms require antimicrobial stewardship. RECOMMENDATION: Use carbapenems (meropenem, ertapenem) rather than piperacillin-tazobactam for definitive ESBL bacteremia. Reserve carbapenems through antimicrobial stewardship. For high-risk AmpC-producing organisms (Enterobacter, Serratia), carbapenems also preferred. Ceftazidime-avibactam for KPC and OXA-48 CRE.",
+    "subdomain": "bacterial-infections",
+    "condition": "antimicrobial resistance",
+    "markers": ["blood cultures", "MIC", "ESBL", "CRE", "CRP", "WBC", "procalcitonin", "creatinine"],
+    "evidence_type": "rct",
+    "publication_year": 2018
+  },
+  {
+    "source": "trial-TB-STREAM-2019",
+    "title": "Tuberculosis Treatment: STREAM, ZeNix, TB-PRACTECAL Trials and Modern Short-Course Regimens",
+    "text": "STUDY: STREAM Stage 2 (NCT02409290): 1,000 patients with MDR-TB. Bedaquiline-containing regimens vs traditional injectable. Bedaquiline + clofazimine + pyrazinamide + moxifloxacin 4-month regimen: not yet superior but less toxicity. ZeNix (NCT03086486): pretomanid+linezolid+bedaquiline (BPaL) vs BPaLM (+ moxifloxacin) for XDR/pre-XDR TB: 6-month treatment. BPaL: 89% favorable outcomes (vs 52% historical). WHO 2022 Consolidated Guidelines: BPaLM preferred for XDR/pre-XDR TB. DS-TB (drug-susceptible): 2HRZE/4HR (6 months) standard; RIFAQUIN 4-month regimen with rifapentine+moxifloxacin. TB-PRACTECAL (NCT02589782): 24-week BPaL 100mg linezolid vs standard 9-20 months MDR: 89% vs 52% success. BIOMARKER: Sputum smear microscopy (AFB): rapid, cheap, limited sensitivity (60-80% in smear+). Sputum culture (gold standard): LJ or MGIT liquid system; MTB detection, drug sensitivity testing (DST). GeneXpert (Xpert MTB/RIF Ultra): sensitivity 88%, rifampicin resistance detection sensitivity/specificity >95%. MTBDRplus: rapid molecular test for isoniazid/rifampicin resistance. LF-LAM (lateral flow lipoarabinomannan): urine point-of-care test for HIV-positive TB (sensitivity 40-70%). Adenosine deaminase (ADA) in pleural fluid: >40U/L supports TB pleuritis. IGRAs (IGRA: IGRA/QuantiFERON-TB Gold Plus) and TST (tuberculin test) diagnose LTBI. RECOMMENDATION: BPaLM (6 months) for drug-resistant TB. Standard 2HRZE/4HR for DS-TB. Screen and treat LTBI in immunocompromised, contacts, migrants from high-burden countries. Rifapentine + isoniazid 3-month weekly (3HP) for LTBI preferred over 6H or 9H.",
+    "subdomain": "tuberculosis",
+    "condition": "tuberculosis",
+    "markers": ["sputum AFB", "MTB culture", "Xpert MTB/RIF", "ADA", "IGRA", "TST", "LF-LAM"],
+    "evidence_type": "rct",
+    "publication_year": 2019
+  },
+  {
+    "source": "trial-HEPATITIS-B-GUIDELINE-2024",
+    "title": "Chronic Hepatitis B Treatment and Monitoring: AASLD/EASL Guidelines and TDF/TAF Evidence",
+    "text": "TREATMENT EVIDENCE: TDF (tenofovir disoproxil fumarate) vs entecavir Phase 3 RCTs: both achieve HBV DNA undetectability in >94% at 48 weeks. TAF (tenofovir alafenamide) vs TDF (Study 108/110): non-inferior HBV suppression with superior renal and bone safety endpoints at 48 weeks and 7-year follow-up (TAF safer for eGFR and BMD). Pegylated interferon-alpha: finite 48-week treatment; HBeAg seroconversion 32%, HBsAg loss 3-7% - limited utility except in HBeAg-positive low-viral high-ALT patients. BIOMARKER ALGORITHM: HBsAg quantification (qHBsAg, IU/mL): HBsAg <1,000 IU/mL with undetectable HBV DNA predicts higher chance of seroconversion. HBV DNA (IU/mL): undetectable (<10-20 IU/mL) is treatment goal. HBeAg and HBeAb: HBeAg-positive+high viral load = high infectious/replicative; HBeAg seroconversion is intermediate endpoint. Anti-HBc IgM vs IgG: IgM indicates acute infection. ALT: 5x ULN threshold for treatment in most guidelines. Liver biopsy or non-invasive fibrosis markers (FIB-4, FibroScan) to determine disease stage. HBsAg loss (functional cure): ultimate endpoint. RECOMMENDATION: Treat all CDH with HBV DNA>2000 IU/mL + elevated ALT or significant fibrosis (>/=F2). TDF or TAF as first-line NAs (entecavir equivalent efficacy, preferred if resistance risk). Lamivudine/telbivudine/adefovir: no longer recommended due to high resistance. HCC surveillance: ultrasound + AFP every 6 months in cirrhosis.",
+    "subdomain": "hepatitis",
+    "condition": "hepatitis B",
+    "markers": ["HBsAg", "HBV DNA", "HBeAg", "HBeAb", "ALT", "FIB-4", "AFP", "eGFR"],
+    "evidence_type": "guideline",
+    "publication_year": 2024
+  },
+  {
+    "source": "trial-PNEUMOCOCCAL-VAX-COMMUNITY-2023",
+    "title": "Vaccine-Preventable Infections: Pneumococcal, Influenza, RSV, and COVID-19 Vaccine Evidence",
+    "text": "PNEUMOCOCCAL VACCINES: PCV20 (20-valent pneumococcal conjugate vaccine): STRIDE-3 study vs PCV13: superior immunogenicity for 7 additional serotypes. PPSV23 (older polysaccharide) vs PCV conjugates: lower immunogenicity, no T-cell memory. 2023 ACIP recommendations: PCV20 single dose for pneumococcal-naive adults >=65 (or PCV15+PPSV23). INFLUENZA: Recombinant quadrivalent high-dose vaccine (RIV4, Flublok) vs standard dose in elderly: 30% superior efficacy (CONSULT study). Live attenuated (LAIV4) superior in children. IMPACT 2023: influenza vaccination reduces hospitalization in adults >=65 by 26-41%. RSV VACCINE: RENOIR (NEJM 2023): RSVPreF3 adjuvanted vaccine vs placebo in >=60y: vaccine efficacy 82.6% against RSV lower respiratory tract disease (primary endpoint), 94% against severe RSV. AREXVY (NCT04886596)/ABRYSVO both approved 2023. RSV rapid antigen test and PCR confirm diagnosis. BIOMARKER: Serology: anti-pneumococcal IgG by ELISA for 23 serotypes (threshold >=1.0mcg/mL). Anti-influenza HA-HI titer >=1:40 = protective threshold. Functional endpoints: hospitalization rates, breakthrough disease. CRP, WBC, procalcitonin for bacterial superinfection detection. RECOMMENDATION: Annual influenza vaccination for all persons >=6 months. COVID-19 updated annual vaccines. RSV vaccination for >=60y (shared decision-making). Pneumococcal PCV20 single dose for >=65y or immunocompromised. Vaccination status assessment at every healthcare encounter.",
+    "subdomain": "vaccines",
+    "condition": "vaccine-preventable infections",
+    "markers": ["anti-pneumococcal IgG", "anti-influenza HI titer", "CRP", "procalcitonin", "WBC"],
+    "evidence_type": "rct",
+    "publication_year": 2023
+  }
+]

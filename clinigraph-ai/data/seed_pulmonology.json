@@ -1,0 +1,102 @@
+[
+  {
+    "source": "trial-UPLIFT-2008",
+    "title": "Tiotropium in Chronic Obstructive Pulmonary Disease: UPLIFT Trial",
+    "text": "STUDY: UPLIFT (NCT00144339) - Phase 3 RCT, 5,993 patients with COPD (FEV1/FVC<70%, FEV1 30-72% predicted), GOLD stage II-IV. Tiotropium 18mcg QD (HandiHaler) vs placebo for 4 years. RESULTS: FEV1 pre-dose at 48 months: +87mL vs placebo (P<0.001). Post-dose FEV1 +103mL. Primary endpoints (rate of FEV1 decline) not significantly different. Exacerbations per patient-year: 0.73 vs 0.85 (HR 0.86; P<0.001). Hospitalizations for COPD exacerbation reduced. SGRQ total score improved -2.3 vs placebo (P<0.001). All-cause mortality: HR 0.87 (nominal P=0.09 - not significant). BIOMARKER: FEV1 (forced expiratory volume in 1 second) - primary measure of airflow limitation severity. FEV1/FVC ratio (Tiffeneau index): <70% (or <LLN) defines obstruction. Spirometry post-bronchodilator required for COPD diagnosis. GOLD staging: mild FEV1>=80% (I), moderate 50-79% (II), severe 30-49% (III), very severe <30% (IV). CAT (COPD Assessment Test) and mMRC dyspnea scale assess symptoms. Blood eosinophil count (>=300 cells/uL) predicts ICS response in COPD. Alpha-1 antitrypsin level (PI*ZZ phenotype) in young patients. RECOMMENDATION: Long-acting bronchodilators (LAMA tiotropium, or LABA) are first-line maintenance in all symptomatic COPD. Dual bronchodilation (LAMA+LABA) for persistent symptoms or moderate-severe. Add ICS for eosinophil-guided indication or frequent exacerbators.",
+    "subdomain": "COPD",
+    "condition": "chronic obstructive pulmonary disease",
+    "markers": ["FEV1", "FVC", "FEV1/FVC", "blood eosinophils", "alpha-1 antitrypsin", "CAT score"],
+    "evidence_type": "rct",
+    "publication_year": 2008
+  },
+  {
+    "source": "trial-IMPACT-2018",
+    "title": "Triple Inhaled Therapy versus Dual Bronchodilation in COPD: IMPACT Trial",
+    "text": "STUDY: IMPACT (NCT02164513) - Phase 3 RCT, 10,355 COPD patients (GOLD 3-4 or more exacerbations). Triple therapy (FF/UMEC/VI: fluticasone furoate/umeclidinium/vilanterol single inhaler) vs dual inhaler (UMEC/VI or FF/VI). RESULTS: FF/UMEC/VI vs UMEC/VI: moderate/severe exacerbation rate ratio 0.75 (P<0.001) - 25% reduction. FF/UMEC/VI vs FF/VI: rate ratio 0.85 (P<0.001). Pneumonia 8% triple vs 5% dual (P<0.001) - ICS-related risk. All-cause mortality trend lower with triple but not significant. Subgroup: blood eosinophils >=150 cells/uL predicted greater ICS benefit. BIOMARKER: Blood eosinophil count (absolute count): <100 = ICS not beneficial; 100-300 = may benefit; >=300 = benefit well-established. Spirometry (FEV1) predicts exacerbation risk. ECG, echo for comorbid cardiovascular disease in COPD (very common). Serum fibrinogen (elevated in COPD = exacerbation predictor, also systemic inflammation marker). CRP and fibrinogen reflect systemic inflammation. Exhaled NO (eNO/FeNO): primarily for asthma diagnosis/management; <25ppb suggests non-eosinophilic asthma; >50ppb suggests eosinophil inflammation. RECOMMENDATION: Triple ICS/LAMA/LABA (fixed-dose combination) for COPD patients with: spirometrically severe disease (GOLD 3-4), 2+ exacerbations or 1 hospitalization per year, and blood eosinophils >=150 cells/uL. Pneumonia risk with ICS must be weighed against exacerbation benefit.",
+    "subdomain": "COPD",
+    "condition": "chronic obstructive pulmonary disease",
+    "markers": ["FEV1", "blood eosinophils", "CRP", "fibrinogen", "FeNO"],
+    "evidence_type": "rct",
+    "publication_year": 2018
+  },
+  {
+    "source": "trial-LIBERTY-ASTHMA-QUEST-2018",
+    "title": "Dupilumab in Uncontrolled Persistent Asthma with Elevated Type 2 Biomarkers: QUEST Trial",
+    "text": "STUDY: LIBERTY ASTHMA QUEST (NCT02414854) - Phase 3 RCT, 1,902 patients with moderate-to-severe uncontrolled asthma. Dupilumab 200mg or 300mg Q2W vs placebo in addition to standard ICS+LABA. RESULTS: Primary endpoint (annualized severe exacerbation rate) at 52 weeks: 0.46 vs 0.87 with placebo (overall; P<0.001). In patients with eosinophil >=300/uL: 0.37 vs 1.08 (66% reduction; P<0.001). FEV1 change: +0.32L vs +0.18L (P<0.001). Dupilumab blocks both IL-4 and IL-13 signaling (IL-4Ra blocking). Conjunctivitis 4-11% (atopic comorbidity). BIOMARKER TYPE 2 ASTHMA: Blood eosinophil count (>=150, especially >=300 predicts biologic benefit). Serum IgE (total and allergen-specific): elevated in allergic asthma. FeNO (fractional exhaled nitric oxide): >25ppb indicates eosinophilic/allergic airway inflammation; >50ppb highly predictive of steroid response. Serum periostin and TARC (thymus and activation-regulated chemokine) reflect IL-13/Th2 activity. Spirometry: FEV1, FVC, FEV1/FVC ratio; bronchodilator reversibility >=200mL and >=12% confirms asthma. BIOLOGICS: Dupilumab (anti-IL4Ra), mepolizumab (anti-IL-5), reslizumab (anti-IL-5), benralizumab (anti-IL-5Ra), tezepelumab (anti-TSLP, pan-Th2 + non-Th2) all approved for severe asthma. RECOMMENDATION: Add biologic therapy in severe asthma when poorly controlled on high-dose ICS+LABA. Choose biologic based on phenotype: eosinophil-high or FeNO-high (IL-4/5 biologics); dupilumab also effective for dupilumab-triad (asthma+AD+CRSWP).",
+    "subdomain": "asthma",
+    "condition": "asthma",
+    "markers": ["FEV1", "FVC", "blood eosinophils", "FeNO", "IgE", "periostin"],
+    "evidence_type": "rct",
+    "publication_year": 2018
+  },
+  {
+    "source": "trial-INPULSIS-2014",
+    "title": "Nintedanib in Idiopathic Pulmonary Fibrosis: INPULSIS-1 and INPULSIS-2 Trials",
+    "text": "STUDY: INPULSIS-1 (NCT01333189) and INPULSIS-2 (NCT01335464) - Two Phase 3 RCTs, each ~500 patients with IPF (FVC>=50%, DLCO>=30%). Nintedanib 150mg BID vs placebo for 52 weeks. RESULTS: Annual rate of FVC decline: -114.7mL/year nintedanib vs -239.9mL/year placebo in INPULSIS-1; -113.6 vs -207.3 in INPULSIS-2 (P<0.001). Combined: 44.1% reduction in FVC decline rate. Acute exacerbations: reduced significantly only in INPULSIS-2 (HR 0.32; P=0.005). Diarrhea 63% (most frequent adverse effect; manageable). Nausea 24%. Liver enzyme elevations: alanine aminotransferase or AST >3xULN in ~5%; monitor LFTs monthly for 3 months. ASCEND (pirfenidone phase 3): similar FVC preservation benefit (-235 vs -428mL/year; P<0.001). BIOMARKER: FVC (forced vital capacity): primary efficacy outcome; decline >5-10% in 6-12 months predicts mortality in IPF. DLCO (diffusing capacity for carbon monoxide): measures gas transfer across alveolocapillary membrane; reduced in IPF, COPD, PAH, anemia. 6-minute walk test (6MWT): functional capacity; SpO2 nadir predicts prognosis. HRCT (high-resolution CT): UIP pattern (honeycombing, traction bronchiectasis, basal predominant, subpleural) diagnostic for IPF. KL-6 (Krebs von den Lungen-6): mucin glycoprotein elevated in IPF; correlates with fibrosis extent. SP-D/SP-A (surfactant proteins). RECOMMENDATION: Nintedanib or pirfenidone slows IPF progression; early treatment initiation recommended. Lung transplantation evaluation for eligible patients with progressive IPF.",
+    "subdomain": "interstitial-lung-disease",
+    "condition": "idiopathic pulmonary fibrosis",
+    "markers": ["FVC", "DLCO", "6MWT", "KL-6", "SpO2", "ALT", "AST"],
+    "evidence_type": "rct",
+    "publication_year": 2014
+  },
+  {
+    "source": "trial-GRIPHON-2015",
+    "title": "Selexipag for Pulmonary Arterial Hypertension: GRIPHON Trial",
+    "text": "STUDY: GRIPHON (NCT01106014) - Phase 3 RCT, 1,156 patients with symptomatic PAH (WHO group 1, mostly already on 1-2 PAH therapies). Selexipag (oral prostacyclin IP receptor agonist, up-titrated 200-1600mcg BID) vs placebo. RESULTS: Primary composite (death or PAH-related complications): HR 0.60 (P<0.001) - 40% risk reduction. Disease worsening: HR 0.61. All-cause death no significant difference in study period. 6MWD improved +12m from baseline vs placebo. Headache 65%, nausea 33%, jaw pain 26%, diarrhea 42%, flushing 19% (prostanoid class effects; dose-limiting but manageable). BIOMARKER: BNP and NT-proBNP critically important in PAH: CAMPHOR and NIH registry data - NT-proBNP >300pg/mL predicts poor prognosis; treatment goal is to normalize or reduce BNP. WHO Functional Class (I-IV) and 6MWT distance guide treatment intensification. Echocardiography: TAPSE (tricuspid annular plane systolic excursion) <18mm predicts mortality; RVESV/ESVI, PA pressure. Right heart catheterization (RHC): diagnostic gold standard; mPAP>20mmHg + PCWP<=15mmHg + PVR>2WU. RECOMMENDATION: Triple combination therapy (ERA + PDE5i + prostacyclin pathway agent) improves outcomes in high-risk PAH (AMBITION trial: upfront ambrisentan+tadalafil superior to monotherapy; HR 0.50 for composite). Risk stratification (ESC/ERS PAH Guidelines 2022) using NT-proBNP, 6MWT, WHO FC, imaging guides treatment intensification.",
+    "subdomain": "pulmonary-hypertension",
+    "condition": "pulmonary arterial hypertension",
+    "markers": ["NT-proBNP", "BNP", "6MWT", "TAPSE", "mPAP", "PVR", "WHO-FC"],
+    "evidence_type": "rct",
+    "publication_year": 2015
+  },
+  {
+    "source": "trial-RECOVERY-dexamethasone-2021",
+    "title": "Dexamethasone in Hospitalized Patients with COVID-19: RECOVERY Trial",
+    "text": "STUDY: RECOVERY (NCT04381936) - Large UK adaptive RCT. Dexamethasone 6mg QD IV or oral for 10 days vs standard of care in hospitalized COVID-19. RESULTS: 28-day mortality in patients on ventilation: 29.3% vs 41.4% (RR 0.64; P<0.001). Patients requiring oxygen only: 23.3% vs 26.2% (RR 0.82; P=0.002). Patients not requiring oxygen: no difference (17.8% vs 14.0%; RR 1.19 - harm trend). Hospital duration reduced. Duration of ventilation reduced. TOCILIZUMAB arm (IL-6 inhibitor): 28-day mortality 29% vs 33% (RR 0.85; P=0.007) in patients requiring oxygen; benefits additive with dexamethasone. BARICITINIB (JAK1/2 inhibitor, COV-BARRIER): 28-day mortality HR 0.57 for patients on high-flow oxygen/non-invasive ventilation. BIOMARKER: Inflammatory markers in COVID-19 severity: CRP (>150mg/L), ferritin (>500-1000ng/mL), D-dimer (>1mcg/mL), LDH, IL-6 (>40pg/mL), lymphopenia (ALC<1.0). NEWS2 (National Early Warning Score 2) and CURB-65 guide respiratory support decisions. CT severity score (CT-SS) quantifies lung involvement. SpO2/FiO2 ratio or PaO2/FiO2 ratio defines ARDS severity. COVID-19 specific: SARS-CoV-2 neutralizing antibody responses (anti-N, anti-S). RECOMMENDATION: Dexamethasone 6mg/day for COVID-19 requiring supplemental oxygen (standard of care). Add tocilizumab within 24h if CRP>=75mg/L and rapidly worsening. Baricitinib if tocilizumab not available or contraindicated.",
+    "subdomain": "pneumonia",
+    "condition": "COVID-19 pneumonia",
+    "markers": ["CRP", "ferritin", "D-dimer", "IL-6", "LDH", "lymphocyte count", "SpO2", "PaO2/FiO2"],
+    "evidence_type": "rct",
+    "publication_year": 2021
+  },
+  {
+    "source": "trial-MEPOLIZUMAB-COPD-2017",
+    "title": "Mepolizumab for Prevention of COPD Exacerbations in Eosinophilic COPD: METREX and METREO Trials",
+    "text": "STUDY: METREX (NCT02105948) - 836 COPD patients (annual exacerbations >=2 prior year). Mepolizumab 100mg SC vs placebo for 52 weeks. RESULTS: Overall population primary endpoint not met. In eosinophilic stratum (blood eosinophil >=150/uL at sampling or >=300/uL prior year): exacerbation rate 1.40 vs 1.71 (RR 0.82; P=0.04). METREO (NCT02105961): 674 patients, higher eosinophil threshold; no statistically significant benefit. Pooled eosinophil-high (>=150): moderate results. BIOMARKER SIGNIFICANCE: Blood eosinophil count is the primary predictive biomarker for ICS and anti-eosinophilic biologic benefit in COPD. Eosinophils>=300/uL: strong predictor of exacerbation reduction with ICS and potential anti-IL5 benefit. Eosinophils>=150/uL: some benefit. Eosinophils<100/uL: ICS potentially harmful (increased pneumonia). Periostin reflects type-2/eosinophilic inflammation. Exhaled breath condensate pH, eNO as inflammatory biomarkers. OBSTRUCTIVE SLEEP APNEA: CPAP (SAVE trial, NCT00738777): 2,717 ischemic stroke or MI + OSA. CPAP vs no CPAP: no reduction in cardiovascular events (HR 1.10) but significant improvement in daytime sleepiness (ESS) and quality of life. CPAP reduces apnea-hypopnea index (AHI) by 75-80%; SpO2 nadir improvement. AHI (apnea-hypopnea index): mild 5-14, moderate 15-29, severe >=30 events/hour. RECOMMENDATION: Mepolizumab for COPD currently not approved/recommended outside of research. Blood eosinophil count should guide ICS use in COPD. CPAP is standard for moderate-severe OSA (AHI>=15) or symptomatic mild OSA.",
+    "subdomain": "COPD",
+    "condition": "COPD with eosinophilia",
+    "markers": ["blood eosinophils", "FEV1", "FeNO", "periostin", "AHI", "SpO2 nadir"],
+    "evidence_type": "rct",
+    "publication_year": 2017
+  },
+  {
+    "source": "trial-LUNG-CANCER-SCREENING-2011",
+    "title": "Low-Dose CT Screening for Lung Cancer: NLST and NELSON Trial Results",
+    "text": "STUDY: NLST (NCT00047385) - 53,454 current/former heavy smokers (>=30 pack-years, age 55-74). Annual low-dose CT (LDCT) vs chest X-ray for 3 years. RESULTS: Lung cancer mortality: 356 vs 443 per 100,000 person-years (RR 0.80; relative reduction 20%; P=0.004). All-cause mortality: RR 0.93 (P=0.014). False-positive rate 96.4% (most nodules benign). NELSON (NCT00894231) European RCT: lung cancer mortality 39 vs 72 per 1000 participants in men (RR 0.76; P=0.003); women (50% reduction). BIOMARKER: Volumetric growth rate of lung nodules (NELSON criteria): volume doubling time >600 days = benign; 400-600 days = intermediate; <400 days = malignant. Nodule volume (mm3) measured at each CT. Lung-RADS classification (ACR): 1 (negative), 2 (benign), 3 (probably benign), 4 (suspicious), 4X (suspicious + other findings). PSA equivalent in lung: serum CYFRA 21-1 (cytokeratin fragment), CEA, NSE (small-cell): limited sensitivity for early detection; used for treatment monitoring. EGFR, KRAS, ALK, ROS1, MET, RET, NTRK, BRAF molecular testing mandatory in all non-small cell lung cancer (NSCLC) for targeted therapy decisions. RECOMMENDATION: Annual LDCT screening for heavy smokers: age 50-80, >=20 pack-years current smoker or quit within 15 years (2021 USPSTF). Smoking cessation is the primary lung cancer prevention strategy. All stage IV NSCLC must have molecular testing; immunotherapy (PD-L1 testing) integrated into first-line decisions.",
+    "subdomain": "lung-cancer-screening",
+    "condition": "lung cancer screening",
+    "markers": ["LDCT nodule volume", "CYFRA 21-1", "CEA", "NSE", "PD-L1", "EGFR", "KRAS", "ALK"],
+    "evidence_type": "rct",
+    "publication_year": 2011
+  },
+  {
+    "source": "trial-PNEUMONIA-CAP-GUIDELINES-2023",
+    "title": "Community-Acquired Pneumonia Severity Assessment and Treatment Guidelines",
+    "text": "SEVERITY ASSESSMENT: CURB-65 score (Confusion, Urea>7mmol/L, Respiratory rate>=30/min, Blood pressure SBP<90 or DBP<=60 mmHg, Age>=65): score 0-1 = low risk (outpatient); 2 = moderate (consider hospitalization); 3-5 = severe (hospital, consider ICU). PSI (Pneumonia Severity Index): more detailed 5-class risk stratification. BIOMARKERS: CRP: >100mg/L suggests bacterial pneumonia; serial CRP can guide antibiotic duration (reduction >50% from peak by day 3-5 supports stopping at day 5). PCT (procalcitonin): <0.25ng/mL can safely guide antibiotic avoidance; serial PCT-guided algorithms reduce antibiotic duration by 1.5-2.5 days without increased mortality. Procalcitonin-guided therapy in PRORATA RCT: non-inferior outcomes. Blood cultures (bacteremic CAP ~10-13%), sputum Gram stain/culture. Urinary antigen tests: Legionella (sensitivity 74%, specificity 99%) and S. pneumoniae (sensitivity 50-70%, specificity 97%). Multiplex PCR panels (BioFire FilmArray LRTI): rapid detection of viral and bacterial pathogens in BAL or sputum. TREATMENT GUIDELINES: IDSA/ATS: outpatient- amoxicillin (no comorbidities) or respiratory fluoroquinolone or beta-lactam+macrolide; ICU/severe CAP - beta-lactam (ceftriaxone/ampicillin-sulbactam) + macrolide or respiratory FQ; add anti-MRSA/Pseudomonas coverage if risk factors. RECOMMENDATION: Use severity score (CURB-65 or PSI) + clinical judgment for disposition. Procalcitonin-guided algorithms reduce excessive antibiotic use. Legionella urinary antigen mandatory in severe CAP.",
+    "subdomain": "pneumonia",
+    "condition": "community-acquired pneumonia",
+    "markers": ["CRP", "procalcitonin", "WBC", "lactate", "creatinine", "blood cultures", "urine Legionella antigen"],
+    "evidence_type": "guideline",
+    "publication_year": 2023
+  },
+  {
+    "source": "trial-PE-VTE-2019",
+    "title": "Pulmonary Embolism Diagnosis and Treatment: EINSTEIN, AMPLIFY, and Modern Risk Stratification",
+    "text": "RISK STRATIFICATION: Hemodynamically unstable (massive PE): thrombolysis (systemic tPA) or catheter-directed; surgical embolectomy. sPESI score (simplified PE Severity Index): age>80, cancer, cardiopulmonary disease, HR>110, SBP<100, SpO2<90% - one point each; 0 points = low risk; PEITHO trial: intermediate-high risk (RV dysfunction + troponin elevation) defined. BIOMARKER: D-dimer (highly sensitive, low specificity): YEARS algorithm (clinical probability + D-dimer threshold adjustment) and Wells score guide imaging decisions. Troponin I/T: RV strain in massive/submassive PE; elevated = intermediate-high risk. BNP/NT-proBNP: RV pressure overload marker; elevated predicts adverse outcomes. Echocardiography: RV/LV ratio >1.0 (apical 4-chamber or CT), tricuspid regurgitation pressure, TAPSE <16mm predict adverse outcomes. CTPA (CT pulmonary angiography): gold standard for PE diagnosis; sensitivity 83-100%, specificity 90-97%. V/Q scan: alternative for CTPA-unable patients (allergy, renal failure, pregnancy). Wells PE score, Geneva score. TREATMENT: Anticoagulation with DOAC (rivaroxaban or apixaban AMPLIFY trial superior to enoxaparin-warfarin; HR 0.84 for recurrence). Extended anticoagulation for provoked PE: 3 months; for unprovoked PE: extended anticoagulation reduces recurrence risk. Thrombolysis: tPA 100mg IV over 2h for massive PE; MOPETT (low dose/sub-massive) reduces PAH. RECOMMENDATION: Systemic thrombolysis for hemodynamically unstable PE. Anticoagulation alone for stable PE. DOAC preferred over VKA for uncomplicated DVT/PE.",
+    "subdomain": "thromboembolism",
+    "condition": "pulmonary embolism",
+    "markers": ["D-dimer", "troponin", "BNP", "NT-proBNP", "RV/LV ratio", "TAPSE", "Wells score"],
+    "evidence_type": "guideline",
+    "publication_year": 2019
+  }
+]

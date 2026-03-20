@@ -1,0 +1,218 @@
+[
+  {
+    "source": "pubmed-29151359",
+    "title": "Osimertinib versus Standard EGFR-TKIs in First-Line EGFR-Mutated Advanced NSCLC: FLAURA Phase 3 Trial",
+    "text": "STUDY: FLAURA (NCT02296125) - Phase 3 RCT comparing osimertinib 80mg QD versus standard first-generation EGFR-TKIs (gefitinib 250mg or erlotinib 150mg) in 556 patients with previously untreated EGFR mutation-positive (exon 19 deletion or L858R) advanced NSCLC. RESULTS: Median PFS 18.9 months with osimertinib vs 10.2 months with standard TKIs (HR 0.46; 95% CI 0.37-0.57; P<0.001). ORR 80% vs 76% (P=0.24). Median duration of response 17.2 vs 8.5 months. Final OS: 38.6 vs 31.8 months (HR 0.80; P=0.046). CNS PFS significantly longer with osimertinib (HR 0.48). Grade 3+ adverse events 34% vs 45%. BIOMARKER: EGFR exon 19 deletion or L858R sensitizing mutation required. EGFR T790M confers resistance to 1st/2nd generation TKIs but not osimertinib. After osimertinib progression, evaluate for MET amplification, KRAS, EGFR C797S by liquid or tissue biopsy. RECOMMENDATION: Osimertinib is standard-of-care first-line therapy for EGFR-mutated advanced NSCLC (exon 19del or L858R). EGFR mutation testing by validated NGS or PCR mandatory. Osimertinib confers superior CNS penetration, reducing risk of brain metastases progression.",
+    "cancer_type": "lung cancer",
+    "biomarkers": ["EGFR", "EGFR exon 19 deletion", "L858R", "T790M"],
+    "evidence_type": "rct",
+    "publication_year": 2018
+  },
+  {
+    "source": "pubmed-27718847",
+    "title": "Pembrolizumab versus Platinum-Based Chemotherapy in PD-L1-Positive (TPS>=50%) Advanced NSCLC: KEYNOTE-024",
+    "text": "STUDY: KEYNOTE-024 (NCT02142738) - Phase 3 RCT, 305 patients with previously untreated advanced NSCLC, PD-L1 TPS>=50%, no EGFR/ALK driver mutations. Pembrolizumab 200mg Q3W vs investigator-choice platinum-based chemotherapy. RESULTS: Median PFS 10.3 vs 6.0 months (HR 0.50; 95% CI 0.37-0.68; P<0.001). 6-month OS rate 80.2% vs 72.4% (HR for death 0.60; P=0.005). ORR 44.8% vs 27.8%. Median duration of response: not reached vs 6.3 months. Grade 3-5 treatment-related adverse events 26.6% vs 53.3%. 5-year OS rate (long-term follow-up): 31.9% pembrolizumab vs 16.3% chemotherapy. BIOMARKER: PD-L1 TPS>=50% by IHC (22C3 pharmDx assay) is required. TPS 1-49% requires pembrolizumab plus chemotherapy (KEYNOTE-189 or KEYNOTE-407). Concurrent EGFR/ALK mutations reduce immunotherapy benefit - these patients should receive TKI first. RECOMMENDATION: Pembrolizumab monotherapy is first-line standard for NSCLC with PD-L1 TPS>=50% and no driver mutations. PD-L1 testing by validated IHC 22C3 is mandatory before treatment selection.",
+    "cancer_type": "lung cancer",
+    "biomarkers": ["PD-L1", "PD-1", "TPS"],
+    "evidence_type": "rct",
+    "publication_year": 2016
+  },
+  {
+    "source": "pubmed-28586279",
+    "title": "Alectinib versus Crizotinib in Previously Untreated ALK-Positive Non-Small-Cell Lung Cancer: ALEX Trial",
+    "text": "STUDY: ALEX (NCT02075840) - Phase 3 RCT, 303 patients with previously untreated advanced ALK-positive NSCLC. Alectinib 600mg BID vs crizotinib 250mg BID. RESULTS: 12-month PFS event-free survival rate 68.4% (alectinib) vs 48.7% (crizotinib); HR 0.47 (95% CI 0.34-0.65; P<0.001); median PFS not reached with alectinib. CNS progression: 12% alectinib vs 45% crizotinib (cause-specific HR 0.16; P<0.001). ORR 82.9% vs 75.5%. Grade 3-5 adverse events 41% vs 50%. Photosensitivity more common with alectinib. In subsequent ALEX OS analysis, alectinib showed superior OS (HR 0.67). BIOMARKER: ALK rearrangement detected by FISH, IHC, or NGS required. EML4-ALK fusion is most common (>70%). ALK amplification and secondary mutations (G1202R, L1196M) confer resistance to crizotinib but sensitivity to alectinib is maintained. RECOMMENDATION: Alectinib is preferred first-line treatment for ALK-positive NSCLC due to superior PFS, CNS control, OS benefit, and better tolerability versus crizotinib. ALK rearrangement testing mandatory at diagnosis for all non-squamous NSCLC or any histology in never/light smokers.",
+    "cancer_type": "lung cancer",
+    "biomarkers": ["ALK", "EML4-ALK", "ALK rearrangement"],
+    "evidence_type": "rct",
+    "publication_year": 2017
+  },
+  {
+    "source": "trial-PACIFIC-2018",
+    "title": "Durvalumab after Chemoradiotherapy in Stage III Non-Small-Cell Lung Cancer: PACIFIC Trial",
+    "text": "STUDY: PACIFIC (NCT02125461) - Phase 3 RCT, 713 patients with unresectable stage III NSCLC who had not progressed after concurrent platinum-based chemoradiotherapy. Durvalumab 10mg/kg Q2W for up to 12 months vs placebo. RESULTS: Median PFS 16.8 vs 5.6 months (HR 0.52; P<0.001). 24-month PFS rate 45.8% vs 26.7%. OS significantly improved (HR 0.68; 36-month OS 57% vs 43.5%). Grade 3-4 adverse events 30.5% vs 26.1%. Pneumonitis occurred in 34% vs 25% (grade 3-4: 3.4% vs 2.6%). BIOMARKER: PD-L1 expression was predictive of benefit; patients with PD-L1 <1% had less benefit (HR 0.73 vs 0.59 in PD-L1>=1%). EGFR mutation status: patients with EGFR mutations derived less benefit. RECOMMENDATION: Durvalumab consolidation for 12 months is standard of care for unresectable stage III NSCLC following definitive concurrent chemoradiotherapy in patients who have not progressed. Should be initiated within 42 days of CRT completion.",
+    "cancer_type": "lung cancer",
+    "biomarkers": ["PD-L1", "PD-1", "EGFR"],
+    "evidence_type": "rct",
+    "publication_year": 2017
+  },
+  {
+    "source": "trial-ADAURA-2020",
+    "title": "Adjuvant Osimertinib in EGFR-Mutated Non-Small-Cell Lung Cancer After Resection: ADAURA Trial",
+    "text": "STUDY: ADAURA (NCT02511106) - Phase 3 RCT, 682 patients with completely resected stage IB-IIIA EGFR-mutated NSCLC. Adjuvant osimertinib 80mg QD for 3 years vs placebo. RESULTS: Primary endpoint (stage II-IIIA): 2-year DFS rate 90% vs 44% (HR 0.17; 95% CI 0.12-0.23; P<0.001). All stages (IB-IIIA): HR 0.20. CNS DFS favored osimertinib (HR 0.18). 4-year DFS rates: 70% vs 29% (stages II-IIIA). Final OS data (4-year update): OS HR 0.49 in stage II-IIIA, crossing significance threshold (P=0.0039). Treatment-related adverse events: grade 3+ in 20% vs 14%. QTc prolongation and cardiomyopathy monitored. BIOMARKER: EGFR exon 19 deletion or L858R mutation in resected tumor required. Post-operative circulating tumor DNA (ctDNA) positivity identifies high-risk patients for recurrence. RECOMMENDATION: Adjuvant osimertinib for 3 years is standard of care for patients with resected stage IB-IIIA EGFR-mutated NSCLC. EGFR mutation testing of all resected NSCLC specimens is now standard practice.",
+    "cancer_type": "lung cancer",
+    "biomarkers": ["EGFR", "EGFR exon 19 deletion", "L858R", "ctDNA"],
+    "evidence_type": "rct",
+    "publication_year": 2020
+  },
+  {
+    "source": "trial-CODEBREAK100-2021",
+    "title": "Sotorasib for KRAS G12C-Mutated Non-Small-Cell Lung Cancer: CodeBreaK 100 Phase 2 Trial",
+    "text": "STUDY: CodeBreaK 100 (NCT03600883) - Phase 2 single-arm trial, 126 patients with KRAS G12C-mutated advanced NSCLC who had received at least one prior line of therapy. Sotorasib 960mg QD, a first-in-class irreversible KRAS G12C inhibitor. RESULTS: ORR 37.1% (95% CI 28.6-46.2%). Median DOR 11.1 months. Median PFS 6.8 months. Disease control rate 80.6%. Grade 3+ treatment-related adverse events 21%; liver toxicity (ALT/AST elevation) was most common. Subsequent CodeBreaK 200 phase 3 vs docetaxel: PFS 5.6 vs 4.5 months (HR 0.66, P=0.002); OS improvement not yet statistically significant. BIOMARKER: KRAS G12C mutation (~13% of NSCLC, predominantly in current/former smokers, adenocarcinoma histology). Also found in colorectal (3-4%) and pancreatic (1%) cancers. Adagrasib (KRYSALIS trial) is an alternative KRAS G12C inhibitor with ORR 43% and CNS activity. RECOMMENDATION: Sotorasib or adagrasib for patients with KRAS G12C-mutated NSCLC after prior platinum chemotherapy and/or immunotherapy. KRAS G12C testing by NGS recommended in all advanced NSCLC at diagnosis.",
+    "cancer_type": "lung cancer",
+    "biomarkers": ["KRAS", "KRAS G12C"],
+    "evidence_type": "rct",
+    "publication_year": 2021
+  },
+  {
+    "source": "pubmed-28578601",
+    "title": "Olaparib for Metastatic Breast Cancer in Patients with a Germline BRCA Mutation: OlympiAD Trial",
+    "text": "STUDY: OlympiAD (NCT02000622) - Phase 3 RCT, 302 patients with HER2-negative metastatic breast cancer and germline BRCA1 or BRCA2 mutation. Olaparib 300mg BID vs standard single-agent chemotherapy (capecitabine, eribulin, or vinorelbine). RESULTS: Median PFS 7.0 vs 4.2 months (HR 0.58; 95% CI 0.43-0.80; P<0.001). ORR 59.9% vs 28.8%. Grade 3+ adverse events 36.6% vs 50.5%. No significant OS difference at interim (likely due to crossover). Long-term follow-up confirmed consistent PFS benefit. BIOMARKER: Germline BRCA1 or BRCA2 pathogenic/likely-pathogenic variant required. BRCA1 and BRCA2 mutations cause homologous recombination deficiency (HRD), rendering cancer cells highly sensitive to PARP inhibitors. Somatic BRCA mutations and other HRD alterations (PALB2, RAD51) may also predict benefit. RECOMMENDATION: Olaparib is approved for germline BRCA1/2-mutated HER2-negative metastatic breast cancer. Germline BRCA testing (BRCA1/2 sequencing) recommended for all patients with triple-negative or early-onset breast cancer, or with family history of breast/ovarian cancer. Talazoparib (EMBRACA) is an alternative PARP inhibitor with similar indication.",
+    "cancer_type": "breast cancer",
+    "biomarkers": ["BRCA1", "BRCA2", "HRD", "PARP"],
+    "evidence_type": "rct",
+    "publication_year": 2017
+  },
+  {
+    "source": "trial-DESTINY-Breast03-2021",
+    "title": "Trastuzumab Deruxtecan versus Trastuzumab Emtansine in HER2-Positive Metastatic Breast Cancer: DESTINY-Breast03",
+    "text": "STUDY: DESTINY-Breast03 (NCT03529110) - Phase 3 RCT, 524 patients with HER2-positive (IHC 3+ or ISH+) unresectable or metastatic breast cancer previously treated with trastuzumab and taxane. T-DXd 5.4mg/kg Q3W vs T-DM1 3.6mg/kg Q3W. RESULTS: 12-month PFS rate 75.8% (T-DXd) vs 34.1% (T-DM1); HR 0.28 (95% CI 0.22-0.37; P<0.001). Median PFS not reached vs 6.8 months. ORR 79.7% vs 34.2%. OS benefit demonstrated (HR 0.64; P=0.0037). Treatment-related ILD/pneumonitis occurred in 10.5% with T-DXd (grade 3-4: 0.8%); requires vigilant monitoring. BIOMARKER: HER2 overexpression (IHC 3+) or amplification (ISH+ with HER2:CEP17 ratio>=2.0 or HER2 copy number>=6). HER2-low (IHC 1+ or 2+/ISH-) patients can also benefit from T-DXd (DESTINY-Breast04, HR 0.50). RECOMMENDATION: T-DXd is preferred second-line treatment for HER2-positive metastatic breast cancer after first-line trastuzumab+pertuzumab+taxane. T-DXd also approved for HER2-low breast cancer (IHC 1+ or 2+/ISH-) after chemotherapy. Monitor for ILD; withhold or discontinue per severity.",
+    "cancer_type": "breast cancer",
+    "biomarkers": ["HER2", "HER2 amplification", "HER2-low"],
+    "evidence_type": "rct",
+    "publication_year": 2021
+  },
+  {
+    "source": "pubmed-28581356",
+    "title": "Adjuvant Pertuzumab and Trastuzumab in Early HER2-Positive Breast Cancer: APHINITY Trial",
+    "text": "STUDY: APHINITY (NCT01358877) - Phase 3 RCT, 4,805 patients with operable HER2-positive early breast cancer. Pertuzumab or placebo added to adjuvant trastuzumab plus chemotherapy. RESULTS: 3-year invasive-DFS rate 94.1% pertuzumab vs 93.2% placebo (HR 0.81; P=0.045). Node-positive cohort: 3-year iDFS 92.0% vs 90.2% (HR 0.77; P=0.02). Node-negative cohort: no significant benefit. Overall 6-year iDFS: 91.6% vs 90.2% (HR 0.76). Cardiac events infrequent in both groups. Grade 3+ diarrhea during chemotherapy: 9.8% vs 3.7%. BIOMARKER: HER2 overexpression (IHC 3+) or amplification (ISH+) required; node-positive disease or high-risk node-negative disease most likely to benefit. RECOMMENDATION: Dual anti-HER2 therapy (pertuzumab + trastuzumab) with chemotherapy is recommended for node-positive HER2-positive early breast cancer. Node-negative patients have marginal absolute benefit and should be individualized. Neratinib (ExteNET trial) as extended adjuvant therapy after trastuzumab is an option for high-risk patients.",
+    "cancer_type": "breast cancer",
+    "biomarkers": ["HER2", "HER2 amplification", "ER", "PR"],
+    "evidence_type": "rct",
+    "publication_year": 2017
+  },
+  {
+    "source": "trial-MONALEESA2-2016",
+    "title": "Ribociclib plus Letrozole in Postmenopausal Women with HR+/HER2- Advanced Breast Cancer: MONALEESA-2",
+    "text": "STUDY: MONALEESA-2 (NCT01958021) - Phase 3 RCT, 668 postmenopausal women with HR+/HER2- advanced breast cancer, no prior therapy for advanced disease. Ribociclib 600mg QD (3 weeks on/1 week off) plus letrozole 2.5mg QD vs placebo plus letrozole. RESULTS: Median PFS not reached vs 14.7 months at 18-month analysis (HR 0.56; P=2.9e-7). Final PFS 25.3 vs 16.0 months (HR 0.57). OS: 63.9 vs 51.4 months (HR 0.76; P=0.009). ORR 52.7% vs 37.1%. QTc prolongation: grade 3 at 3.3% with ribociclib (ECG monitoring required). Neutropenia: grade 3-4 in 59.3% (managed with dose interruption). BIOMARKER: Hormone receptor positivity (ER+ and/or PR+) and HER2-negativity required. CDK4/6 pathway is frequently dysregulated in HR+ breast cancer through CCND1 amplification and CDKN2A loss. PIK3CA mutation (40% of HR+ BC) may predict partial resistance; everolimus combinations are alternative. RECOMMENDATION: CDK4/6 inhibitor (ribociclib, palbociclib, or abemaciclib) plus aromatase inhibitor is standard first-line treatment for postmenopausal HR+/HER2- advanced breast cancer. OS benefit demonstrated for ribociclib and abemaciclib. Pre/perimenopausal women require LHRH agonist added.",
+    "cancer_type": "breast cancer",
+    "biomarkers": ["ER", "PR", "HER2", "CDK4", "CDK6", "CCND1", "PIK3CA"],
+    "evidence_type": "rct",
+    "publication_year": 2016
+  },
+  {
+    "source": "trial-ASCENT-2021",
+    "title": "Sacituzumab Govitecan in Triple-Negative Metastatic Breast Cancer after Two or More Prior Therapies: ASCENT Trial",
+    "text": "STUDY: ASCENT (NCT02574455) - Phase 3 RCT, 529 patients with relapsed/refractory triple-negative metastatic breast cancer who received 2+ prior therapies. Sacituzumab govitecan (SG) 10mg/kg IV days 1 and 8 of 21-day cycles vs treatment of physician choice (capecitabine, eribulin, vinorelbine, or gemcitabine). RESULTS: Median PFS 5.6 vs 1.7 months (HR 0.41; P<0.001) in patients without brain metastases. Median OS 12.1 vs 6.7 months (HR 0.48; P<0.001). ORR 35% vs 5%. Grade 3-4 neutropenia 51%; febrile neutropenia 6%. Diarrhea grade 3+ in 10%. UGT1A1*28 homozygosity increases toxicity risk. BIOMARKER: TROP-2 overexpression (target of SG) is common in TNBC; higher expression may correlate with greater benefit. BRCA1/2 germline status does not predict differential benefit. RECOMMENDATION: Sacituzumab govitecan following 2+ prior therapies is approved for metastatic TNBC. Consider UGT1A1 genotyping before treatment. Anti-TROP-2 ADCs represent a new therapeutic class applicable across breast cancer subtypes.",
+    "cancer_type": "breast cancer",
+    "biomarkers": ["TROP-2", "BRCA1", "BRCA2", "UGT1A1"],
+    "evidence_type": "rct",
+    "publication_year": 2021
+  },
+  {
+    "source": "pubmed-25399551",
+    "title": "Combined BRAF and MEK Inhibition with Dabrafenib plus Trametinib versus Vemurafenib in Metastatic BRAF V600 Melanoma: COMBI-v",
+    "text": "STUDY: COMBI-v (NCT01597908) - Phase 3 RCT, 704 patients with metastatic melanoma and BRAF V600E or V600K mutation. Dabrafenib 150mg BID plus trametinib 2mg QD vs vemurafenib 960mg BID as first-line therapy. RESULTS: 12-month OS rate 72% (combination) vs 65% (vemurafenib); HR for death 0.69 (95% CI 0.53-0.89; P=0.005). Median PFS 11.4 vs 7.3 months (HR 0.56; P<0.001). ORR 64% vs 51% (P<0.001). Rates of cutaneous squamous cell carcinoma: 1% vs 18%. BIOMARKER: BRAF V600E mutation (~50% of melanoma) or V600K mutation (~5%) are required for BRAF inhibitor eligibility. Combined BRAF+MEK dual inhibition overcomes paradoxical MAPK pathway reactivation seen with BRAF monotherapy, improving outcomes and reducing squamous cell carcinoma. NRAS, RAC1, MAP2K1 mutations confer primary resistance. Acquired resistance mechanisms include NRAS Q61K, MEK1/2 mutations, BRAF amplification. RECOMMENDATION: Dabrafenib plus trametinib (or vemurafenib plus cobimetinib, or encorafenib plus binimetinib) is standard first-line treatment for BRAF V600E/K-mutated unresectable or metastatic melanoma. BRAF mutation testing required for all advanced melanomas. In fit patients without high tumor burden or elevated LDH, immunotherapy (nivolumab+ipilimumab) may be preferred over targeted therapy for potential durable remission.",
+    "cancer_type": "melanoma",
+    "biomarkers": ["BRAF", "BRAF V600E", "BRAF V600K", "MEK", "NRAS"],
+    "evidence_type": "rct",
+    "publication_year": 2015
+  },
+  {
+    "source": "trial-CheckMate067-2015",
+    "title": "Combined Nivolumab and Ipilimumab or Monotherapy in Untreated Melanoma: CheckMate 067",
+    "text": "STUDY: CheckMate 067 (NCT01844505) - Phase 3 RCT, 945 patients with previously untreated unresectable stage III or IV melanoma. Nivolumab 1mg/kg plus ipilimumab 3mg/kg Q3W for 4 doses then nivolumab 3mg/kg Q2W vs nivolumab 3mg/kg Q2W monotherapy vs ipilimumab 3mg/mg Q3W for 4 doses. RESULTS: Median PFS: 11.5 months (combination) vs 6.9 months (nivolumab) vs 2.9 months (ipilimumab). 5-year OS rates: 52% combination vs 44% nivolumab vs 26% ipilimumab. Combination ORR 57.6% vs nivolumab 43.7% vs ipilimumab 19.0%. Grade 3-4 adverse events: 59% combination vs 21% nivolumab vs 28% ipilimumab. BIOMARKER: PD-L1 expression helps select monotherapy vs combination: PD-L1>=5% patients had similar benefit from combination and nivolumab monotherapy; PD-L1<1% patients benefited most from combination. BRAF V600 mutation status does not influence immunotherapy choice. TMB high may predict better response. RECOMMENDATION: Nivolumab+ipilimumab combination is first-line option for patients with unresectable metastatic melanoma without active autoimmune disease. Monitor for immune-related adverse events (colitis, hepatitis, pneumonitis, endocrinopathies). Patients with BRAF mutation may prefer targeted therapy if rapid disease control is needed.",
+    "cancer_type": "melanoma",
+    "biomarkers": ["PD-L1", "PD-1", "CTLA-4", "BRAF", "TMB"],
+    "evidence_type": "rct",
+    "publication_year": 2015
+  },
+  {
+    "source": "pubmed-26406148",
+    "title": "Nivolumab versus Everolimus in Advanced Renal-Cell Carcinoma: CheckMate 025",
+    "text": "STUDY: CheckMate 025 (NCT01668784) - Phase 3 RCT, 821 patients with advanced clear-cell renal cell carcinoma previously treated with 1-2 antiangiogenic regimens. Nivolumab 3mg/kg Q2W vs everolimus 10mg QD. RESULTS: Median OS 25.0 vs 19.6 months (HR 0.73; 98.5% CI 0.57-0.93; P=0.002). ORR 25% vs 5% (OR 5.98; P<0.001). Median PFS 4.6 vs 4.4 months (HR 0.88; P=0.11; no significant difference). Grade 3-4 adverse events: 19% nivolumab vs 37% everolimus. BIOMARKER: PD-L1 expression correlated with greater OS benefit from nivolumab, but benefit was observed even in PD-L1-negative patients. CAIX, VHL mutation status, and immune gene signatures are being studied as predictive biomarkers. RECOMMENDATION: Nivolumab was an initial advance for second-line RCC but current standard for treatment-naive patients is immunotherapy-based combinations (KEYNOTE-426: pembrolizumab+axitinib; CheckMate 9ER: nivolumab+cabozantinib; CLEAR: lenvatinib+pembrolizumab). IMDC risk score guides initial therapy selection.",
+    "cancer_type": "renal cell carcinoma",
+    "biomarkers": ["PD-L1", "PD-1", "CAIX", "VHL"],
+    "evidence_type": "rct",
+    "publication_year": 2015
+  },
+  {
+    "source": "trial-KEYNOTE426-2019",
+    "title": "Pembrolizumab plus Axitinib versus Sunitinib for Advanced Renal-Cell Carcinoma: KEYNOTE-426",
+    "text": "STUDY: KEYNOTE-426 (NCT02853331) - Phase 3 RCT, 861 patients with treatment-naive advanced clear-cell RCC. Pembrolizumab 200mg Q3W plus axitinib 5mg BID vs sunitinib 50mg QD (4 weeks on/2 weeks off). RESULTS: 12-month OS rate 89.9% vs 78.3% (HR 0.53; P<0.0001). Median PFS 15.1 vs 11.1 months (HR 0.69; P<0.001). ORR 59.3% vs 35.7%. Benefit consistent across IMDC risk groups and PD-L1 expression levels. Grade 3+ adverse events 75.8% vs 70.6%. Most common: hypertension, ALT/AST elevation. 42-month final analysis confirmed OS HR 0.68, PFS HR 0.71. BIOMARKER: PD-L1 CPS (combined positive score) was not required for enrollment. Benefit observed regardless of PD-L1 status. VHL mutations, HIF-1 alpha expression, and PBRM1 mutations are under investigation as predictive biomarkers. CLEAR trial (lenvatinib+pembrolizumab): ORR 71%, median PFS 23.9 months. RECOMMENDATION: Pembrolizumab plus axitinib (or nivolumab plus cabozantinib, or lenvatinib plus pembrolizumab) is standard first-line treatment for advanced clear-cell RCC. IMDC criteria guides prognosis. Sunitinib or pazopanib monotherapy reserved for select patients (poor performance status, contraindications to immunotherapy).",
+    "cancer_type": "renal cell carcinoma",
+    "biomarkers": ["PD-L1", "VHL", "HIF-1 alpha", "PBRM1"],
+    "evidence_type": "rct",
+    "publication_year": 2019
+  },
+  {
+    "source": "trial-SOLO1-2018",
+    "title": "Olaparib Maintenance in BRCA-Mutated Newly Diagnosed Advanced Ovarian Cancer: SOLO-1 Trial",
+    "text": "STUDY: SOLO-1 (NCT01844986) - Phase 3 RCT, 391 patients with newly diagnosed advanced (stage III/IV) ovarian cancer and BRCA1 or BRCA2 mutation, in response after platinum-based chemotherapy. Olaparib 300mg BID maintenance for up to 2 years vs placebo. RESULTS: 3-year PFS rate 60% vs 27% (HR 0.30; P<0.001). 5-year PFS rate 48% vs 21%. Median PFS not reached vs 13.8 months. Significant benefit maintained at long-term follow-up. Grade 3-4 adverse events 38% vs 18%; anemia most common. Secondary MDS/AML: 2 patients vs 0. BIOMARKER: Germline or somatic BRCA1 or BRCA2 mutation in tumor tissue is required. HRD (homologous recombination deficiency) broader scoring (including non-BRCA HRD) predicts benefit from PARP inhibitors in non-BRCA patients (STUDY-56, PAOLA-1). PAOLA-1: olaparib+bevacizumab maintenance in HRD+ patients HR 0.33. RECOMMENDATION: Olaparib maintenance for 2 years is recommended for newly diagnosed stage III/IV ovarian cancer patients with BRCA-mutated tumors after complete or partial clinical response to platinum-based first-line chemotherapy. All newly diagnosed ovarian cancer patients should undergo BRCA1/2 germline and somatic tumor testing.",
+    "cancer_type": "ovarian cancer",
+    "biomarkers": ["BRCA1", "BRCA2", "HRD", "PARP"],
+    "evidence_type": "rct",
+    "publication_year": 2018
+  },
+  {
+    "source": "trial-POLO-2019",
+    "title": "Olaparib Maintenance in Germline BRCA-Mutated Metastatic Pancreatic Cancer: POLO Trial",
+    "text": "STUDY: POLO (NCT02184195) - Phase 3 RCT, 154 patients with germline BRCA1/2-mutated metastatic pancreatic cancer who had not progressed after first-line platinum-based chemotherapy (at least 16 weeks). Olaparib 300mg BID vs placebo maintenance. RESULTS: Median PFS 7.4 vs 3.8 months (HR 0.53; P=0.004). 1-year PFS rate 33.7% vs 14.5%. OS not significantly different (18.9 vs 18.1 months; HR 0.83; P=0.3453). ORR 23% vs 12%. Grade 3+ adverse events 40% vs 23%; anemia and fatigue were most common. BIOMARKER: Germline BRCA1 or BRCA2 mutation present in ~5-7% of pancreatic cancer patients (higher in Ashkenazi Jewish, familial pancreatic cancer). Platinum sensitivity prior to maintenance predicts benefit. RECOMMENDATION: Olaparib maintenance is approved for germline BRCA1/2-mutated metastatic pancreatic cancer following stable disease or better on first-line platinum chemotherapy (minimum 16 weeks). All pancreatic cancer patients with family history of pancreatic, breast, ovarian, or prostate cancer should undergo germline BRCA testing.",
+    "cancer_type": "pancreatic cancer",
+    "biomarkers": ["BRCA1", "BRCA2", "PARP"],
+    "evidence_type": "rct",
+    "publication_year": 2019
+  },
+  {
+    "source": "trial-KEYNOTE590-2020",
+    "title": "Pembrolizumab plus Chemotherapy versus Chemotherapy Alone in Advanced Esophageal Cancer: KEYNOTE-590",
+    "text": "STUDY: KEYNOTE-590 (NCT03189719) - Phase 3 RCT, 749 patients with locally advanced or metastatic esophageal cancer (esophageal squamous cell carcinoma or Siewert type 1 EAC/GEJ). Pembrolizumab 200mg Q3W plus cisplatin and fluorouracil (5-FU) vs placebo plus chemotherapy. RESULTS: In PD-L1 CPS>=10 ESCC population: median OS 13.9 vs 8.8 months (HR 0.57; P<0.0001). Overall ESCC: OS HR 0.72 (P=0.0006). All-comers: OS HR 0.73 (P=0.0011). PFS: HR 0.65 in CPS>=10. Grade 3-5 adverse events 72% vs 68%. BIOMARKER: PD-L1 CPS (combined positive score, counting tumor cells, lymphocytes, and macrophages) >=10 identifies patients with greatest benefit. HER2 amplification in ~15-20% of EAC/GEJ - treated with trastuzumab (ToGA) or trastuzumab+pembrolizumab (KEYNOTE-811). RECOMMENDATION: Pembrolizumab plus fluoropyrimidine-based chemotherapy is standard first-line for advanced esophageal cancer (ESCC and EAC/GEJ), particularly with PD-L1 CPS>=10. HER2 testing should be performed in EAC/GEJ to consider targeted therapy addition.",
+    "cancer_type": "esophageal cancer",
+    "biomarkers": ["PD-L1", "CPS", "HER2"],
+    "evidence_type": "rct",
+    "publication_year": 2020
+  },
+  {
+    "source": "trial-IMbrave150-2020",
+    "title": "Atezolizumab plus Bevacizumab versus Sorafenib in Unresectable Hepatocellular Carcinoma: IMbrave150",
+    "text": "STUDY: IMbrave150 (NCT03434379) - Phase 3 RCT, 501 patients with unresectable or metastatic hepatocellular carcinoma (HCC) who had not received prior systemic therapy. Atezolizumab 1200mg Q3W plus bevacizumab 15mg/kg Q3W vs sorafenib 400mg BID. RESULTS: 12-month OS rates 67.2% vs 54.6% (HR 0.58; P<0.001). Median OS 19.2 vs 13.4 months (HR 0.66). Median PFS 6.8 vs 4.3 months (HR 0.59; P<0.001). ORR 27.3% vs 11.9%. Grade 3-4 adverse events 56.5% vs 55.1%. Bleeding events: 26% vs 18% (bevacizumab effect). BIOMARKER: AFP (alpha-fetoprotein) predicts prognosis; high AFP associated with poorer outcomes. Liver cirrhosis etiology (HBV, HCV, NASH) and Barcelona Clinic Liver Cancer (BCLC) stage influence treatment selection. PD-L1 was not predictive in this study. RECOMMENDATION: Atezolizumab plus bevacizumab is preferred first-line systemic treatment for unresectable HCC in Child-Pugh A patients. Sorafenib or lenvatinib remain options when bevacizumab is contraindicated (varices, thrombosis). Endoscopy to rule out high-risk varices required before bevacizumab initiation.",
+    "cancer_type": "hepatocellular carcinoma",
+    "biomarkers": ["AFP", "PD-L1", "HBV", "HCV"],
+    "evidence_type": "rct",
+    "publication_year": 2020
+  },
+  {
+    "source": "pubmed-11287973",
+    "title": "Activity of Imatinib (STI571) in BCR-ABL-Positive Leukemia: CML and Ph+ ALL",
+    "text": "STUDY: Early clinical study by Druker et al. - Phase 1/2 escalation study, 58 patients. STI571 (imatinib) in myeloid blast crisis CML (n=38) and lymphoid blast crisis/ALL Ph+ (n=20). Doses 300-1000mg oral QD. RESULTS: Responses in 21/38 (55%) myeloid blast crisis patients (4 complete hematologic responses). Responses in 14/20 (70%) lymphoid blast crisis/ALL patients (4 complete). Remissions lasted 101-349 days in myeloid blast responders. Adverse effects: nausea, vomiting, edema, thrombocytopenia, neutropenia. HISTORICAL SIGNIFICANCE: This study was foundational evidence for the first BCR-ABL-specific tyrosine kinase inhibitor. The subsequent IRIS trial (phase 3, 1106 patients CML chronic phase) demonstrated imatinib 400mg vs IFN-alpha+cytarabine: 18-month complete cytogenetic response rate 76.2% vs 14.5% (P<0.001); 5-year progression-free survival 83%. BIOMARKER: BCR-ABL fusion gene (Philadelphia chromosome, t(9;22)) is the defining molecular event in CML (present in >95% of cases) and ~25% of adult ALL. BCR-ABL quantitative PCR (qPCR) in peripheral blood is gold standard for monitoring response (deep molecular response: BCR-ABL/ABL<0.001%). ABL kinase domain mutations (T315I - gatekeeper, E255K, Y253H) confer resistance. RECOMMENDATION: Imatinib 400mg, nilotinib 300mg BID, or dasatinib 100mg QD are first-line options for CML chronic phase. Bosutinib and ponatinib reserved for resistance/intolerance. Monitor BCR-ABL by qPCR every 3 months. T315I mutation requires ponatinib or asciminib.",
+    "cancer_type": "chronic myeloid leukemia",
+    "biomarkers": ["BCR-ABL", "Philadelphia chromosome", "ABL kinase", "T315I"],
+    "evidence_type": "rct",
+    "publication_year": 2001
+  },
+  {
+    "source": "trial-CASTOR-2016",
+    "title": "Daratumumab plus Bortezomib and Dexamethasone in Relapsed or Refractory Multiple Myeloma: CASTOR",
+    "text": "STUDY: CASTOR (NCT02136134) - Phase 3 RCT, 498 patients with relapsed or refractory multiple myeloma who had received 1-3 prior lines of therapy. Daratumumab 16mg/kg IV plus bortezomib 1.3mg/m2 and dexamethasone 20mg (DVd) vs bortezomib+dexamethasone (Vd). RESULTS: 12-month PFS rate 60.7% vs 26.9% (HR 0.39; P<0.001). ORR 82.9% vs 63.2%. Complete response or better: 28.7% vs 9.7%. Median PFS 16.7 vs 7.1 months. OS HR 0.75 (P=0.0050). Grade 3-4 neutropenia 13% vs 4%. Infusion-related reactions with daratumumab in 45% (mostly grade 1-2; grade 3 in 9%). BIOMARKER: CD38 overexpression (>95% of myeloma cells) is the target of daratumumab. FISH/cytogenetics: del(17p), t(4;14), t(14;16) identify high-risk patients needing more intensive therapy. IMWG response criteria includes sCR, CR, VGPR, PR for monitoring. RECOMMENDATION: Daratumumab-based triplet regimens are standard in relapsed/refractory myeloma. For transplant-eligible newly diagnosed patients, D-VTd (CASSIOPEIA) or D-RVd (GRIFFIN) are preferred. For non-transplant eligible NDMM, D-Rd (MAIA) reduced risk of death by 32%. Daratumumab interferes with blood type cross-match: inform blood bank.",
+    "cancer_type": "multiple myeloma",
+    "biomarkers": ["CD38", "del17p", "t(4;14)", "t(14;16)"],
+    "evidence_type": "rct",
+    "publication_year": 2016
+  },
+  {
+    "source": "trial-EV302-2023",
+    "title": "Enfortumab Vedotin plus Pembrolizumab versus Chemotherapy in Previously Untreated Advanced Urothelial Cancer: EV-302",
+    "text": "STUDY: EV-302/KEYNOTE-A39 (NCT04223856) - Phase 3 RCT, 886 patients with previously untreated locally advanced or metastatic urothelial carcinoma. Enfortumab vedotin (anti-Nectin-4 ADC) 1.25mg/kg days 1,8 Q3W plus pembrolizumab 200mg Q3W vs gemcitabine plus cisplatin or carboplatin. RESULTS: Median PFS 12.5 vs 6.3 months (HR 0.45; P<0.001). Median OS 31.5 vs 16.1 months (HR 0.47; P<0.001). ORR 67.7% vs 44.4%. Benefit consistent regardless of platinumeeligibility, PD-L1 status, and Nectin-4 expression. Grade 3+ adverse events 55.9% vs 69.5%. Peripheral neuropathy 49%, skin reactions 45%, hyperglycemia 10% with EV. BIOMARKER: Nectin-4 (NECTIN4) is highly expressed in urothelial carcinoma (>95%); not required for treatment eligibility. FGFR2/3 mutations (~20%) predict benefit from erdafitinib (after prior platinum+PD-1). PD-L1 CPS by IHC 22C3 was not predictive of differential benefit. RECOMMENDATION: Enfortumab vedotin plus pembrolizumab is the new first-line standard for advanced urothelial cancer, replacing platinum-based chemotherapy as first choice. FGFR2/3 testing should be performed for consideration of erdafitinib in platinum-refractory patients.",
+    "cancer_type": "bladder cancer",
+    "biomarkers": ["Nectin-4", "PD-L1", "FGFR2", "FGFR3"],
+    "evidence_type": "rct",
+    "publication_year": 2023
+  },
+  {
+    "source": "trial-VISION-2021",
+    "title": "177Lu-PSMA-617 versus Standard of Care in PSMA-Positive Metastatic Castration-Resistant Prostate Cancer: VISION",
+    "text": "STUDY: VISION (NCT03511664) - Phase 3 RCT, 831 patients with PSMA-positive (PSMA-PET positive) metastatic castration-resistant prostate cancer (mCRPC) who had previously received at least one ARPI and 1-2 prior taxane chemotherapies. 177Lu-PSMA-617 7.4 GBq Q6W for up to 6 cycles plus standard of care vs standard of care alone. RESULTS: Median rPFS 8.7 vs 3.4 months (HR 0.40; P<0.001). Median OS 15.3 vs 11.3 months (HR 0.62; P<0.001). PSA decline >=50%: 46% vs 7%. Grade 3-4 adverse events 52.7% vs 38.3%; fatigue, dry mouth, nausea most common. BIOMARKER: PSMA (prostate-specific membrane antigen, encoded by FOLH1) is overexpressed in 80-90% of mCRPC. PSMA-PET/CT (68Ga-PSMA-11 or 18F-DCFPyL) required for patient selection. Low PSMA expression or PSMA-negative disease on PET excludes patients. BRCA1/2, CDK12, ATM mutations predict DNA repair defector-based therapies (olaparib, rucaparib). RECOMMENDATION: 177Lu-PSMA-617 is approved for PSMA-positive mCRPC after prior ARPI and taxane therapy. PSMA-PET imaging is required for patient selection. PSMA-negative lesions (FDG-avid) indicate divergent biology requiring different approaches.",
+    "cancer_type": "prostate cancer",
+    "biomarkers": ["PSMA", "PSA", "BRCA1", "BRCA2", "CDK12", "ATM"],
+    "evidence_type": "rct",
+    "publication_year": 2021
+  },
+  {
+    "source": "trial-LIBRETTO001-2020",
+    "title": "Selpercatinib in RET Fusion-Positive Non-Small-Cell Lung Cancer and Other Cancers: LIBRETTO-001",
+    "text": "STUDY: LIBRETTO-001 (NCT03157128) - Phase 1/2 single-arm basket trial. Selpercatinib 160mg BID, an oral selective RET kinase inhibitor, in patients with RET-altered solid tumors including RET fusion-positive NSCLC (n=253), RET-mutant medullary thyroid cancer, and others. RESULTS (NSCLC cohort, treatment-naive): ORR 84% (95% CI 74-91%); median PFS 22.0 months. Previously treated NSCLC: ORR 64%, median PFS 17.5 months. CNS ORR in patients with measurable brain metastases: 91%. Grade 3+ adverse events 35%; hypertension, QTc prolongation, liver enzyme elevation, dry mouth. BIOMARKER: RET gene fusions (~1-2% of NSCLC, 10-20% of papillary thyroid cancer). Most common NSCLC fusions: KIF5B-RET (most common), CCDC6-RET. RET point mutations are the defining event in hereditary medullary thyroid cancer (MEN2A/2B). RET M918T mutation (MEN2B) associated with most aggressive phenotype. RECOMMENDATION: Selpercatinib or pralsetinib are approved for RET fusion-positive NSCLC and RET-mutant thyroid cancer. RET testing (NGS or FISH) should be routinely performed in advanced NSCLC. RET fusion-positive NSCLC responds poorly to standard immunotherapy alone.",
+    "cancer_type": "lung cancer",
+    "biomarkers": ["RET", "RET fusion", "KIF5B-RET"],
+    "evidence_type": "rct",
+    "publication_year": 2020
+  }
+]

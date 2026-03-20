@@ -1,0 +1,82 @@
+[
+  {
+    "source": "trial-SONIC-2010",
+    "title": "Infliximab with Azathioprine for Crohn's Disease: SONIC Trial",
+    "text": "STUDY: SONIC (NCT00207779): Phase 3 RCT, 508 patients with moderate-severe Crohn's disease (naive to both immunomodulators and biologics, CDAI 220-450). Three arms: infliximab 5mg/kg+azathioprine 2.5mg/kg, infliximab+placebo, azathioprine+placebo for 26 weeks. RESULTS: Steroid-free remission at Week 26: combination 56.8% vs infliximab alone 44.4% vs azathioprine alone 30.0% (P<0.001 for combination vs both comparators). Mucosal healing at week 26: combination 43.9% vs infliximab 30.1% vs azathioprine 16.5% (P<0.001). Combination superior in biologics-naive moderate-severe CD. BIOMARKER: CDAI (Crohn's Disease Activity Index): remission <150, mild 150-220, moderate 220-450, severe >450. CRP >5mg/L indicates active inflammation. Fecal calprotectin (FCP): highly specific for gut inflammation (>50mcg/g = active IBD, >250mcg/g = active luminal disease); correlates with endoscopic activity; predicts relapse. FCAL is better mucosal healing marker than CRP in Crohn's. HBI (Harvey-Bradshaw Index): simpler clinical activity index (remission <5). Infliximab trough levels: target >=3-5mcg/mL for maintenance; >8 for active disease/fistula. Anti-drug antibodies (ADAs): reduce infliximab efficacy; detectable if troughs low. RECOMMENDATION: Accelerated step-up or top-down therapy for new-onset moderate-severe Crohn's disease: biologics (anti-TNF, vedolizumab, ustekinumab, risankizumab) + immunomodulator combination superior to monotherapy. Treat-to-target: clinical remission + mucosal healing (FCP <100-150mcg/g, normal endoscopy).",
+    "subdomain": "IBD",
+    "condition": "Crohn's disease",
+    "markers": ["CDAI", "CRP", "fecal calprotectin", "infliximab trough", "albumin"],
+    "evidence_type": "rct",
+    "publication_year": 2010
+  },
+  {
+    "source": "trial-VARSITY-2019",
+    "title": "Vedolizumab versus Adalimumab for Ulcerative Colitis: VARSITY Trial",
+    "text": "STUDY: VARSITY (NCT02497469): Phase 3b head-to-head RCT, 769 patients with moderate-severe active UC (Mayo score 6-12) naive to anti-TNF or prior failure. Vedolizumab 300mg IV Q8W vs adalimumab 40mg SC Q2W for 52 weeks. RESULTS: Clinical remission at Week 52: vedolizumab 31.3% vs adalimumab 22.5% (P=0.006). Mucosal healing (Mayo endoscopic>0): 39.7% vs 27.7% (P<0.001). CDSS scores improved more with vedolizumab. No significant difference in infective serious adverse events. SEAVUE (ustekinumab vs adalimumab in CD): non-inferiority (44.6% vs 45.0% remission at 1 year). BIOMARKER: Mayo score (0-12): total and endoscopic subscore (0-3: normal, mild, moderate, severe mucosal disease). UC Mayo total score <=2 = remission. PRO2 (patient-reported outcome: stool frequency + rectal bleeding). Fecal calprotectin (FCP): active UC FCP typically >250mcg/g; treatment goal FCP <100. CRP >10 correlates with active disease. Albumin<3.5g/dL predicts complicated IBD course. Vedolizumab trough level: >=14mcg/mL at Week 14 predicts response. p-ANCA positive in 50-70% UC. Anti-Saccharomyces cerevisiae antibody (ASCA) positive in 50-60% CD. RECOMMENDATION: Vedolizumab 300mg IV Q8W with oxazacitinib (S1P modulator: ozanimod, etrasimod) as effective options for UC including anti-TNF naive. For steroid-dependent UC: early biologics or small molecule (JAK inhibitor: tofacitinib, upadacitinib). Surgery (proctocolectomy) curative for refractory UC.",
+    "subdomain": "IBD",
+    "condition": "ulcerative colitis",
+    "markers": ["Mayo score", "CRP", "fecal calprotectin", "albumin", "vedolizumab trough", "p-ANCA", "ASCA"],
+    "evidence_type": "rct",
+    "publication_year": 2019
+  },
+  {
+    "source": "trial-REGENERATE-NASH-2019",
+    "title": "Obeticholic Acid for Liver Fibrosis Improvement in Nonalcoholic Steatohepatitis: REGENERATE Trial",
+    "text": "STUDY: REGENERATE (NCT02548351): Phase 3 RCT, 931 patients with NASH (NAS>=4) and fibrosis stage 1-3, or advanced fibrosis (F4 excluded for analysis). Obeticholic acid (OCA) 25mg QD vs 10mg QD vs placebo. RESULTS: Co-primary: fibrosis improvement >=1 stage without NASH worsening: OCA25mg 23.1% vs OCA10mg 17.6% vs placebo 11.9% (P=0.01 for OCA25). NASH resolution: not significantly different from placebo. LDL-C increased (FXR agonism reduces CYP7A1). Pruritus 51% (dose-limiting adverse effect). Interim surrogate endpoint approved. Phase 3b ongoing for outcome data. RESMETIROM (MAESTRO-NASH, NCT03900429, 2024): Phase 3 RCT, 966 patients. Resmetirom 80mg or 100mg QD: NASH resolution at 52 weeks 25.9%/29.9% vs 9.7% placebo (P<0.001); fibrosis improvement >=1 stage 24.2%/25.9% vs 14.2%. First FDA-approved drug for NASH (Rezdiffra, March 2024 - moderate-severe fibrosis F2-F3). BIOMARKER: Liver biopsy (NASH CRN scoring): NAS (NAFLD Activity Score) = steatosis(0-3)+lobular inflammation(0-3)+ballooning(0-2); NAS>=5+fibrosis+ballooning = NASH. Fibrosis F0-F4. Non-invasive fibrosis markers: FIB-4, NAFLD Fibrosis Score (NFS). FibroScan: >7.9kPa = significant fibrosis; >11.7 = cirrhosis. ALT, AST (typically 2-3xULN), GGT, ALP. RECOMMENDATION: Resmetirom (Rezdiffra) for NASH with moderate-severe fibrosis (F2-F3). Weight loss >10% improves NASH histology; GLP-1 agonists/tirzepatide reduce liver fat and ALT. Bariatric surgery improves NASH in morbidly obese patients.",
+    "subdomain": "liver-disease",
+    "condition": "nonalcoholic steatohepatitis",
+    "markers": ["ALT", "AST", "GGT", "FIB-4", "NAS", "FibroScan", "LDL-C", "ALP"],
+    "evidence_type": "rct",
+    "publication_year": 2019
+  },
+  {
+    "source": "trial-HELICOBACTER-MAASTRICHT-2022",
+    "title": "Helicobacter pylori Eradication: Maastricht-VI/Florence Consensus Report",
+    "text": "MAASTRICHT-VI CONSENSUS (2022): First-line eradication regimens: BISMUTH-BASED QUADRUPLE THERAPY (BQT): PPI+bismuth+metronidazole+tetracycline for 14 days: eradication rates >90% regardless of clarithromycin resistance. NON-BISMUTH QUADRUPLE (CONCOMITANT): PPI+amoxicillin+clarithromycin+metronidazole x14 days: 90% if clarithromycin resistance <15%. VONOPRAZAN (potassium-competitive acid blocker, P-CAB): vonprazan+clarithromycin+amoxicillin (or bismuth-based): superior acid suppression; 83-98% eradication. PACIFICAL (vonoprazan study): non-inferior to PPI-based triple therapy in Europe/Asia. BIOMARKER: Urea breath test (13C or 14C UBT): gold standard non-invasive test for active H. pylori infection; sensitivity 96%, specificity 93%. Must stop PPI 2 weeks, antibiotics 4 weeks before. Stool antigen test (HpSAg): sensitivity 94%, specificity 97% - good for post-eradication assessment. Serology (IgG antibody): can't distinguish active from past infection; not useful for test-of-cure. Endoscopy: RUT (rapid urease test, biopsy specimen), Giemsa stain histology, culture+sensitivity (if multiple antibiotic failures). CagA/VacA virulence factor testing: CagA+ strains associated with higher gastric cancer and peptic ulcer risk. RECOMMENDATION: Test-and-treat strategy in dyspeptic patients <60 without alarm symptoms in high-prevalence areas. H. pylori eradication reduces gastric cancer risk (30-50%). Confirm eradication >=4 weeks after treatment cessation. BQT regimen preferred in high clarithromycin-resistance regions.",
+    "subdomain": "gastric-disease",
+    "condition": "Helicobacter pylori infection",
+    "markers": ["urea breath test", "stool H. pylori antigen", "H. pylori IgG", "CagA", "VacA"],
+    "evidence_type": "guideline",
+    "publication_year": 2022
+  },
+  {
+    "source": "trial-MOTIVATE-UC-2023",
+    "title": "Mirikizumab for Moderately to Severely Active Ulcerative Colitis: LUCENT-1 and LUCENT-2 Trials",
+    "text": "STUDY: LUCENT-1 (NCT03518086, induction) + LUCENT-2 (NCT03524092, maintenance): 1,281 patients with moderate-severe UC (Mayo 4-9) including biologics-naive and experienced patients. Mirikizumab 300mg IV Q4W x12 weeks induction, then SC 200mg Q4W maintenance. RESULTS: LUCENT-1 clinical remission: 24.2% vs 13.3% (P<0.001). LUCENT-2 (sustained remission at Week 52): 49.9% vs 25.1% (P<0.001). Endoscopic remission: 36.3% vs 16.3% (P<0.001). Histologic endoscopic mucosal improvement (HEMI): 34.5% vs 15.0%. Results consistent in prior biologic-failure patients. IL-23p19 blockade (mirikizumab, risankizumab): superior to IL-12/23p40 blockade (ustekinumab) in gut tissue selectivity - lower systemic effects. BIOMARKER: Modified Mayo Score (MMS): includes stool frequency (SF), rectal bleeding (RB), and endoscopic subscore. Clinical remission = SF<=1+RB=0+ES<=1. ES (endoscopic subscore) 0-3, remission=0-1. Patient-reported outcomes (PRO2, PRO3). Fecal calprotectin: FCP >=600 at week 2 predicts non-response to induction therapy. Vedolizumab or ustekinumab trough levels for therapeutic drug monitoring. MRI enterography (MRE) for assessing transmural healing in CD. RECOMMENDATION: Mirikizumab (Omvoh) FDA and EMA approved for moderate-severe UC. IL-23 inhibitors are preferred in patients with psoriasis or PsA comorbidity. Upadacitinib (JAK1 selective) shows highest efficacy in biologic-failure UC from head-to-head data.",
+    "subdomain": "IBD",
+    "condition": "ulcerative colitis",
+    "markers": ["Mayo score", "fecal calprotectin", "CRP", "albumin", "endoscopic subscore"],
+    "evidence_type": "rct",
+    "publication_year": 2023
+  },
+  {
+    "source": "trial-COLORECTAL-CANCER-CAPOX-FLOX-2022",
+    "title": "Colorectal Cancer Screening, Staging, and Treatment: Current Evidence and Biomarker Integration",
+    "text": "COLORECTAL CANCER SCREENING: US Multi-Society Task Force 2022: average-risk adults begin screening at age 45 (ACS 2018, USPSTF 2021). Colonoscopy every 10 years (gold standard); annual FIT (fecal immunochemical test); Cologuard (FIT+DNA, every 3 years) sensitivity 92% tumor, 42% high-risk polyps. LYNCH SYNDROME UNIVERSAL SCREENING: IHC for MMR proteins (MLH1/MSH2/MSH6/PMS2) on all CRC tumors; MSI-PCR or NGS if IHC loss; >90% of Lynch is MLH1 promoter methylation vs germline. STAGING: TNM staging, radical resection for localized CRC. ADJUVANT THERAPY: Stage III: FOLFOX or CAPOX for 6 months. MOSAIC (FOLFOX vs LV5FU2): DFS HR 0.77 at 6 years. XELOXA (CAPOX): non-inferior to FOLFOX - oral capecitabine preferred for tolerability. BIOMARKER: CEA (carcinoembryonic antigen): pre-op CEA>5ng/mL predicts worse prognosis; serial decline post-op (<5 = response); rising CEA during surveillance = recurrence. KRAS/NRAS/BRAF V600E: KRAS codons 12/13 mutations (45%) = anti-EGFR (cetuximab, panitumumab) resistance. BRAF V600E (~10%): poor prognosis; BEACON trial (encorafenib+cetuximab): ORR 20% vs 2% (prognosis still poor). MSI-H/dMMR: pembrolizumab superiorto chemotherapy for 1st-line mCRC (KEYNOTE-158, KEYNOTE-177). HER2 amplification (~5% RAS/BRAF-wild type): trastuzumab+tucatinib or pertuzumab active (MOUNTAINEER). RECOMMENDATION: MSI-H mCRC: pembrolizumab first-line (PFS HR 0.60). RAS/BRAF WT left-sided: FOLFOX/FOLFIRI+cetuximab. Add bevacizumab if BRAF mutated. Universal MMR testing for Lynch screening.",
+    "subdomain": "colorectal-cancer",
+    "condition": "colorectal cancer",
+    "markers": ["CEA", "KRAS", "NRAS", "BRAF", "MSI", "MMR proteins", "CA19-9"],
+    "evidence_type": "guideline",
+    "publication_year": 2022
+  },
+  {
+    "source": "trial-ACUTE-PANCREATITIS-2023",
+    "title": "Acute and Chronic Pancreatitis: Severity Assessment, Biomarkers, and Management",
+    "text": "ACUTE PANCREATITIS: Most common cause: gallstones (40-50%) and alcohol (30-35%). SEVERITY (Atlanta 2012 revised): mild (no organ failure, no local complications), moderately severe (transient organ failure <=48h or local complications), severe (persistent organ failure >48h). RANSON CRITERIA at admission: age>55, WBC>16,000, glucose>200, LDH>350, AST>250 - >=3 criteria predicts severe disease. BISAP score (Bedside Index of Severity in AP): BUN>25, impaired mental status, SIRS, age>60, pleural effusion - score 0-5. CT Severity Index (CTSI/Balthazar): pancreatic necrosis extent + peripancreatic inflammation. BIOMARKER: Serum amylase (rises 2-12h, peaks 12-72h, returns to baseline 3-5d): sensitivity 73-79% for AP. Serum lipase (rises 4-8h, remains elevated 7-14d): sensitivity 80-100%, superior to amylase (lipase >3xULN specific for AP). Lipase:amylase ratio >3 suggests alcoholic pancreatitis. CRP>150mg/L at 48h = severe disease predictor. Procalcitonin>0.5ng/mL predicts pancreatic infection/necrosis. TAP (trypsinogen activation peptide) in urine: research marker. WBC, BUN, creatinine. CHRONIC PANCREATITIS: Fecal elastase-1 (FE-1): <200mcg/g = exocrine pancreatic insufficiency. Fecal fat 72h quantitative test. Serum IgG4 (IgG4-related disease/autoimmune pancreatitis Type 1). RECOMMENDATION: Fluid resuscitation (lactated Ringer's preferred over normal saline) within 24h. Antibiotics only if infected necrosis. Early enteral nutrition (within 24-48h) vs parenteral nutrition. ERCP urgent (<24h) if cholangitis complicating gallstone pancreatitis; cholecystectomy same admission for mild gallstone AP.",
+    "subdomain": "pancreatic-disease",
+    "condition": "acute pancreatitis",
+    "markers": ["amylase", "lipase", "CRP", "procalcitonin", "WBC", "BUN", "creatinine", "LDH", "fecal elastase"],
+    "evidence_type": "guideline",
+    "publication_year": 2023
+  },
+  {
+    "source": "trial-IBD-FMT-2019",
+    "title": "Fecal Microbiota Transplantation for Ulcerative Colitis: Systematic Review of RCTs",
+    "text": "SYSTEMATIC REVIEW AND POOLED ANALYSIS: Four RCTs (FOCUS NCT01896635, Paramsothy et al NCT01896635, Moayyedi et al NCT01896635, Rossen et al): Total 277 patients with mild-moderate active UC. FMT (fecal microbiota transplantation) via colonoscopy, enema, or capsule versus placebo. RESULTS: Clinical remission at 8 weeks: 28% FMT vs 9% placebo (OR 4.4; P<0.001). Mucosal healing: 32% vs 9% (OR 4.9; P<0.001). Multi-donor FMT via colonoscopy had highest remission rates. MICROBIOME BIOMARKERS: 16S rRNA gene sequencing (alpha diversity): Bacteroidetes:Firmicutes ratio dysbiosis in IBD; loss of Clostridiales/Ruminococcus/Faecalibacterium prausnitzii in UC/CD. Fecal calprotectin reflects gut inflammation. Engraftment assessment by donor-recipient microbiome overlap. Short-chain fatty acids (SCFA: butyrate, propionate, acetate) in fecal cultures: butyrate-producing bacteria (Roseburia, Butyrivibrio) associated with remission maintenance. CLOSTRIDIOIDES DIFFICILE: Fidaxomicin vs vancomycin (CONFIRM): non-inferior cure, less recurrence (13% vs 25%; P<0.001). FMT for recurrent CDI: 90% cure vs 26-31% vancomycin in RCTs. RECOMMENDATION: FMT for UC is an investigational treatment (not approved); multidonor protocols appear superior; ongoing Phase 3 trials. FMT for recurrent CDI (>=3 recurrences or >=2 severe episodes) is FDA-approved (RBX2660, CP101); cure rates 70-90%.",
+    "subdomain": "IBD",
+    "condition": "ulcerative colitis",
+    "markers": ["fecal calprotectin", "microbiome diversity index", "CRP", "albumin", "Mayo score"],
+    "evidence_type": "review",
+    "publication_year": 2019
+  }
+]

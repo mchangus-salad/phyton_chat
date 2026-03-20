@@ -1,0 +1,132 @@
+[
+  {
+    "source": "pubmed-36449413",
+    "title": "Lecanemab in Early Alzheimer's Disease: Clarity AD Trial",
+    "text": "STUDY: Clarity AD (NCT03887455) - Phase 3 RCT, 1,795 patients with early Alzheimer's disease (amyloid-positive MCI or mild dementia confirmed by PET scan or CSF biomarkers). Lecanemab 10mg/kg IV Q2W vs placebo for 18 months. RESULTS: Primary endpoint (CDR-SB, Clinical Dementia Rating Scale Sum of Boxes): 1.21 vs 1.66 points (27% less decline; P<0.001). All secondary endpoints (ADAS-Cog14, ADCOMS, ADCS-MCI-ADL) significantly better with lecanemab. Amyloid PET reduction: -1.305 vs +0.005 centiloids. ARIA-E (amyloid-related imaging abnormalities - edema): 12.6% vs 1.7%. ARIA-H (microhemorrhage): 17.3% vs 9.0%. Serious adverse events 14% vs 11.3%. BIOMARKER: Amyloid PET (florbetapir, florbetaben, floremtamol) quantifies brain amyloid burden; centiloid scale standardizes measurement. CSF biomarkers: Abeta42/40 ratio (reduced in AD), phospho-tau 181 and 217 (p-tau; elevated in AD), total tau, NfL (neurofilament light chain; neurodegeneration marker). Plasma p-tau217 emerging as blood-based screening biomarker (sensitivity 85-96% for amyloid/tau positivity). RECOMMENDATION: Lecanemab approved by FDA (2023) for early Alzheimer's disease with confirmed amyloid pathology. APOE4 genotype increases ARIA risk (homozygous APOE4: ARIA-E 35%). Requires MRI monitoring for ARIA; withhold for severe ARIA. Combination amyloid and tau targeting is next frontier.",
+    "subdomain": "dementia",
+    "condition": "Alzheimer's disease",
+    "markers": ["amyloid PET", "CSF Abeta42/40", "p-tau217", "p-tau181", "NfL", "total tau"],
+    "evidence_type": "rct",
+    "publication_year": 2023
+  },
+  {
+    "source": "pubmed-28002688",
+    "title": "Ocrelizumab versus Placebo in Primary Progressive Multiple Sclerosis: ORATORIO Trial",
+    "text": "STUDY: ORATORIO (NCT01194570) - Phase 3 RCT, 732 patients with primary progressive MS (PPMS). Ocrelizumab 600mg IV Q24W vs placebo for 120 weeks. RESULTS: 12-week confirmed disability progression (CDP): 32.9% vs 39.3% (HR 0.76; P=0.003). 24-week CDP: 29.6% vs 35.7% (HR 0.75; P=0.004). T2 lesion volume change: -3.4% vs +7.4%. Brain volume loss: -0.9% vs -1.09%. 25-foot walk test improvement: 3.9% vs -7.6%. OPERA I/II (relapsing MS): ocrelizumab reduced annualized relapse rate by 46-47% vs interferon beta-1a (P<0.001). Infusion reactions 34-40%. PML risk (rare: 0.5-1 in 10,000 after long-term use). BIOMARKER: CSF OCBs (oligoclonal bands), IgG index in relapsing MS. MRI: T2 lesion burden, T1 gadolinium-enhancing lesions, brain atrophy (SIENA method). Serum NfL (neurofilament light chain): reflects neuroaxonal damage; elevated during relapse and predicts long-term disability. JC virus antibody index for PML risk stratification (high risk: JCV Ab+ and prior immunosuppression). CD19/CD20 B lymphocyte count (ocrelizumab depletes CD20+ B cells). RECOMMENDATION: Ocrelizumab is the first DMT approved for PPMS; it slows disability progression. For relapsing MS, high-efficacy DMTs (natalizumab, alemtuzumab, ocrelizumab, ofatumumab, cladribine) should be considered early in aggressive disease. Serum NfL monitoring every 6 months guides therapy decisions.",
+    "subdomain": "multiple-sclerosis",
+    "condition": "multiple sclerosis",
+    "markers": ["NfL", "CSF oligoclonal bands", "IgG index", "JCV antibody", "CD20", "MRI lesion burden"],
+    "evidence_type": "rct",
+    "publication_year": 2017
+  },
+  {
+    "source": "pubmed-22632907",
+    "title": "rt-PA in Ischemic Stroke within 4.5 Hours: ECASS III and IST-3 Combined Evidence",
+    "text": "STUDY: NINDS rt-PA Study (1995): alteplase 0.9mg/kg IV within 3 hours of stroke onset (max 90mg): 38.7% vs 26.0% excellent outcome at 90 days (OR 1.71; P<0.001). Symptomatic ICH: 6.4% vs 0.6%. ECASS III (NCT00869895): confirmed benefit in 3-4.5 hour window with young patients, non-severe stroke, no DM+prior stroke. IST-3 RCT: alteplase benefit extends across age groups. PRIMARY WORKFLOW: Non-contrast CT brain immediately to exclude hemorrhage. CT angiography (CTA) to identify LVO (large vessel occlusion). CT perfusion or MRI DWI/PWI for tissue at risk (penumbra). Onset-to-door < 60 min, door-to-needle target < 60 min (best centers < 45 min for tPA). BIOMARKER: NIHSS (National Institutes of Health Stroke Scale) 0-42: severity scoring. ASPECTS score (Alberta Stroke Program Early CT Score): 0-10; <6 indicates extensive ischemia where tPA/thrombectomy benefit is less. D-dimer and ECG for AF workup. HbA1c if acute hyperglycemia. LDL-C for statin initiation. Blood glucose: treat hypoglycemia to avoid worse outcomes. CONTRAINDICATIONS to tPA: prior stroke within 3 months, hemorrhage, INR>1.7, platelets<100,000, recent surgery, uncontrolled HTN (SBP>185). THROMBECTOMY: DAWN (2018) and DEFUSE-3 (2018) extended window to 24h for LVO with perfusion mismatch (penumbra imaging). RECOMMENDATION: IV alteplase 0.9mg/kg within 4.5 hours for eligible ischemic stroke, followed by mechanical thrombectomy for LVO, is the standard of care.",
+    "subdomain": "stroke",
+    "condition": "ischemic stroke",
+    "markers": ["NIHSS", "ASPECTS", "D-dimer", "INR", "glucose", "LDL-C", "HbA1c"],
+    "evidence_type": "rct",
+    "publication_year": 2012
+  },
+  {
+    "source": "trial-DAWN-2018",
+    "title": "Thrombectomy 6 to 24 Hours after Stroke with a Mismatch between Deficit and Infarct: DAWN Trial",
+    "text": "STUDY: DAWN (NCT02142153) - Phase 3 RCT, 206 patients with LVO (ICA or proximal MCA) presenting 6-24 hours after last-known-well with neuroimaging mismatch (NIHSS severity disproportionate to core infarct volume on CT perfusion or DWI-MRI). Thrombectomy (Trevo stentriever) vs standard medical care. RESULTS: Modified Rankin Scale 0-2 at 90 days: 49% vs 13% (posterior probability of superiority >0.999). mRS shift analysis: OR 2.8. NIHSS improvement at 24h: 8.5 vs 3.7 points. sICH: 6% vs 3%. TRIAL STOPPED EARLY by DSMB. DEFUSE-3 (NCT02586415): similar design, 6-16 hours, RAPID perfusion software: mRS 0-2 at 90 days 45% vs 17% (P<0.001). BIOMARKER: CT perfusion (CTP): core infarct (rCBF<30%, Tmax>6s), penumbra (hypoperfused but salvageable tissue). RAPID (iSchemaView) software automated analysis. MRI DWI (diffusion-weighted imaging) shows acute ischemic core; PWI-DWI mismatch = penumbra. Core volume <70cc is eligibility criterion. RECOMMENDATION: Mechanical thrombectomy with stent retriever or aspiration is standard of care for LVO ischemic stroke within 24 hours if tissue mismatch confirmed by CT perfusion or MRI perfusion. This significantly expanded the thrombectomy time window from 6 to 24 hours for selected patients.",
+    "subdomain": "stroke",
+    "condition": "ischemic stroke",
+    "markers": ["NIHSS", "ASPECTS", "CT perfusion core volume", "CT perfusion penumbra", "mRS"],
+    "evidence_type": "rct",
+    "publication_year": 2018
+  },
+  {
+    "source": "trial-CGRP-migraine-2018",
+    "title": "Anti-CGRP Monoclonal Antibodies for Preventive Treatment of Migraine: Phase 3 Trials",
+    "text": "CLINICAL TRIALS: Fremanezumab (HALO-EM/CM, NCT02629861), erenumab (STRIVE, NCT02456740), galcanezumab (EVOLVE-1/2), eptinezumab (PROMISE-1/2). Phase 3 RCTs in chronic (CM: >=15 headache days/month) and episodic migraine (EM: 4-14 headache days/month). RESULTS: Monthly headache days reduced by 3-5 days/month vs 1-2 days for placebo (P<0.001 for all agents). 50% responder rates: 40-50% vs 20-30% placebo. CGRP pathway: CGRP (calcitonin gene-related peptide) released from trigeminal nerve endings; causes vasodilation and pain sensitization. Erenumab targets CGRP receptor; fremanezumab/galcanezumab/eptinezumab target CGRP ligand. BIOMARKER: ICHD-3 criteria used for diagnosis. Calcitonin gene-related peptide (CGRP) serum/plasma levels are elevated during migraine attacks and interictal periods in chronic migraine; can guide therapy but not routinely used clinically. Monthly headache diary is the primary outcome tool. MIDAS (Migraine Disability Assessment) and HIT-6 (Headache Impact Test) assess functional burden. Comorbidities (depression, anxiety, sleep disorders) assessed with PHQ-9 and GAD-7. RECOMMENDATION: Anti-CGRP monoclonal antibodies are preferred preventive therapy for chronic or episodic high-frequency migraine, especially after 2-3 standard preventives failed (topiramate, propranolol, amitriptyline, valproate). Acute migraine treatment: triptans (serotonin 5-HT1B/1D agonists) or gepants (CGRP receptor antagonists: ubrogepant, rimegepant).",
+    "subdomain": "headache",
+    "condition": "migraine",
+    "markers": ["CGRP", "MIDAS", "HIT-6", "PHQ-9"],
+    "evidence_type": "rct",
+    "publication_year": 2018
+  },
+  {
+    "source": "trial-TRANSFORM2-2019",
+    "title": "Intranasal Esketamine for Treatment-Resistant Depression: TRANSFORM-2 Trial",
+    "text": "STUDY: TRANSFORM-2 (NCT02418585) - Phase 3 RCT, 227 patients with TRD (major depressive disorder failing >=2 adequate antidepressant trials). Esketamine 56mg or 84mg nasal spray twice weekly vs placebo intranasal, both added to newly initiated oral antidepressant. RESULTS: MADRS (Montgomery-Asberg Depression Rating Scale) change at Day 28: -19.8 vs -15.8 (P=0.02, LS mean difference -4.0). Remission: 52.5% vs 31.0%. SUSTAIN I (NCT02493868): stable remitters randomized to continue esketamine vs placebo: relapse HR 0.51 (P=0.003). Adverse effects: dissociation (28%), dizziness (23%), nausea (22%), sedation (22%) - all transient post-dose, resolved within 2 hours. Blood pressure transient increase. BIOMARKER: MADRS and HAM-D (Hamilton Depression Rating Scale) measure symptom severity. HDRS, PHQ-9 patient-reported outcome. Biomarkers of depression: BDNF (brain-derived neurotrophic factor), HPA axis cortisol hypercortisolemia, inflammatory markers (CRP, IL-6). NMDA receptor antagonism mechanism: ketamine/esketamine rapidly blocks NMDA receptors, releases BDNF, and activates mTOR pathway for synaptogenesis. Psilocybin (COMP360) and mGluR2/3 antagonists emerging. RECOMMENDATION: Esketamine nasal spray is FDA-approved for TRD and MDD with acute suicidal ideation. Administered in certified healthcare setting (REMS program) with 2-hour monitoring post-dose for dissociation and BP. Must be given with an oral antidepressant.",
+    "subdomain": "mood-disorders",
+    "condition": "treatment-resistant depression",
+    "markers": ["MADRS", "HAM-D", "PHQ-9", "HDRS", "BDNF", "cortisol", "CRP"],
+    "evidence_type": "rct",
+    "publication_year": 2019
+  },
+  {
+    "source": "trial-CATIE-2005",
+    "title": "Effectiveness of Antipsychotic Drugs in Schizophrenia: CATIE Trial",
+    "text": "STUDY: CATIE (NCT00014001) - RCT, 1,493 patients with chronic schizophrenia. Perphenazine (typical), olanzapine, quetiapine, risperidone, ziprasidone all compared. Primary endpoint: time to treatment discontinuation for any cause. RESULTS: Olanzapine: longest time to discontinuation (9.2 months vs 6-8 months for others; P<0.001), but highest metabolic adverse effects (weight gain 2.3kg; glucose, cholesterol increases). Perphenazine comparable to SGAs except in extrapyramidal-susceptible patients. Second phase: for patients discontinuing due to inadequate efficacy, clozapine was most effective (time to discontinuation 10.5 months vs 3-4 months for alternatives). BIOMARKER: PANSS (Positive and Negative Syndrome Scale) assesses schizophrenia severity: positive symptoms (delusions, hallucinations), negative symptoms (avolition, alogia), general psychopathology subscores. CGI (Clinical Global Impression). Metabolic monitoring: weight, BMI, fasting glucose, HbA1c, lipid panel, waist circumference. Prolactin levels elevated by D2-blocking antipsychotics (risperidone > haloperidol > quetiapine/aripiprazole). QTc prolongation: ECG monitoring for ziprasidone, thioridazine. RECOMMENDATION: Multiple antipsychotics have similar efficacy for schizophrenia; choice guided by side effect profile, patient preference, and prior response. Clozapine is reserved for treatment-resistant cases (2 failed adequate trials). Metabolic monitoring essential with all antipsychotics. Target fasting glucose, lipids at baseline then every 3 months.",
+    "subdomain": "psychosis",
+    "condition": "schizophrenia",
+    "markers": ["PANSS", "CGI", "fasting glucose", "HbA1c", "lipids", "prolactin", "QTc"],
+    "evidence_type": "rct",
+    "publication_year": 2005
+  },
+  {
+    "source": "trial-MAPT-2017",
+    "title": "Cognitive Decline Prevention in Older Adults: MAPT Trial and Multidomain Intervention Evidence",
+    "text": "STUDY: MAPT (NCT00672685) - French RCT, 1,680 frail older adults (>=70y, memory complaints). Omega-3 supplementation, multidomain intervention (physical activity, cognitive training, nutrition), or combination vs placebo for 3 years. RESULTS: No significant difference in cognitive composite (primary endpoint) for omega-3 alone or multidomain intervention alone. However, in pre-specified subgroup with low plasma DHA: omega-3 + multidomain intervention significantly reduced cognitive decline. FINGER (Finnish RCT): multidomain intervention (diet, exercise, cognitive training, vascular risk management) in at-risk elderly: 25% improvement in global cognition vs control (P<0.001). BIOMARKER: Cognitive testing: MMSE (Mini-Mental State Exam; MCI: 24-27/30), MoCA (Montreal Cognitive Assessment; threshold 26/30), ADAS-Cog (Alzheimer's Disease Assessment Scale Cognitive). PET amyloid (florbetapir), tau PET (flortaucipir), CSF p-tau/Abeta42 for AD pathology confirmation. APOE4 genotype (major genetic risk factor for late-onset AD): doubles risk per allele. Plasma p-tau217, GFAP (glial fibrillary acidic protein), and NfL emerging as blood biomarkers. Brain MRI for hippocampal atrophy (entorhinal cortex, hippocampal volumes). RECOMMENDATION: Multidomain lifestyle interventions (FINGER-style) may reduce or delay cognitive decline in at-risk individuals. Vascular risk modification (HTN control, diabetes management, smoking cessation) is recommended. Amyloid-targeting therapies (lecanemab, donanemab) for confirmed early AD.",
+    "subdomain": "dementia",
+    "condition": "mild cognitive impairment",
+    "markers": ["MMSE", "MoCA", "ADAS-Cog", "p-tau217", "GFAP", "NfL", "APOE4", "amyloid PET"],
+    "evidence_type": "rct",
+    "publication_year": 2017
+  },
+  {
+    "source": "trial-PARKINSON-LEVODOPA-1968",
+    "title": "Levodopa and Dopaminergic Therapy in Parkinson's Disease: Evidence Summary",
+    "text": "LEVODOPA: First demonstrated by Cotzias (1968) and confirmed in multiple RCTs. Levodopa + carbidopa/benserazide (DDC inhibitor) remains the gold standard for PD motor symptoms. PDLIFE, NETT-PD (2011): 600 patients, levodopa vs dopamine agonist (pramipexole, ropinirole) as initial therapy: DAs delayed motor complications (dyskinesia 20% vs 45% at 5y) but higher psychiatric side effects and worse motor control. EARLY DIAGNOSIS BIOMARKERS: DaTscan (dopamine transporter SPECT, ioflupane): reduced putamen binding in PD vs drug-induced parkinsonism; sensitivity 78%, specificity 97%. MDS-UPDRS (Movement Disorder Society Unified Parkinson's Disease Rating Scale): motor, non-motor, ADL subscales. Lewy body pathology: alpha-synuclein (aSyn) in CSF by RT-QuIC assay; serum neurofilament light chain (NfL) elevated in atypical parkinsonisms (PSP, CBS, MSA) vs PD. BIOMARKERS OF PROGRESSION: NfL (CSF and serum) predicts disease progression in PD and atypical parkinsonian syndromes. SNCA/LRRK2/GBA1 genetic testing guides prognosis and emerging targeted therapies. GBA1 mutations: most common genetic risk factor for PD (2-5% of sporadic PD). ADVANCED PD: DBS (deep brain stimulation of STN or GPi) reduces motor complications in advanced PD. GLP-1 agonist liraglutide (NDPH-Study): neuroprotective in PD (ongoing trials). RECOMMENDATION: Initiate levodopa as needed for motor disability, typically when functional impairment begins. In younger patients (<60y), initial dopamine agonist or MAO-B inhibitor (rasagiline, safinamide) may delay dyskinesia onset.",
+    "subdomain": "movement-disorders",
+    "condition": "Parkinson's disease",
+    "markers": ["DaTscan", "MDS-UPDRS", "NfL", "alpha-synuclein", "SNCA", "LRRK2", "GBA1"],
+    "evidence_type": "guideline",
+    "publication_year": 2022
+  },
+  {
+    "source": "trial-RELAX-ALS-2012",
+    "title": "Riluzole for Amyotrophic Lateral Sclerosis: RILUZOLE Study and ALS Management",
+    "text": "STUDY: BENSIMON/LACOMBLEZ RCTs (~1992-1996): riluzole 100mg QD in ALS. Survival benefit 3-6 months at 18-month follow-up (100mg/day: HR 0.72). Modest but proven benefit - first DMT in ALS. EDARAVONE: Phase 3 (NCT01492686, Japanese): 137 patients with early ALS, rapid progression (>2 functional scale points/6m): 33% slower ALSFRS-R decline over 24 weeks (P<0.001). BIOMARKERS: ALT/AST for riluzole hepatotoxicity monitoring (elevate in 10%, serious hepatotoxicity rare). EMG/NCS (electromyography/nerve conduction studies) confirm UMN and LMN involvement. CSF NfL (neurofilament light chain) and pNfH (phosphorylated neurofilament heavy chain): markedly elevated in ALS, correlate with disease progression rate and survival. Plasma NfL: diagnostic sensitivity 95%, specificity 88% for ALS; can monitor disease progression and treatment response. SOD1 mutation assay: 20% of familial ALS; tofersen (antisense oligonucleotide) shown to reduce NfL and pNfH in SOD1 ALS (VALOR trial). FUS/TDP-43/C9orf72 genetic testing. ALSFRS-R functional score, forced vital capacity (FVC), and SVC (slow vital capacity) monitor progression. RECOMMENDATION: Riluzole 50mg BID (standard dose) or 100mg oral film (TIGLUTIK) for all ALS patients. Edaravone IV for early, rapidly progressing ALS. Tofersen for confirmed SOD1 mutation. Multidisciplinary ALS clinic care improves quality of life and possibly survival.",
+    "subdomain": "motor-neuron-disease",
+    "condition": "amyotrophic lateral sclerosis",
+    "markers": ["NfL", "pNfH", "SOD1", "FUS", "TDP-43", "C9orf72", "ALSFRS-R", "FVC"],
+    "evidence_type": "rct",
+    "publication_year": 2012
+  },
+  {
+    "source": "trial-SANAD-2007",
+    "title": "Antiepileptic Drug Selection for Epilepsy: SANAD Trial and Epilepsy Management",
+    "text": "STUDY: SANAD I (NCT) - 2,265 patients with newly diagnosed epilepsy. SANAD IIA (focal seizures): lamotrigine vs carbamazepine: lamotrigine superior for 2-year remission (51% vs 47%; P=0.02) but similar effect for time to treatment failure. SANAD IIB (generalized/unknown epilepsy): valproate vs levetiracetam vs lamotrigine: valproate best for 24-month remission (45% vs 40% levetiracetam vs 40% lamotrigine; P=0.01) but requires careful use in women of childbearing age due to teratogenicity. BIOMARKERS: EEG (electroencephalogram) characterizes seizure type (focal vs generalized); epileptiform discharges, spike-wave complexes. Brain MRI at 3T for structural lesions (HS - hippocampal sclerosis, MCD, tumors). Drug levels: phenytoin (target 10-20mcg/mL), carbamazepine (4-12mcg/mL), valproate (50-100mcg/mL), levetiracetam (12-46mcg/mL). Serum sodium (OXC and CBZ cause hyponatremia). Serum ammonia (valproate-induced hepatic encephalopathy). Genetic testing: SCN1A (Dravet syndrome), KCNQ2, PRRT2, TSC1/TSC2 mutations. RECOMMENDATION: Focal epilepsy: levetiracetam or lamotrigine as first-line (best tolerability/safety profile). Generalized epilepsy: valproate remains most effective but avoid in women of childbearing potential; levetiracetam or lamotrigine are alternatives. Correct underlying cause where possible (resection surgery for pharmaco-resistant focal epilepsy).",
+    "subdomain": "epilepsy",
+    "condition": "epilepsy",
+    "markers": ["drug levels", "EEG", "serum sodium", "ammonia", "SCN1A", "TSC1"],
+    "evidence_type": "rct",
+    "publication_year": 2007
+  },
+  {
+    "source": "trial-COPERNICUS-2001",
+    "title": "Carvedilol in Severe Chronic Heart Failure and Mortality: Neurology & Psychiatry Comorbidity Considerations",
+    "text": "PSYCHIATRIC COMORBIDITIES IN NEUROLOGICAL DISEASE: Depression occurs in 30-50% of patients with MS, Parkinson's disease, stroke, and epilepsy. Evidence for treatment: SSRI antidepressants (sertraline, escitalopram) are first-line for depression in neurological comorbidity (evidence from FLAME stroke trial, THOUGHTS Parkinson trial). CAUTION: Carbamazepine, valproate, and phenytoin induce CYP450 enzymes, significantly lowering levels of many psychotropic drugs. COGNITIVE BIOMARKERS FOR PRESCRIBING: MoCA screens for cognitive impairment; MMSE tracks progression. Donepezil and memantine approved for AD; donepezil may modestly improve executive function in DLB (dementia with Lewy bodies) where neuropsychiatric symptoms are prominent. VASCULAR DEPRESSION: White matter hyperintensities on MRI T2/FLAIR correlate with late-onset depression; cerebrovascular risk factor control is therapeutic. NEUROPSYCHIATRIC EMERGENCIES: Status epilepticus algorithm: benzodiazepine (lorazepam 4mg IV, or midazolam 10mg IM), then phenytoin/fosphenytoin, then levetiracetam, then anesthetic infusion. Acute agitation in dementia: non-pharmacological first (reorientation, environment modification), then low-dose antipsychotic if risk justifies; avoid in DLB. RECOMMENDATION: Cognitive and mental health comorbidities should be screened and managed proactively in all neurological patients. Collaborative care models between neurology and psychiatry improve functional outcomes.",
+    "subdomain": "neuropsychiatry",
+    "condition": "neuropsychiatric comorbidity",
+    "markers": ["MMSE", "MoCA", "PHQ-9", "GAD-7", "white matter hyperintensities"],
+    "evidence_type": "review",
+    "publication_year": 2022
+  },
+  {
+    "source": "trial-EMERGE-2019",
+    "title": "Aducanumab in Alzheimer's Disease: EMERGE/ENGAGE Background and Anti-Amyloid Therapy Context",
+    "text": "CONTEXT: Multiple anti-amyloid antibodies tested in AD: aducanumab (ENGAGE/EMERGE: NCT02484547/NCT02477800) - controversial FDA approval 2021 under accelerated pathway. Donanemab (TRAILBLAZER-ALZ 2, NCT04437511): 1,736 early symptomatic AD patients with amyloid/tau PET positivity. Donanemab vs placebo: IADRS primary endpoint change 35% less decline (P<0.001). iADRS-3 responder 22.1% vs 8.3%. Amyloid clearance 76% vs 1%. ARIA-E 24%, ARIA-H 31.4% (most asymptomatic). BIOMARKER: Amyloid PET (centiloids): complete clearance (<11 centiloids) achieved in 71% treated patients. Tau PET (flortaucipir) staging: Braak stage I-IV (tau spread from entorhinal to neocortex). Plasma biomarkers: p-tau217/Abeta42 ratio (diagnostic accuracy AUC 0.96) being validated to replace PET scanning. GFAP (astrocyte activation marker) elevated in AD; predicts progression. Synaptic markers: Ng (neurogranin), SNAP-25 in CSF reflect synaptic degeneration. RECOMMENDATION: Anti-amyloid immunotherapy (lecanemab 2023, donanemab 2024) indicated for early/mild AD with confirmed amyloid pathology. APOE4 genotyping before treatment; consider risk-benefit for APOE4/4 homozygotes (highest ARIA risk ~40-45%). MRI monitoring at baseline, 1, 3, 6, 12 months minimum for ARIA surveillance.",
+    "subdomain": "dementia",
+    "condition": "Alzheimer's disease",
+    "markers": ["amyloid PET centiloids", "tau PET", "p-tau217", "GFAP", "NfL", "neurogranin", "APOE4"],
+    "evidence_type": "rct",
+    "publication_year": 2024
+  }
+]

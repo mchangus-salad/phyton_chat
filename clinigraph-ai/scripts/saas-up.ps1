@@ -2,7 +2,8 @@ param(
     [string]$EnvFile = ".env.saas.local",
     [switch]$SkipBuild,
     [switch]$SkipHealthCheck,
-    [int]$TimeoutSeconds = 180
+    [int]$TimeoutSeconds = 180,
+    [switch]$Seed
 )
 
 $ErrorActionPreference = "Stop"
@@ -181,3 +182,11 @@ Write-Host "Web: http://127.0.0.1:$webPort/api/v1/health/"
 Write-Host "Swagger: http://127.0.0.1:$webPort/api/docs/"
 Write-Host "Para actualizar sin limpiar: .\scripts\saas-refresh.ps1"
 Write-Host "Para apagar y limpiar: .\scripts\saas-down.ps1"
+
+if ($Seed) {
+    Write-Step "Importando corpus inicial"
+    & "$scriptDir\saas-seed.ps1"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Fallo al ejecutar saas-seed.ps1"
+    }
+}

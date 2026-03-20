@@ -1,0 +1,152 @@
+[
+  {
+    "source": "pubmed-31535829",
+    "title": "Dapagliflozin in Patients with Heart Failure and Reduced Ejection Fraction: DAPA-HF Trial",
+    "text": "STUDY: DAPA-HF (NCT03036124) - Phase 3 RCT, 4,744 patients with NYHA class II-IV heart failure and LVEF<=40% (HFrEF). Dapagliflozin 10mg QD vs placebo added to standard therapy (ACEi/ARB/ARNI, beta-blocker, MRA). RESULTS: Primary composite (worsening HF or CV death): 16.3% vs 21.2% (HR 0.74; 95% CI 0.65-0.85; P<0.001). Worsening HF events: 10.0% vs 13.7% (HR 0.70). CV death: 9.6% vs 11.5% (HR 0.82). All-cause death HR 0.83. Benefit consistent regardless of diabetes status - equally effective in non-diabetic patients. eGFR decline: -0.92 vs -2.28 mL/min/1.73m2/year (P=0.002). HbA1c reduction: 0.02% (minimal glycemic effect in DAPA-HF). Grade 3 adverse events similar between groups; DKA rare. BIOMARKER: NT-proBNP and BNP guide diagnosis and monitoring of heart failure. LVEF, NYHA class, 6-minute walk test, and Kansas City Cardiomyopathy Questionnaire (KCCQ) assess heart failure burden. SGLT2 inhibitors reduce preload and afterload via osmotic/natriuretic effects, independent of glucose lowering. RECOMMENDATION: Dapagliflozin or empagliflozin should be added to all patients with HFrEF (LVEF<=40%) regardless of diabetes status, added to ACEi/ARB/ARNI, beta-blocker, and MRA (aldosterone antagonist). This represents the 4th pillar of HFrEF therapy (GDMT). SGLT2 inhibitors also improve HFpEF (LVEF>50%).",
+    "subdomain": "heart-failure",
+    "condition": "heart failure with reduced ejection fraction",
+    "markers": ["NT-proBNP", "BNP", "LVEF", "eGFR"],
+    "evidence_type": "rct",
+    "publication_year": 2019
+  },
+  {
+    "source": "pubmed-32865377",
+    "title": "Empagliflozin in Heart Failure with Reduced Ejection Fraction: EMPEROR-Reduced Trial",
+    "text": "STUDY: EMPEROR-Reduced (NCT03057977) - Phase 3 RCT, 3,730 patients with NYHA class II-IV HFrEF (LVEF<=40%). Empagliflozin 10mg QD vs placebo added to standard guideline-directed medical therapy. RESULTS: CV death or hospitalization for HF: 19.4% vs 24.7% (HR 0.75; P<0.001). Total HF hospitalizations: HR 0.70 (P<0.001). Annual rate of sustained eGFR decline: -0.55 vs -2.28 mL/min/1.73m2/year (P<0.001), with lower risk of serious renal outcomes. Effect consistent regardless of diabetes status. Benefit even in LVEF 31-40% range. Uncomplicated genital tract infections 2% vs 0.5%. BIOMARKER: NT-proBNP elevated in HF; higher values correlate with worse prognosis. BNP-guided therapy is used in some centers. Creatinine/eGFR monitoring important given renal effects. SGLT2 transporters in renal tubule: SGLT2 inhibition reduces glucose-sodium cotransport, inducing glucosuria, natriuresis, and osmotic diuresis. EMPEROR-Preserved (LVEF>40%, HFpEF): empagliflozin improved composite outcome (HR 0.79; P<0.001) - first medication proven effective in HFpEF. RECOMMENDATION: Empagliflozin is indicated for HFrEF and now also for HFpEF. Equivalent evidence exists for dapagliflozin (DAPA-HF, DELIVER). Both agents are recommended in current ESC, ACC/AHA heart failure guidelines as class I evidence for HFrEF.",
+    "subdomain": "heart-failure",
+    "condition": "heart failure with reduced ejection fraction",
+    "markers": ["NT-proBNP", "BNP", "LVEF", "eGFR", "creatinine"],
+    "evidence_type": "rct",
+    "publication_year": 2020
+  },
+  {
+    "source": "trial-PARADIGM-HF-2014",
+    "title": "Sacubitril/Valsartan versus Enalapril in Heart Failure with Reduced Ejection Fraction: PARADIGM-HF",
+    "text": "STUDY: PARADIGM-HF (NCT01035255) - Phase 3 RCT, 8,442 patients with NYHA class II-IV HFrEF (LVEF<=40%), elevated BNP/NT-proBNP. Sacubitril/valsartan (LCZ696, ARNI) 200mg BID vs enalapril 10mg BID. RESULTS: CV death or HF hospitalization: 21.8% vs 26.5% (HR 0.80; P<0.001). CV death: 13.3% vs 16.5% (HR 0.80). All-cause death: 17.0% vs 19.8% (HR 0.84; P<0.001). HF hospitalization: 12.8% vs 15.6% (HR 0.79). Symptomatic hypotension more common with sacubitril/valsartan; angioedema similar but slightly lower than enalapril. BIOMARKER: NT-proBNP and BNP levels decline with sacubitril/valsartan; NT-proBNP is preferred monitoring biomarker as sacubitril affects BNP but not NT-proBNP metabolism. BNP may be falsely elevated with ARNI due to neprilysin inhibition. RECOMMENDATION: Sacubitril/valsartan (ARNI) is preferred over ACE inhibitors or ARBs in HFrEF patients who are already tolerating ACEI/ARB. ACEI must be stopped 36 hours before initiating ARNI to prevent angioedema. ARNI represents superior efficacy vs enalapril for CV death and HF hospitalization. Standard GDMT for HFrEF: ARNI (or ACEi/ARB), beta-blocker, MRA, SGLT2 inhibitor.",
+    "subdomain": "heart-failure",
+    "condition": "heart failure with reduced ejection fraction",
+    "markers": ["NT-proBNP", "BNP", "LVEF", "creatinine", "potassium"],
+    "evidence_type": "rct",
+    "publication_year": 2014
+  },
+  {
+    "source": "pubmed-28304224",
+    "title": "Evolocumab and Clinical Outcomes in Patients with Cardiovascular Disease: FOURIER Trial",
+    "text": "STUDY: FOURIER (NCT01764633) - Phase 3 RCT, 27,564 patients with atherosclerotic cardiovascular disease (MI, stroke, or peripheral arterial disease) and LDL-C>=70mg/dL on statin therapy. Evolocumab (anti-PCSK9 monoclonal antibody) 140mg Q2W or 420mg monthly subcutaneous vs placebo. RESULTS: LDL-C reduction at 48 weeks: 59% (from median 92 to 30 mg/dL). Primary composite (CV death, MI, stroke, UA hospitalization, revascularization): 9.8% vs 11.3% (HR 0.85; P<0.001). Key secondary composite (CV death, MI, stroke): 5.9% vs 7.4% (HR 0.80; P<0.001). No significant difference in adverse events including new-onset diabetes and neurocognitive events. Injection-site reactions 2.1% vs 1.6%. BIOMARKER: LDL-C is the primary therapeutic target. High-sensitivity CRP (hsCRP) reflects residual inflammatory risk. LDL-P (particle number) and apolipoprotein B (apoB) are alternative markers. PCSK9 enzyme cleaves LDL receptors on hepatocytes; inhibition increases LDL receptor recycling and LDL-C clearance. RECOMMENDATION: PCSK9 inhibitors (evolocumab, alirocumab) are indicated when LDL-C remains above target on maximally tolerated statin plus ezetimibe, or in statin-intolerant patients with high CV risk. Target LDL-C <55mg/dL for very-high-risk patients (recurrent events or multivessel disease).",
+    "subdomain": "dyslipidemia",
+    "condition": "cardiovascular disease",
+    "markers": ["LDL-C", "hsCRP", "apoB", "PCSK9"],
+    "evidence_type": "rct",
+    "publication_year": 2017
+  },
+  {
+    "source": "trial-PLATO-2009",
+    "title": "Ticagrelor versus Clopidogrel in Patients with Acute Coronary Syndromes: PLATO Trial",
+    "text": "STUDY: PLATO (NCT00391872) - Phase 3 RCT, 18,624 patients with acute coronary syndrome (UA, NSTEMI, or STEMI). Ticagrelor 180mg loading then 90mg BID vs clopidogrel 300-600mg loading then 75mg QD for 12 months. RESULTS: Primary composite (CV death, MI, stroke) at 12 months: 9.8% vs 11.7% (HR 0.84; P<0.001). CV death: 4.0% vs 5.1% (HR 0.79; P<0.001). MI: 5.8% vs 6.9% (HR 0.84; P=0.005). Non-CABG major bleeding: 4.5% vs 3.8% (HR 1.19; P=0.03), no statistical difference in total major bleeding. Dyspnea: 13.8% vs 7.8% (common but usually mild). BIOMARKER: Platelet function testing (VerifyNow P2Y12 assay, Plateletworks): measures P2Y12 receptor inhibition. High on-treatment platelet reactivity (HTPR) predicts worse outcomes; low platelet reactivity predicts bleeding. CYP2C19 polymorphisms affect clopidogrel metabolism (poor metabolizers at *2, *3 alleles); ticagrelor efficacy not affected by CYP2C19 genotype. RECOMMENDATION: Ticagrelor is generally preferred over clopidogrel in ACS managed with or without PCI, given superior mortality benefit. Dual antiplatelet therapy (DAPT) for 12 months post-ACS, then consider DAPT de-escalation or monotherapy based on bleeding/ischemic risk. CYP2C19 genotyping can guide clopidogrel use.",
+    "subdomain": "acute-coronary-syndrome",
+    "condition": "acute coronary syndrome",
+    "markers": ["troponin", "CK-MB", "BNP", "CYP2C19", "platelet function"],
+    "evidence_type": "rct",
+    "publication_year": 2009
+  },
+  {
+    "source": "trial-SPRINT-2015",
+    "title": "Intensive versus Standard Blood Pressure Control: SPRINT Trial",
+    "text": "STUDY: SPRINT (NCT01206062) - RCT, 9,361 adults with hypertension (SBP 130-180 mmHg) and increased cardiovascular risk (not including diabetes or prior stroke). Intensive BP target (SBP<120 mmHg) vs standard target (SBP<140 mmHg). RESULTS: Primary composite (MI, ACS, stroke, HF, CV death): 5.2% vs 6.8% per year (HR 0.75; P<0.001) - TRIAL STOPPED EARLY. CV death: 0.8% vs 1.4% (HR 0.57). All-cause death: 3.3% vs 4.5% (HR 0.73). Serious adverse events in intensive arm: hypotension 2.4% vs 1.4%, syncope 2.3% vs 1.7%, electrolyte abnormalities 3.1% vs 2.3%, acute kidney injury 4.1% vs 2.5%. BIOMARKER: Spot urine albumin-to-creatinine ratio (ACR) identifies nephropathy; ACR>30mg/g indicates albuminuria. eGFR monitors renal function. 24-hour ambulatory BP monitoring is more accurate than office measurements. RECOMMENDATION: More intensive BP target (SBP<130 mmHg) is now recommended for most high-risk hypertensive adults (2017 ACC/AHA guidelines defined stage 1 HTN as SBP>=130 or DBP>=80). Individualize targets for elderly patients (ACCORD: no additional CV benefit with HTN target <120 in T2DM), frail patients, orthostatic hypotension. Preferred initial agents depend on comorbidities: ACEI/ARB in CKD/diabetes, beta-blockers after MI/HF, CCBs in isolated systolic hypertension.",
+    "subdomain": "hypertension",
+    "condition": "hypertension",
+    "markers": ["blood pressure", "creatinine", "eGFR", "ACR"],
+    "evidence_type": "rct",
+    "publication_year": 2015
+  },
+  {
+    "source": "trial-CASTLE-AF-2018",
+    "title": "Catheter Ablation versus Medical Therapy in Atrial Fibrillation with Heart Failure: CASTLE-AF",
+    "text": "STUDY: CASTLE-AF (NCT00643188) - Phase 3 RCT, 363 patients with symptomatic paroxysmal or persistent AFib, HFrEF (LVEF<=35%), NYHA class II-IV, prior catheter ablation or cardioversion failure. Radiofrequency catheter ablation vs conventional rate or rhythm medical management. RESULTS: Primary composite (all-cause death or worsening HF): 28.5% vs 44.6% (HR 0.62; P<0.001). Death: 13.4% vs 25.0% (HR 0.53; P=0.01). HF hospitalization: 20.7% vs 35.9% (HR 0.56). LVEF improved by 8% more in ablation group. BIOMARKER: NT-proBNP and BNP correlate with HF severity; AFib increases BNP via atrial stretch. 6-minute walk test and KCCQ score assess functional capacity. Holter monitoring and implanted cardiac monitors track AFib burden and recurrence post-ablation. RECOMMENDATION: Catheter ablation can be considered in HFrEF patients with symptomatic AFib who remain in AFib despite medical therapy or when AFib is suspected cause of tachycardia-mediated cardiomyopathy. Medical rate control: beta-blocker preferred (carvedilol, bisoprolol, metoprolol); digoxin as second option. Rhythm control: particularly beneficial in recently diagnosed AFib (EAST-AFNET 4 trial).",
+    "subdomain": "arrhythmia",
+    "condition": "atrial fibrillation",
+    "markers": ["NT-proBNP", "BNP", "LVEF", "thyroid function tests", "D-dimer"],
+    "evidence_type": "rct",
+    "publication_year": 2018
+  },
+  {
+    "source": "trial-PARTNER3-2019",
+    "title": "Transcatheter versus Surgical Aortic-Valve Replacement in Low-Surgical-Risk Patients: PARTNER 3",
+    "text": "STUDY: PARTNER 3 (NCT02675114) - Phase 3 RCT, 1,000 patients with severe aortic stenosis at low surgical risk (STS score <4%). TAVR (transfemoral SAPIEN 3 balloon-expandable valve) vs SAVR. RESULTS: 1-year composite of death, stroke, or rehospitalization: 8.5% TAVR vs 15.1% SAVR (HR 0.54; P<0.001). Stroke: 1.2% vs 3.1%. Atrial fibrillation: 5.0% vs 39.5%. New pacemaker: 6.6% vs 4.0%. Vascular complications higher with TAVR (3.8% vs 1.6%). 2-year outcomes sustained. Valve durability remains a long-term concern vs bioprosthetic SAVR. BIOMARKER: Aortic valve area (AVA) by echocardiography defines severity: severe AVA<1.0cm2, mean gradient>40mmHg, Vmax>4m/s. BNP/NT-proBNP indicates hemodynamic burden. CT calcium scoring of aortic valve (Agatston score) predicts severity when echo-Doppler is discordant. Heart team approach required. RECOMMENDATION: TAVR is preferred over SAVR for patients with severe aortic stenosis and high or intermediate surgical risk. For low-risk patients, TAVR is now an acceptable alternative to SAVR; shared decision-making essential regarding pacemaker rates, durability, and access. Lifetime management planning required.",
+    "subdomain": "structural-heart-disease",
+    "condition": "aortic stenosis",
+    "markers": ["BNP", "NT-proBNP", "aortic valve area", "mean gradient", "Vmax"],
+    "evidence_type": "rct",
+    "publication_year": 2019
+  },
+  {
+    "source": "trial-ATTR-ACT-2018",
+    "title": "Tafamidis in Patients with Transthyretin Amyloid Cardiomyopathy: ATTR-ACT Trial",
+    "text": "STUDY: ATTR-ACT (NCT01994889) - Phase 3 RCT, 441 patients with ATTR cardiomyopathy (both wild-type and variant ATTR). Tafamidis 80mg or 20mg QD vs placebo for 30 months. RESULTS: All-cause mortality and CV hospitalizations: significantly reduced with tafamidis 80mg (HR 0.70 in primary hierarchical outcome). All-cause mortality: 29.5% vs 42.9% with placebo (nominal P<0.001 for pooled doses). CV hospitalizations reduced. 6-minute walk distance preserved. KCCQ score improved with tafamidis vs decline with placebo. BIOMARKER: Cardiac ATTR amyloid diagnosed by: Technetium pyrophosphate (Tc-PYP) bone scan (strong uptake grade 2-3 is highly specific for ATTR), mass spectrometry for typing, TTR gene sequencing for variant ATTR. NT-proBNP and troponin (hsTnI or hsTnT) are elevated; serial monitoring assesses progression. TTR stabilizer preserves TTR tetramer, reducing amyloid fibril deposition. RECOMMENDATION: Tafamidis 80mg QD is standard treatment for ATTR cardiomyopathy (wild-type or variant). Early diagnosis critical - 10-15% of HFpEF patients have ATTR amyloidosis. Screen with Tc-PYP scan in HFpEF with ECG-echocardiography dissociation (low voltage with LV hypertrophy), bilateral carpal tunnel syndrome, or spinal stenosis history.",
+    "subdomain": "cardiomyopathy",
+    "condition": "transthyretin amyloid cardiomyopathy",
+    "markers": ["NT-proBNP", "troponin", "TTR", "Tc-PYP"],
+    "evidence_type": "rct",
+    "publication_year": 2018
+  },
+  {
+    "source": "trial-STEMI-guidelines-2023",
+    "title": "Management of ST-Elevation Myocardial Infarction: ACC/AHA and ESC Guidelines Summary",
+    "text": "PRIMARY PCI: Primary percutaneous coronary intervention is the preferred reperfusion strategy for STEMI when performed within 120 minutes of first medical contact (door-to-balloon time target <90 minutes, or <60 minutes if direct presentation to PCI-capable center). Fibrinolytic therapy preferred when PCI delay >120 minutes; administer within 30 minutes of hospital arrival. BIOMARKERS: High-sensitivity cardiac troponin I (hsTnI) or T (hsTnT) is the essential diagnostic biomarker; elevated in >99th percentile of healthy reference population defines myocardial injury. Serial troponin (0h/1h or 0h/2h algorithms) allows rapid rule-in/rule-out. CK-MB predominantly used in re-infarction detection. BNP/NT-proBNP predicts prognosis and guides HF therapy. ANTITHROMBOTIC: Aspirin plus P2Y12 inhibitor (ticagrelor or prasugrel preferred over clopidogrel for STEMI) for 12 months. Anticoagulation (unfractionated heparin, bivalirudin, or enoxaparin) during PCI. SECONDARY PREVENTION: All STEMI patients: aspirin indefinitely, high-intensity statin (target LDL<55mg/dL), ACEi/ARB (especially with reduced LVEF), beta-blocker, SGLT2 inhibitor if HFrEF. Cardiac rehabilitation recommended for all. RECOMMENDATION: Time is muscle - every 30-minute delay in reperfusion increases mortality by ~7.5%. Systematic STEMI networks with direct catheterization laboratory activation improve outcomes.",
+    "subdomain": "acute-coronary-syndrome",
+    "condition": "ST-elevation myocardial infarction",
+    "markers": ["troponin", "CK-MB", "hsTnI", "hsTnT", "BNP", "NT-proBNP", "creatinine", "LDL-C"],
+    "evidence_type": "guideline",
+    "publication_year": 2023
+  },
+  {
+    "source": "trial-EAST-AFNET4-2020",
+    "title": "Early Rhythm Control versus Rate Control in Atrial Fibrillation: EAST-AFNET 4 Trial",
+    "text": "STUDY: EAST-AFNET 4 (NCT01288352) - RCT, 2,789 patients with early AFib (within 1 year of diagnosis) and cardiovascular conditions. Early rhythm control (antiarrhythmics or ablation within 1 year) vs usual rate-control. RESULTS: Primary composite (CV death, stroke, HF or acute coronary syndrome hospitalization) at 5 years: 13.4% vs 19.6% per 100 patient-years (HR 0.79; P=0.005). Stroke: HR 0.65 (P=0.08). Quality of life measures improved in rhythm control arm. Adverse events similar between groups. BIOMARKER: ECG and Holter monitor confirm AFib. NT-proBNP guides HF management. CHA2DS2-VASc score (Congestive HF, Hypertension, Age>=75[2pts], Diabetes, Stroke[2pts], Vascular disease, Age 65-74, Sex category) determines stroke risk: score>=2 in men or >=3 in women warrants anticoagulation. HAS-BLED score estimates bleeding risk. Anti-Xa levels or TT for anticoagulation monitoring. RECOMMENDATION: Early rhythm control (within 12 months of AFib diagnosis) should be considered for eligible patients, particularly those with cardiovascular comorbidities, as it reduces CV outcomes versus late/no rhythm control. Oral anticoagulation (DOAC preferred over warfarin) for stroke prevention when CHA2DS2-VASc meets threshold, regardless of rhythm strategy.",
+    "subdomain": "arrhythmia",
+    "condition": "atrial fibrillation",
+    "markers": ["CHA2DS2-VASc", "HAS-BLED", "NT-proBNP", "INR"],
+    "evidence_type": "rct",
+    "publication_year": 2020
+  },
+  {
+    "source": "trial-REDUCE-HF-biomarkers-2022",
+    "title": "Cardiac Biomarkers in Heart Failure Diagnosis and Management: State of the Art",
+    "text": "BNP AND NT-proBNP: B-type natriuretic peptide (BNP) and N-terminal pro-BNP are the most clinically validated cardiac biomarkers. Released by cardiomyocytes in response to wall stress and volume overload. BNP<100pg/mL effectively rules out HF in acute dyspnea (NPV 99%). NT-proBNP diagnostic cutoffs by age: <50y: <450pg/mL; 50-75y: <900pg/mL; >75y: <1800pg/mL. Obesity, renal failure, AFib, and sepsis can confound interpretation. HIGH-SENSITIVITY TROPONIN: hsTnI and hsTnT detect subclinical myocardial injury in HF, predicting adverse outcomes. Chronic elevation in HFrEF reflects ongoing cardiomyocyte injury. Acute rise defines ACS. GALECTIN-3: Fibrosis biomarker; elevated levels predict HF progression and all-cause mortality. SOLUBLE ST2: Soluble suppression of tumorigenicity-2 (sST2) is an IL-33 decoy receptor. Elevated in HF, predicts mortality and HF hospitalization regardless of ejection fraction. Combined with NT-proBNP improves risk stratification. GDF-15: Growth differentiation factor-15 elevated in HF; predicts mortality. CARDIOTOXICITY MONITORING: Troponin and LVEF (echocardiography) are used to detect cancer therapy-related cardiac dysfunction (CTRD). Early cardioprotection with ACEi/ARB or beta-blocker may be warranted. RECOMMENDATION: NT-proBNP/BNP-guided therapy reduces HF hospitalizations. Serial biomarker monitoring every 3-6 months in stable HF; more frequent in unstable or newly diagnosed patients.",
+    "subdomain": "heart-failure",
+    "condition": "heart failure biomarkers",
+    "markers": ["BNP", "NT-proBNP", "troponin", "hsTnI", "hsTnT", "galectin-3", "sST2", "GDF-15"],
+    "evidence_type": "review",
+    "publication_year": 2022
+  },
+  {
+    "source": "trial-CANTOS-2017",
+    "title": "Canakinumab Anti-inflammatory Therapy and Residual Inflammatory Cardiovascular Risk: CANTOS Trial",
+    "text": "STUDY: CANTOS (NCT01327846) - Phase 3 RCT, 10,061 patients with prior MI and hsCRP>=2mg/L despite statin therapy (residual inflammatory risk). Canakinumab (anti-IL-1beta monoclonal antibody) at 50mg, 150mg, or 300mg subcutaneous Q3M vs placebo. RESULTS (150mg dose): Primary composite (non-fatal MI, non-fatal stroke, CV death): reduced from 4.50 to 3.86 events/100 person-years (HR 0.85; P=0.0049). CV death HR 0.82 (300mg, P=0.04). All-cause death not significantly reduced. Fatal infection 0.31 vs 0.18 per 100 person-years (increased risk). Lung cancer incidence significantly reduced as exploratory endpoint (HR 0.33). BIOMARKER: hsCRP (high-sensitivity C-reactive protein) is the biomarker of residual inflammatory risk. IL-6 and IL-1beta are upstream inflammatory cytokines. LDL-C did not change with canakinumab (purely anti-inflammatory effect). hsCRP reduction with treatment predicted outcomes. RECOMMENDATION: Canakinumab demonstrated proof-of-concept that IL-1beta inhibition reduces MACE independent of LDL-C lowering. Not approved for CV prevention due to infection risk and cost. Colchicine (COLCOT, LoDoCo2) has emerged as an anti-inflammatory agent for CV risk reduction with better safety/cost profile.",
+    "subdomain": "coronary-disease",
+    "condition": "cardiovascular disease",
+    "markers": ["hsCRP", "IL-6", "IL-1beta", "LDL-C"],
+    "evidence_type": "rct",
+    "publication_year": 2017
+  },
+  {
+    "source": "trial-CREDENCE-2019",
+    "title": "Canagliflozin and Renal Outcomes in Type 2 Diabetes and Nephropathy: CREDENCE Trial",
+    "text": "STUDY: CREDENCE (NCT02065791) - Phase 3 RCT, 4,401 patients with T2DM and CKD (eGFR 30-90 mL/min/1.73m2) and albuminuria (ACR 300-5000mg/g). Canagliflozin 100mg QD vs placebo added to standard therapy (>80% on ACEi/ARB). RESULTS: Trial stopped early for efficacy. Primary composite (ESKD, doubling of serum creatinine, renal or CV death): 11.0% vs 15.5% (HR 0.70; P=0.00001). ESKD: 5.6% vs 8.9% (HR 0.68). CV death: not significantly reduced. HF hospitalization: 4.0% vs 6.4% (HR 0.61). DKA: 0.6% vs 0.3% (absolute risk low). eGFR rate of decline: -3.0 vs -6.2 mL/min/1.73m2/year. BIOMARKER: eGFR (CKD-EPI 2021 creatinine equation or cystatin C-creatinine equation), ACR (spot urine), and serum creatinine are primary renal monitoring biomarkers. KDIGO staging guides CKD management. SGLT2 inhibition reduces intraglomerular pressure (tubuloglomerular feedback effect) in addition to glucose lowering. DAPA-CKD (NCT03036124): dapagliflozin in CKD regardless of diabetes (eGFR 25-75, ACR 200-5000): ESKD/death HR 0.61. RECOMMENDATION: SGLT2 inhibitors (canagliflozin or dapagliflozin) are strongly recommended for CKD patients with T2DM and ACR>300mg/g (diabetic nephropathy) to reduce progression to ESKD. Finerenone (FIDELIO-DKD, FIGARO-DKD) is a nonsteroidal MRA that also reduces CKD progression in T2DM.",
+    "subdomain": "cardiometabolic",
+    "condition": "diabetic nephropathy",
+    "markers": ["eGFR", "creatinine", "ACR", "HbA1c", "cystatin C"],
+    "evidence_type": "rct",
+    "publication_year": 2019
+  },
+  {
+    "source": "trial-ODYSSEY-OUTCOMES-2018",
+    "title": "Alirocumab after ACS and Clinical Outcomes: ODYSSEY OUTCOMES Trial",
+    "text": "STUDY: ODYSSEY OUTCOMES (NCT01663402) - Phase 3 RCT, 18,924 patients with acute coronary syndrome within 1-12 months, on high-intensity or maximally tolerated statin. Alirocumab (anti-PCSK9) 75mg Q2W (titrated to 150mg if needed) vs placebo. RESULTS: Primary composite (CV death, MI, fatal/non-fatal ischemic stroke, hospitalized UA) at 2.8 years: 9.5% vs 11.1% (HR 0.85; P<0.001). All-cause death reduced in patients with baseline LDL>=100mg/dL: HR 0.71 (P=0.006). LDL-C reduced by 55% (from 87 to 34mg/dL). No increase in new-onset diabetes, hemorrhagic stroke, neurocognitive effects. BIOMARKER: LDL-C target after ACS: <55mg/dL (ESC 2019) or <70mg/dL (ACC/AHA 2018). Lipoprotein(a) [Lp(a)] is an independent CV risk factor; PCSK9 inhibitors reduce Lp(a) by 25-30%. ApoB is a superior marker to LDL-C for residual risk. RECOMMENDATION: Alirocumab or evolocumab should be added when LDL-C remains above target (ESC: <55mg/dL for very-high risk) on maximally tolerated statin plus ezetimibe, particularly in post-ACS patients. PCSK9 inhibitors reduce LDL-C by 50-60%. Inclisiran (siRNA) reduces LDL-C by 50% with twice-yearly dosing (ORION trials).",
+    "subdomain": "dyslipidemia",
+    "condition": "acute coronary syndrome",
+    "markers": ["LDL-C", "apoB", "Lp(a)", "hsCRP", "HbA1c"],
+    "evidence_type": "rct",
+    "publication_year": 2018
+  }
+]

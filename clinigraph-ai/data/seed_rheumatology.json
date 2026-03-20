@@ -1,0 +1,82 @@
+[
+  {
+    "source": "trial-ORAL-STRATEGY-2017",
+    "title": "Tofacitinib versus Methotrexate and Adalimumab in Rheumatoid Arthritis: ORAL Strategy Trial",
+    "text": "STUDY: ORAL Strategy (NCT02092467) - Phase 3b RCT, 1,146 RA patients with inadequate response to MTX. Three arms: tofacitinib 5mg BID monotherapy, tofacitinib 5mg BID + MTX, adalimumab 40mg Q2W + MTX for 12 months. RESULTS: ACR50 at 6 months: tofacitinib+MTX 46%, adalimumab+MTX 44%, tofacitinib monotherapy 38%. Non-inferiority demonstrated for tofacitinib+MTX vs adalimumab+MTX (P<0.0001). Disease Activity Score (DAS28): all arms similar improvement. SAFETY: Tofacitinib upper respiratory infection 29% vs 28%, herpes zoster 1.5% (higher with JAK inhibitors). DVT/PE 0.2% (low absolute risk; ORAL Surveillance showed increased CV/VTE/malignancy with tofacitinib vs TNFi in high-risk patients, leading to EMA/FDA boxed warning). BIOMARKER: DAS28-CRP and DAS28-ESR: assess disease activity; DAS28-CRP <2.6 = remission. CDAI (Clinical Disease Activity Index), SDAI (Simplified DAI). ACR response criteria (ACR20/50/70): 20/50/70% improvement in tender, swollen joints + 3 of 5 other measures. Serum CRP and ESR reflect systemic inflammation. RF (rheumatoid factor) and anti-CCP antibodies (ACPA) aid diagnosis and predict progression: anti-CCP sensitivity 67%, specificity 95%. MCP/PIP joint ultrasound (power Doppler) detects subclinical synovitis. RECOMMENDATION: Treat-to-target strategy: target DAS28 remission (or low disease activity). Preferentially use MTX as anchor drug; add bDMARD (TNFi, IL-6Ri, CTLA4-Ig) or JAK inhibitor if inadequate response. Due to ORAL Surveillance findings, JAK inhibitors preferred only if no high CV risk or alternative bDMARDs insufficient.",
+    "subdomain": "rheumatoid-arthritis",
+    "condition": "rheumatoid arthritis",
+    "markers": ["DAS28-CRP", "DAS28-ESR", "CRP", "ESR", "RF", "anti-CCP", "CDAI"],
+    "evidence_type": "rct",
+    "publication_year": 2017
+  },
+  {
+    "source": "trial-TULIP2-2021",
+    "title": "Anifrolumab in Active Systemic Lupus Erythematosus: TULIP-2 Trial",
+    "text": "STUDY: TULIP-2 (NCT02547922) - Phase 3 RCT, 363 patients with moderate-severe active SLE (SLEDAI>=6), on standard therapy (HCQ, steroids, immunosuppressants). Anifrolumab 300mg IV Q4W vs placebo for 52 weeks. RESULTS: Primary endpoint BICLA response at Week 52: 47.8% vs 31.5% (P=0.001). Annualized oral glucocorticoid dose reduction. Severe/very active skin disease (CLASI-A>=10): 49.0% vs 25.7% improved with anifrolumab. Low SRI-4 response but TULIP-1 failed primary SRI-4 endpoint. Active arthritis improved. Herpes zoster 7.2% vs 1.1% (IFNAR blockade). BLISS-76 (belimumab): SRI-4 response 43% vs 33% placebo (P=0.02). Belimumab acts by blocking BLyS/BAFF (B lymphocyte stimulator). BIOMARKER: SLEDAI (SLE Disease Activity Index) and BILAG (British Isles Lupus Assessment Group) measure disease activity. SRI-4 (SLE Responder Index-4): composite. Complement C3/C4: decreased with SLE flare due to consumption. Anti-dsDNA antibody titer: correlates with disease activity (especially nephritis). Anti-Sm/RNP/Ro/La/antiphospholipid antibodies. Urine protein-to-creatinine ratio (UPCR) and urinalysis for lupus nephritis monitoring. IFN gene signature (type I interferon score): elevated in ~70% SLE; higher type I IFN predicts anifrolumab response. RECOMMENDATION: Belimumab for active SLE with inadequate response to standard therapy. Anifrolumab for moderate-severe SLE, especially with high IFN signature. Hydroxychloroquine for all SLE patients (unless contraindicated) - reduces flares, damage accrual, and mortality.",
+    "subdomain": "lupus",
+    "condition": "systemic lupus erythematosus",
+    "markers": ["SLEDAI", "C3", "C4", "anti-dsDNA", "anti-Sm", "antiphospholipid antibodies", "UPCR", "IFN signature"],
+    "evidence_type": "rct",
+    "publication_year": 2021
+  },
+  {
+    "source": "trial-MEASURE1-2015",
+    "title": "Secukinumab in Axial Spondyloarthritis/Ankylosing Spondylitis: MEASURE 1 Trial",
+    "text": "STUDY: MEASURE 1 (NCT01358175) - Phase 3 RCT, 371 AS patients (radiographic axSpA; BASDAI>=4; inadequate response to NSAIDs). Secukinumab 10mg/kg IV loading then 75mg or 150mg SC Q4W vs placebo for 52 weeks. RESULTS: ASAS20 at week 16: 60.8% (150mg) vs 60.7% (75mg) vs 29.5% (placebo) (P<0.001). ASAS40: 41.1% vs 36.2% vs 12.3% (P<0.001). CRP normalized in 49% vs 16% placebo. Spinal inflammation on MRI significantly reduced. IBD worsening with IL-17A inhibitors ~1% (monitor in IBD comorbidity). DISCOVER-1/2 (guselkumab IL-23p19 inhibitor in PsA): ACR50 27.4% vs 11.5% (P<0.001). BIOMARKER: BASDAI (Bath Ankylosing Spondylitis Disease Activity Index 0-10): >=4 indicates active disease; >=2-point improvement indicates response. ASDAS-CRP (Ankylosing Spondylitis Disease Activity Score using CRP): preferred; <1.3=inactive; 1.3-2.1=low; 2.1-3.5=high; >3.5=very high. CRP and ESR reflect spinal inflammation. HLA-B27 positivity (90%+ of radiographic AS). MRI spine/sacroiliac joints: SPARCC score for bone marrow edema (active sacroiliitis). Modified Stoke Ankylosing Spondylitis Spinal Score (mSASSS): radiographic damage assesment. Active sacroiliitis on MRI defined as SPARCC>=2. RECOMMENDATION: IL-17A inhibitors (secukinumab, ixekizumab) and TNF inhibitors (adalimumab, certolizumab, etanercept) are equally recommended first biologics in axSpA after NSAID failure. IL-23 inhibitors excellent for PsA and psoriasis comorbidity. Prefer non-NSAID biologics for IBD comorbidity (TNFi preferred over IL-17A).",
+    "subdomain": "spondyloarthropathy",
+    "condition": "ankylosing spondylitis",
+    "markers": ["BASDAI", "ASDAS-CRP", "CRP", "ESR", "HLA-B27", "MRI SPARCC score"],
+    "evidence_type": "rct",
+    "publication_year": 2015
+  },
+  {
+    "source": "trial-CARES-2018",
+    "title": "Cardiovascular Safety of Febuxostat versus Allopurinol in Patients with Gout: CARES Trial",
+    "text": "STUDY: CARES (NCT01101035) - Phase 3b RCT, 6,190 patients with gout and major CV disease. Febuxostat 40-120mg QD vs allopurinol 100-800mg QD for median 32 months. PRIMARY: Non-inferior for 4-point MACE (CV death, non-fatal MI, non-fatal stroke, unstable angina); HR 1.03 (P<0.001 for non-inferiority). CV death: 4.3% vs 3.2% (HR 1.34; P=0.03) - significant increase with febuxostat. All-cause death: 7.8% vs 6.4% (HR 1.22; P=0.04). Serum urate reductions similar (both good urate-lowering). COLCHICINE evidence: LoDoCo2 (NEJM 2020): colchicine 0.5mg QD in CAD: MACE HR 0.69 (P<0.001). BIOMARKER: Serum uric acid (SUA): target <6.0mg/dL for gout (tophi/severe: <5.0mg/dL). Synovial fluid crystal analysis: monosodium urate (MSU) crystals - needle-shaped, negatively birefringent under polarized light. 24h urine uric acid excretion distinguishes underexcretors vs overproducers. eGFR and creatinine guide allopurinol dosing (dose reduction in CKD). CRP and WBC elevated during acute gout attacks; return to baseline between attacks. RECOMMENDATION: Allopurinol preferred over febuxostat for urate-lowering therapy, especially in patients with CVD, given CARES CV mortality finding. FDA added boxed warning to febuxostat. Start with low-dose allopurinol, titrate with serum urate monitoring. Acute gout: NSAIDs, colchicine, or oral corticosteroids first-line; IL-1 inhibitors (canakinumab, anakinra) for refractory attacks.",
+    "subdomain": "gout",
+    "condition": "gout",
+    "markers": ["serum uric acid", "CRP", "WBC", "eGFR", "creatinine", "synovial crystals"],
+    "evidence_type": "rct",
+    "publication_year": 2018
+  },
+  {
+    "source": "trial-FINCH1-2019",
+    "title": "Filgotinib versus Adalimumab or Placebo in Rheumatoid Arthritis: FINCH 1 Trial",
+    "text": "STUDY: FINCH 1 (NCT02889796) - Phase 3 RCT, 1,755 RA patients with inadequate response to MTX. Filgotinib 200mg QD + MTX, filgotinib 100mg QD + MTX, adalimumab 40mg Q2W + MTX, or placebo + MTX for 52 weeks. RESULTS: ACR50 at 12 weeks: filgotinib 200mg 53.3% vs adalimumab 48.4% vs placebo 27.5% (P<0.001 vs placebo). Remission (CDAI<=2.8) at 24 weeks: filgotinib 200mg 35.1% vs adalimumab 32.2% vs placebo 13.2%. DAS28-CRP <2.6 at 52 weeks: 41.2% (fil200) vs 35.7% (adal). Herpes zoster incidence: filgotinib 200mg 4.6% (driven by Asia Pacific, JAK-related). JAK1 selectivity of filgotinib thought to reduce some JAK class effects. SAFETY: Hemoglobin decrease with JAK inhibitors (due to EPO effect/JAK2); monitor CBC. Creatinine kinase stable. Lipids: LDL slight increase with JAK inhibitors; monitor at 4-8 weeks. BIOMARKER: ACR/EULAR Boolean remission: tender joints 0, swollen joints 0, CRP<=1mg/dL, patient global <=1. HAQ-DI (Health Assessment Questionnaire Disability Index) measures functional disability. RF and anti-CCP titers track over time (sustained rise with flare). Calprotectin (fecal and serum) emerging as RA disease activity biomarker. RECOMMENDATION: Filgotinib approved in EU/Japan for active RA with MTX inadequate response. FDA has not yet approved. Similar safety warnings as other JAK inhibitors per EMA EPITT19170: boxed warning for infections, VTE, malignancy, CV events in high-risk patients. Treat-to-target: remission or low disease activity.",
+    "subdomain": "rheumatoid-arthritis",
+    "condition": "rheumatoid arthritis",
+    "markers": ["DAS28-CRP", "CDAI", "CRP", "RF", "anti-CCP", "hemoglobin", "lipids"],
+    "evidence_type": "rct",
+    "publication_year": 2019
+  },
+  {
+    "source": "trial-VASCULITIS-ANCA-2021",
+    "title": "Rituximab versus Cyclophosphamide for ANCA-Associated Vasculitis: RAVE and RITUXVAS Trials",
+    "text": "STUDY: RAVE (NCT00104299): 197 patients with ANCA vasculitis (GPA or MPA, BVAS/WG>=3). Rituximab 375mg/m2 IV Q week x4 + cyclophosphamide-free vs cyclophosphamide IV then azathioprine for remission maintenance. RESULTS: Remission at 6 months: rituximab non-inferior to cyclophosphamide (64% vs 53%; P<0.001 for non-inferiority). Superior in relapsing disease: 67% vs 42% (P=0.01). BIOMARKER: ANCA: MPO-ANCA (microscopic polyangiitis, renal, pulmonary) and PR3-ANCA (GPA, Wegener's, more generalized). ANCA titers correlate with disease activity and predict relapse (rising PR3-ANCA). Urinalysis: hematuria, RBC casts indicate renal involvement (glomerulonephritis). Creatinine and eGFR for renal function. CRP/ESR reflect inflammatory activity. 24h urine protein or UPCR for proteinuria. ENAS (extractable nuclear antigens), complement for overlap with SLE. LUNG BIOPSY: necrotizing granulomas in GPA. KIDNEY BIOPSY: pauci-immune crescentic GN (minimal Ig/complement on IF). CLASSIFICATION: ACR/EULAR 2022 new classification criteria for AAV. GPA (formerly Wegener's): granulomatosis + polyangiitis (ear, nose, throat, lung, kidney, skin). MPA: microscopic polyangiitis (no granulomas, predominantly renal). EGPA: eosinophilic GPA (asthma, eosinophilia). RECOMMENDATION: Rituximab preferred over cyclophosphamide for induction in ANCA vasculitis with severe disease, especially relapsing or fertility-concern cases. Rituximab maintenance (500mg Q6M x4 doses) superior to azathioprine for relapse prevention (RITAZAREM trial).",
+    "subdomain": "vasculitis",
+    "condition": "ANCA-associated vasculitis",
+    "markers": ["PR3-ANCA", "MPO-ANCA", "CRP", "ESR", "creatinine", "eGFR", "UPCR", "blood eosinophils"],
+    "evidence_type": "rct",
+    "publication_year": 2021
+  },
+  {
+    "source": "trial-PSORIATIC-ARTHRITIS-DISCOVER-2020",
+    "title": "Guselkumab for Psoriatic Arthritis: DISCOVER-1 and DISCOVER-2 Trials",
+    "text": "STUDY: DISCOVER-2 (NCT03158285): Phase 3 RCT, 739 biologic-naive PsA patients. Guselkumab 100mg Q4W, Q8W after 2 loading doses, or placebo for 52 weeks. RESULTS: ACR20 at Week 24: Q4W 64.4%, Q8W 64.1%, placebo 30.1% (P<0.001). ACR50: 44.4% and 41.5% vs 14.2%. Enthesitis resolution (LEI): 44% and 45% vs 24%. Dactylitis resolution: 56% and 58% vs 28%. Psoriasis (PASI75): 78.4% and 76.2% vs 19.8%. Minimal disease activity (MDA): 32.8% and 31.4% vs 11.3%. Radiographic progression slowed. IL-23p19 mechanism: blocks IL-23:IL-17 axis specifically without affecting IL-12 (IL-23 specific). BIOMARKER: ACR/EULAR PsA criteria (CASPAR): scored with inflammatory spinal/peripheral joint disease, dactylitis, enthesitis, skin/nail psoriasis, RF-negative status, X-ray periostitis. DAS44 or DAPSA (Disease Activity in PSoriatic Arthritis Score) for disease monitoring. Serum uric acid (10% PsA comorbid gout). PASI (Psoriasis Area and Severity Index) for skin involvement. enthesial involvement scored with MASES or Leeds Enthesitis Index (LEI). MRI/ultrasound enthesitis, synovitis, tenosynovitis assessment. RECOMMENDATION: TNF inhibitors remain first-line biologics for PsA when MTX inadequate (with good evidence for both joint and skin). IL-17A (secukinumab, ixekizumab), IL-23 (guselkumab, risankizumab), and JAK inhibitors (upadacitinib, tofacitinib) all effective. Consider IBD comorbidity (avoid IL-17A), uveitis (TNFi preferred), and CV risk in agent selection.",
+    "subdomain": "psoriatic-arthritis",
+    "condition": "psoriatic arthritis",
+    "markers": ["DAS28", "DAPSA", "CRP", "PASI", "CASPAR score", "serum uric acid"],
+    "evidence_type": "rct",
+    "publication_year": 2020
+  },
+  {
+    "source": "trial-SJIA-PMR-2022",
+    "title": "Polymyalgia Rheumatica and Giant Cell Arteritis: Tocilizumab (GiACTA) Evidence",
+    "text": "STUDY: GiACTA (NCT01791153) - Phase 3 RCT, 251 patients with giant cell arteritis (GCA). Tocilizumab 162mg SC weekly or Q2W + 26-week prednisone taper vs placebo + 26- or 52-week prednisone taper. RESULTS: Sustained remission at Week 52: tocilizumab weekly 56% (P<0.001 vs 26-week placebo 14%), tocilizumab Q2W 53.7% (P<0.001). Cumulative prednisone dose reduced 49%. Relapse HR: tocilizumab 0.41 (Q weekly). Tocilizumab superior for steroid-sparing and sustained remission. PMR: In SEMAPHORE trial (sarilumab) and other IL-6 inhibitor studies, IL-6 inhibition reduces prednisone requirement in polymyalgia rheumatica. BIOMARKER: ESR (normal <20mm/h men, <30 women) and CRP: primary inflammatory markers in PMR and GCA; markedly elevated at diagnosis (ESR often >50mm/h), tracked to guide flare detection. IL-6 levels elevated in GCA; serum VEGF elevated. Temporal artery biopsy (sensitivity 60-80%): fibrinoid necrosis, granulomatous inflammation, multinucleated giant cells. PET-CT: high sensitivity for active large vessel vasculitis (FDG uptake in aorta/branch vessels), especially missed by temporal artery biopsy. Ultrasound of temporal arteries: halo sign. RECOMMENDATION: Tocilizumab (IL-6RA) + GC taper is preferred for GCA requiring treatment. Prednisone alone for most PMR (rapid response). Anti-IL-6 therapy reduces cumulative steroid exposure and relapse risk.",
+    "subdomain": "vasculitis",
+    "condition": "giant cell arteritis",
+    "markers": ["ESR", "CRP", "IL-6", "VEGF"],
+    "evidence_type": "rct",
+    "publication_year": 2022
+  }
+]

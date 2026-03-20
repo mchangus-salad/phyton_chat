@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: clinigraph-ai-web
     container_name: clinigraph-web
     restart: unless-stopped
     env_file:
@@ -96,8 +97,22 @@ services:
     volumes:
       - weaviate_data:/var/lib/weaviate
 
+  corpus-updater:
+    image: clinigraph-ai-web
+    container_name: clinigraph-corpus-updater
+    restart: unless-stopped
+    env_file:
+      - .env.saas.local
+    command: ["/bin/sh", "/app/scripts/corpus-updater-entrypoint.sh"]
+    depends_on:
+      web:
+        condition: service_healthy
+    volumes:
+      - corpus_state:/app/data/corpus_state
+
 volumes:
   postgres_data:
   redis_data:
   kafka_data:
   weaviate_data:
+  corpus_state:

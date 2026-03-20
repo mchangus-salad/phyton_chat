@@ -1,0 +1,112 @@
+[
+  {
+    "source": "pubmed-28605561",
+    "title": "Empagliflozin and Cardiovascular Outcomes in Type 2 Diabetes with High CV Risk: EMPA-REG OUTCOME",
+    "text": "STUDY: EMPA-REG OUTCOME (NCT01131676) - Phase 3 RCT, 7,020 patients with T2DM and established cardiovascular disease, eGFR>=30. Empagliflozin 10mg or 25mg QD vs placebo added to standard care. HbA1c: 7.0-9.0% at baseline. RESULTS: 3-point MACE (CV death, nonfatal MI, nonfatal stroke): 10.5% vs 12.1% (HR 0.86; P<0.001 for non-inferiority, P=0.04 for superiority). CV death: 3.7% vs 5.9% (HR 0.62; P<0.001). HF hospitalization: 2.7% vs 4.1% (HR 0.65; P=0.002). Renal composite (new/worsening nephropathy): HR 0.61. DKA rare (0.1%). Genital mycotic infections 6.4% vs 1.8%. BIOMARKER: HbA1c is the primary glycemic monitoring biomarker - 3-month average glucose. Fasting plasma glucose (FPG) day-to-day monitoring. eGFR and ACR critical for renal monitoring. SGLT2 mechanism: osmotic diuresis, natriuresis, reduction of body weight, blood pressure lowering, and reduction of intraglomerular pressure all contribute to CV/renal benefits independent of glucose lowering. RECOMMENDATION: Empagliflozin, dapagliflozin, and canagliflozin are first-line diabetes medications alongside metformin in T2DM with established CVD or high CV risk. ADA/EASD guidelines recommend GLP-1RA or SGLT2i as preferred added therapy after metformin in T2DM with CVD (prefer SGLT2i if HF or CKD).",
+    "subdomain": "diabetes",
+    "condition": "type 2 diabetes mellitus",
+    "markers": ["HbA1c", "FPG", "eGFR", "ACR", "LDL-C", "blood pressure"],
+    "evidence_type": "rct",
+    "publication_year": 2015
+  },
+  {
+    "source": "pubmed-27295427",
+    "title": "Liraglutide and Cardiovascular Outcomes in Type 2 Diabetes: LEADER Trial",
+    "text": "STUDY: LEADER (NCT01179048) - Phase 3 RCT, 9,340 patients with T2DM and high CV risk. Liraglutide 1.8mg subcutaneous QD vs placebo added to standard care. RESULTS: 3-point MACE: 13.0% vs 14.9% (HR 0.87; P<0.001 for non-inferiority, P=0.01 for superiority). CV death: 4.7% vs 6.0% (HR 0.78; P=0.007). Nonfatal MI: 6.0% vs 6.8% (HR 0.88; P=0.046). Diabetic nephropathy: HR 0.78. Weight loss: 2.3kg greater with liraglutide. HbA1c reduction 0.4% vs placebo. GI adverse effects (nausea, vomiting, diarrhea) 40% vs 28%; usually transient. Pancreatitis and thyroid C-cell tumors: no increase but remain precaution. SUSTAIN-6 (semaglutide): MACE HR 0.74; stroke reduction 39%. BIOMARKER: Glucagon-like peptide-1 (GLP-1) is an incretin hormone; stimulates insulin, suppresses glucagon, slows gastric emptying. GLP-1 levels postprandial (intact, active form). Weight (BMI) changes relevant given obesity-driven T2DM. C-peptide reflects residual beta-cell function (important in T1DM monitoring). RECOMMENDATION: GLP-1 receptor agonists (liraglutide, semaglutide, dulaglutide, tirzepatide) are recommended in T2DM patients with established atherosclerotic CVD or multiple CVD risk factors. Weekly semaglutide (Ozempic) preferred over daily liraglutide for convenience; both have proven CV outcomes.",
+    "subdomain": "diabetes",
+    "condition": "type 2 diabetes mellitus",
+    "markers": ["HbA1c", "FPG", "GLP-1", "weight", "BMI", "eGFR"],
+    "evidence_type": "rct",
+    "publication_year": 2016
+  },
+  {
+    "source": "trial-SELECT-2023",
+    "title": "Semaglutide and Cardiovascular Outcomes in Obese Patients without Diabetes: SELECT Trial",
+    "text": "STUDY: SELECT (NCT03574597) - Phase 3 RCT, 17,604 patients with established CVD, BMI>=27kg/m2 (but no diabetes). Semaglutide 2.4mg subcutaneous once weekly vs placebo for a mean 39.8 months. RESULTS: 3-point MACE (CV death, nonfatal MI, nonfatal stroke): 6.5% vs 8.0% (HR 0.80; P<0.001) - 20% RRR. Weight loss: 9.4% vs 0.88%. HF hospitalization also reduced. Adverse effects: GI symptoms (nausea 18% vs 5%, vomiting 7.5% vs 2%). Gallbladder events 2.8% vs 1.6%. Serious adverse events overall lower in semaglutide group. SURMOUNT-1 (tirzepatide vs placebo in obesity/overweight without T2DM): 72-week mean weight loss 22.5% (15mg dose) vs 2.4% (P<0.001). BIOMARKER: BMI and waist circumference. Leptin and adiponectin reflect adipose tissue mass; adiponectin reduced in obesity. Insulin resistance: HOMA-IR (Homeostatic Model Assessment of Insulin Resistance) = fasting glucose x fasting insulin / 405. GLP-1 levels impaired in obesity (incretin defect). Adipose tissue-derived inflammatory cytokines (IL-6, TNF-alpha, IL-1beta) are elevated in obesity and contribute to CV risk. RECOMMENDATION: Semaglutide 2.4mg (Wegovy) is FDA-approved for chronic weight management in adults with BMI>=30 or >=27 with at least one weight-related comorbidity. Now also approved for CV event reduction in obesity+CVD. Tirzepatide (GLP-1/GIP dual agonist) FDA-approved for obesity; may surpass semaglutide in weight loss (~25% vs 15%).",
+    "subdomain": "obesity",
+    "condition": "obesity",
+    "markers": ["BMI", "waist circumference", "HOMA-IR", "adiponectin", "leptin", "HbA1c"],
+    "evidence_type": "rct",
+    "publication_year": 2023
+  },
+  {
+    "source": "trial-DCCT-1993",
+    "title": "Intensive Glycemic Control in Type 1 Diabetes and Complications: DCCT/EDIC",
+    "text": "STUDY: DCCT (NCT00360815, original 1983-1993): 1,441 patients with T1DM randomized to intensive (3+ injections/day or pump, target HbA1c <7%) vs conventional treatment. RESULTS: Intensive therapy reduced retinopathy by 76%, nephropathy by 54%, neuropathy by 60% (P<0.001 for all). HbA1c: 7.0% intensive vs 9.0% conventional. EDIC follow-up (17 years): metabolic memory - intensive arm maintained significantly lower CV events despite HbA1c equalization. MODERN T1DM MANAGEMENT: Continuous glucose monitoring (CGM): Dexcom G7, FreeStyle Libre 3. CGM metrics: Time-in-Range (TIR 70-180mg/dL, target >70%), Time-above-range (TAR >180, target <25%), Time-below-range (TBR <70, target <4%), GMI (glucose management indicator). Automated insulin delivery (AID/closed-loop): Omnipod 5, MiniMed 780G: HbA1c improved 0.5-1.0% vs sensor-augmented pump; TIR increased to 70-80%. GAD65 antibody, IA-2 antibody, zinc transporter 8 antibody (ZnT8): confirm autoimmune T1DM. C-peptide (virtually absent in established T1DM; residual C-peptide indicates preserved beta-cell function). MODY screening: HNF4A, HNF1A, GCK gene mutations. BIOMARKER: HbA1c, CGM metrics (TIR, GMI), C-peptide, glucose variability (CV%), GAD65/IA-2 antibodies, annual ACR, eGFR, ophthalmology exam, neuropathy assessment. RECOMMENDATION: ADA target HbA1c < 7% for most adults; individualize. CGM and AID are now standard of care in T1DM per ADA 2024 guidelines.",
+    "subdomain": "diabetes",
+    "condition": "type 1 diabetes mellitus",
+    "markers": ["HbA1c", "TIR", "CGM", "C-peptide", "GAD65", "IA-2", "ZnT8", "ACR"],
+    "evidence_type": "rct",
+    "publication_year": 1993
+  },
+  {
+    "source": "trial-FREEDOM-2011",
+    "title": "Denosumab for Reduction of Fracture Risk in Postmenopausal Osteoporosis: FREEDOM Trial",
+    "text": "STUDY: FREEDOM (NCT00089791) - Phase 3 RCT, 7,868 postmenopausal women with T-score -2.5 to -4.0 at lumbar spine or total hip. Denosumab 60mg SC Q6M vs placebo for 36 months. RESULTS: New vertebral fracture: 2.3% vs 7.2% (RRR 68%; P<0.001). Hip fracture: 0.7% vs 1.2% (HR 0.60; P=0.04). Nonvertebral fracture: HR 0.80 (P<0.001). BMD increase: lumbar spine +9.2%, total hip +6.0%. Serious adverse events similar; cellulitis 0.3% vs 0.1% (P=0.002). Discontinuation: significant rebound increase in vertebral fractures if stopped abruptly - must transition to bisphosphonate. BIOMARKERS: DEXA (dual-energy X-ray absorptiometry) T-score: BMD compared to young adult reference. T-score <=-2.5 = osteoporosis; -1.0 to -2.5 = osteopenia. FRAX score (WHO Fracture Risk Assessment Tool): 10-year probability of major osteoporotic and hip fracture based on clinical risk factors +/- BMD. PTH (parathyroid hormone), 25-OH vitamin D, calcium, phosphorus, 24h urine calcium, bone turnover markers: CTX (serum C-telopeptide = bone resorption marker) and P1NP (procollagen type 1 N-terminal propeptide = bone formation marker) guide treatment response. RECOMMEND: Treat when T-score <=-2.5 or FRAX major fracture >=20% (or hip >=3%). Bisphosphonates (alendronate, zoledronic acid) first-line; denosumab for high-risk or intolerant. Romosozumab (anti-sclerostin) then antiresorptive for very high risk. Sequential therapy important.",
+    "subdomain": "bone-metabolism",
+    "condition": "osteoporosis",
+    "markers": ["T-score", "BMD", "CTX", "P1NP", "PTH", "vitamin D", "calcium", "FRAX"],
+    "evidence_type": "rct",
+    "publication_year": 2009
+  },
+  {
+    "source": "trial-ADAURA-2020",
+    "title": "Thyroid Cancer: ATA Risk Stratification, BRAF/RAS Testing, and Targeted Therapy Evidence",
+    "text": "DIFFERENTIATED THYROID CANCER: ATA 2015 guidelines: low/intermediate/high risk stratification guides RAI therapy and suppression thresholds. Initial surgery: total thyroidectomy for DTC >4cm, high risk, or bilateral disease. LN central compartment dissection for centrally metastatic disease. PAPILLARY THYROID CANCER BIOMARKERS: Thyroglobulin (Tg) is the primary serum tumor marker after thyroidectomy; stimulated Tg even 0.1-1 ng/mL indicates residual/recurrent disease with whole-body scan. Anti-thyroglobulin antibodies (TgAb) interfere with Tg immunoassay - must be measured simultaneously. TSH suppression therapy: L-thyroxine dose to achieve TSH 0.1-0.5 (low-risk) or <0.1 (high-risk) for disease-free period. SORAFENIB (Phase 3, DECISION trial): median PFS 10.8 vs 5.8 months (HR 0.59; P<0.001) in RAI-refractory DTC. Lenvatinib (SELECT trial): PFS 18.3 vs 3.6 months (HR 0.21; P<0.001). MEDULLARY THYROID CANCER: RET proto-oncogene mutation (sporadic 1-7%, MEN2A/B germline): calcitonin and CEA are serum markers. Vandetanib/cabozantinib for progressive MCC. Selpercatinib/pralsetinib for RET mutation-positive. BRAF V600E mutation in ~60% PTC: dabrafenib+trametinib active in BRAF-mutated ATC (anaplastic thyroid carcinoma). RECOMMENDATION: Molecular testing (BRAF, RAS, RET/PTC, NTRK fusion) on thyroid nodule FNA improves diagnositc accuracy (Bethesda III-IV categories). Calcitonin screening for MCC in thyroid nodule workup remains debated (European guidelines recommend it).",
+    "subdomain": "thyroid",
+    "condition": "thyroid cancer",
+    "markers": ["thyroglobulin", "TSH", "TgAb", "calcitonin", "CEA", "BRAF", "RET", "RAS"],
+    "evidence_type": "guideline",
+    "publication_year": 2020
+  },
+  {
+    "source": "trial-ACCORD-2010",
+    "title": "Glycemic Control and Cardiovascular Outcomes in Type 2 Diabetes: ACCORD vs UKPDS vs ADVANCE",
+    "text": "STUDY: ACCORD (NCT00000620) - 10,251 patients with T2DM and high CV risk. Intensive glycemia (target HbA1c <6.0%) vs standard (7.0-7.9%). RESULTS: Intensive arm stopped: increased all-cause mortality increased 22% (HR 1.22; P=0.04) and CV mortality (HR 1.35; P=0.02) despite HbA1c 6.4% vs 7.5%. Weight gain (+3.5kg) and severe hypoglycemia (2.5x) increased. Teaching point: treating to HbA1c <6.0% is harmful in high-risk T2DM. UKPDS (1977-1997): newly diagnosed T2DM, intensive vs conventional. Intensive: 12% reduction in any diabetes endpoint (P=0.03). 10-year follow-up (UKPDS 80): legacy/metabolic memory effect - reduced MI 15% and all-cause death 13%. ADVANCE: intensive HbA1c 6.5% vs standard 7.3% in T2DM: renal benefits (HR 0.79 for nephropathy) but no CV mortality benefit. BIOMARKER: HbA1c reflects 3-month average blood glucose. Time in range (TIR) superior metric to HbA1c with CGM. Fasting C-peptide identifies residual insulin secretion. Continuous ketone monitoring for DKA prevention in SGLT2 users. RECOMMENDATION: ADA 2024: HbA1c target <7% for most adults; <8% for elderly/frail with limited life expectancy. Tight control most beneficial early in T1DM and newly diagnosed T2DM (legacy effect). Avoid overly aggressive glycemia targets in established CVD, elderly, hypoglycemia-prone patients.",
+    "subdomain": "diabetes",
+    "condition": "type 2 diabetes mellitus",
+    "markers": ["HbA1c", "FPG", "postprandial glucose", "C-peptide", "TIR"],
+    "evidence_type": "rct",
+    "publication_year": 2010
+  },
+  {
+    "source": "trial-CUSHING-CRIT-2022",
+    "title": "Cushing's Syndrome and Adrenal Disorders: Diagnosis and Management Evidence",
+    "text": "CUSHING'S SYNDROME DIAGNOSIS: Late-night salivary cortisol (LNSC) x2: sensitivity 95%, specificity 93% (best screening). 24-hour urine free cortisol (24h UFC): sensitivity 89-90%. Low-dose dexamethasone suppression test (LDDST): 1mg overnight (normal cortisol suppression to <1.8mcg/dL). ACTH measurement: suppressed (<5pg/mL) = ACTH-independent (adrenal); elevated (>15pg/mL) = ACTH-dependent (pituitary CD, ectopic). MRI pituitary for Cushing's disease (pituitary ACTH adenoma); inferior petrosal sinus sampling (IPSS) for biochemical lateralization. MEDICATIONS: Ketoconazole/metyrapone/osilodrostat for cortisol synthesis inhibition. Pasireotide (somatostatin analogue) for Cushing's disease: 26% UFC normalization vs 1% placebo (Phase 3; P<0.001). Mifepristone (glucocorticoid receptor antagonist):SEISMIC study. ADDISON'S DISEASE: ACTH stimulation test: cortisol peak <18mcg/dL indicates deficiency. Replacement: hydrocortisone 15-20mg/day in 2-3 divided doses. 21-hydroxylase antibodies (anti-21-OH) in autoimmune Addison's. BIOMARKER: Serum and salivary cortisol. ACTH (plasma, preserved on ice). DHEAS (dehydroepiandrosterone sulfate): low in secondary adrenal insufficiency. Morning cortisol random: >18mcg/dL suggests normal function. RECOMMENDATION: ACTH stimulation test is gold standard for diagnosing adrenal insufficiency. Cushing's workup requires biochemical confirmation before imaging. Pituitary surgery (transsphenoidal) is first-line for Cushing's disease.",
+    "subdomain": "adrenal",
+    "condition": "Cushing's syndrome",
+    "markers": ["cortisol", "ACTH", "24h UFC", "DHEAS", "21-hydroxylase antibody"],
+    "evidence_type": "guideline",
+    "publication_year": 2022
+  },
+  {
+    "source": "trial-LEADER-thyroid-acromegaly-2022",
+    "title": "Acromegaly Diagnosis and Treatment: Growth Hormone/IGF-1 Evidence Summary",
+    "text": "ACROMEGALY: Caused by GH-secreting pituitary adenoma (>95%). Key comorbidities: diabetes (30%), arterial hypertension (40%), cardiomyopathy, colonic polyps, sleep apnea, carpal tunnel. DIAGNOSIS: IGF-1 (insulin-like growth factor 1): age/sex-adjusted - elevated in acromegaly. Random GH unreliable; oral glucose tolerance test (OGTT, 75g) with GH every 30 minutes for 2h: nadir GH <1ng/mL using sensitive assay rules out acromegaly. GH nadir >1ng/mL with elevated IGF-1 confirms. MRI pituitary: macroadenoma (>10mm) 75%, microadenoma 25%. TREATMENT: Transsphenoidal surgery: remission 80-90% for microadenomas, 40-60% for macroadenomas. Medical: octreotide/lanreotide (somatostatin analogues) normalize IGF-1 in 40-60%; pegvisomant (GH receptor antagonist) normalizes IGF-1 in >90%. Pasireotide (PAOLA trial): superior IGF-1 normalization vs octreotide LAR (38.6% vs 23.6%; P=0.002) but higher hyperglycemia. SRS II/III: post-surgical radiotherapy when medical and surgical control fails. BIOMARKER: IGF-1 is the primary surveillance biomarker - check every 6 months on treatment. GH nadir on OGTT for diagnosis and early cure assessment. GHRL (ghrelin): not routinely used clinically. Monitoring: glucose (diabetes risk), IGF-1, pituitary MRI annually until stable. RECOMMENDATION: Pituitary surgery is first-line for most acromegaly patients with resectable adenoma. Medical therapy is second-line or adjuvant. Interdisciplinary pituitary center approach recommended.",
+    "subdomain": "pituitary",
+    "condition": "acromegaly",
+    "markers": ["IGF-1", "GH", "glucose", "HbA1c"],
+    "evidence_type": "guideline",
+    "publication_year": 2022
+  },
+  {
+    "source": "trial-PCOS-evidence-2023",
+    "title": "Polycystic Ovary Syndrome: Diagnosis, Biomarkers, and Treatment Evidence",
+    "text": "PCOS: Most common endocrine disorder in women of reproductive age (6-12%). Rotterdam criteria (2 of 3 required): oligo/anovulation, clinical/biochemical hyperandrogenism, polycystic ovary morphology on ultrasound. HYPERANDROGENISM BIOMARKERS: Total testosterone; free testosterone (calculated or equilibrium dialysis); DHEAS (adrenal androgen origin); androstenedione; sex hormone-binding globulin (SHBG) - reduced in insulin resistance/obesity. LH/FSH ratio (elevated LH:FSH>2 in ~50% PCOS). Anti-Mullerian hormone (AMH): markedly elevated in PCOS (>3.4 ng/mL); correlates with antral follicle count; now included in Rotterdam criteria (2023 international guidelines). METABOLIC FEATURES: Insulin resistance (70% of PCOS): HOMA-IR, oral glucose tolerance test (2-hour GTT), fasting insulin. Metabolic syndrome assessment essential. Fasting lipids. MANAGEMENT: OCP (combined oral contraceptive) for menstrual regulation and hyperandrogenism. Metformin for metabolic features/insulin resistance/ovulation induction assistance. Letrozole (PPCOS II trial): superior to clomiphene for ovulation induction and live birth (27.5% vs 19.1%; P=0.007). GLP-1 agonists improving insulin resistance and weight in PCOS studies. RECOMMENDATION: PCOS diagnosis is clinical+biochemical: rule out CAH (17-OHP), thyroid disease (TSH), hyperprolactinemia. Lifestyle modification first-line for metabolic features. Letrozole for infertility. OCP+spironolactone for hirsutism.",
+    "subdomain": "reproductive-endocrinology",
+    "condition": "polycystic ovary syndrome",
+    "markers": ["testosterone", "free testosterone", "DHEAS", "AMH", "LH", "FSH", "SHBG", "HOMA-IR"],
+    "evidence_type": "guideline",
+    "publication_year": 2023
+  },
+  {
+    "source": "trial-PARATHYROID-HTN-2022",
+    "title": "Primary Hyperparathyroidism: Clinical Presentation, Biomarkers, and Surgical Criteria",
+    "text": "PRIMARY HYPERPARATHYROIDISM (pHPT): Most common cause of hypercalcemia in outpatients. Three presentations: symptomatic (nephrolithiasis, fragility fractures, neuromuscular symptoms) - classic 'moans, groans, stones, bones'; asymptomatic (incidentally discovered hypercalcemia - majority today); normocalcemic hyperparathyroidism. BIOMARKERS: PTH (intact, 1-84): elevated or inappropriately normal (with hypercalcemia) distinguishes pHPT from hypercalcemia of malignancy (PTH suppressed). Serum calcium, ionized calcium, phosphorus, magnesium, 25-OH vitamin D, 24h urine calcium, alkaline phosphatase. Vitamin D deficiency amplifies pHPT; replete before surgery. SURGERY CRITERIA (3rd/4th International Workshops): age <50, calcium >1mg/dL above ULN, eGFR<60, T-score <=-2.5 at any site or Z-score <=-2.5, or 24h urine calcium >400mg/day with stone risk. Localization before surgery: 4D CT (best), sestamibi scan (99mTc-MIBI SPECT), ultrasound. MEDICAL MANAGEMENT: Cinacalcet (calcimimetic): reduces serum calcium by 15-20%, reduces PTH by 50% - normalizes calcium but no effect on BMD or renal outcomes. FAMILIAL HPT: MEN1 (parathyroid + GEP-NET + pituitary), MEN2A (parathyroid + medullary thyroid + pheochromocytoma), hyperparathyroidism-jaw tumor syndrome: CDC73/HRPT2 mutation. RECOMMENDATION: Surgery is curative in 95-98% of pHPT; parathyroidectomy recommended in all symptomatic patients and those meeting asymptomatic criteria.",
+    "subdomain": "parathyroid",
+    "condition": "primary hyperparathyroidism",
+    "markers": ["PTH", "calcium", "ionized calcium", "phosphorus", "vitamin D", "24h urine calcium", "alkaline phosphatase"],
+    "evidence_type": "guideline",
+    "publication_year": 2022
+  }
+]
