@@ -19,10 +19,54 @@ Implemented so far:
 
 ## Documentation
 
-- AgentAI module docs: [clinigraph-ai/api/agent_ai/README.md](clinigraph-ai/api/agent_ai/README.md)
-- Mermaid architecture and flow diagrams: [clinigraph-ai/api/agent_ai/MERMAID_DIAGRAMS.md](clinigraph-ai/api/agent_ai/MERMAID_DIAGRAMS.md)
-- Product branding guide: [clinigraph-ai/BRANDING.md](clinigraph-ai/BRANDING.md)
-- Technical renaming roadmap: [clinigraph-ai/RENAMING_PLAN.md](clinigraph-ai/RENAMING_PLAN.md)
+- Documentation hub: [clinigraph-ai/docs/README.md](clinigraph-ai/docs/README.md)
+- AgentAI module docs: [clinigraph-ai/docs/AGENT_AI_README.md](clinigraph-ai/docs/AGENT_AI_README.md)
+- Mermaid architecture and flow diagrams: [clinigraph-ai/docs/MERMAID_DIAGRAMS.md](clinigraph-ai/docs/MERMAID_DIAGRAMS.md)
+- Client usage manual (living document): [clinigraph-ai/docs/CLIENT_MANUAL.md](clinigraph-ai/docs/CLIENT_MANUAL.md)
+- Client usage manual (English): [clinigraph-ai/docs/CLIENT_MANUAL_EN.md](clinigraph-ai/docs/CLIENT_MANUAL_EN.md)
+- Platform roadmap: [clinigraph-ai/docs/PLATFORM_ROADMAP.md](clinigraph-ai/docs/PLATFORM_ROADMAP.md)
+- Documentation update template: [clinigraph-ai/docs/DOC_UPDATE_TEMPLATE.md](clinigraph-ai/docs/DOC_UPDATE_TEMPLATE.md)
+- Product branding guide: [clinigraph-ai/docs/BRANDING.md](clinigraph-ai/docs/BRANDING.md)
+- Technical renaming roadmap: [clinigraph-ai/docs/RENAMING_PLAN.md](clinigraph-ai/docs/RENAMING_PLAN.md)
+
+## New Clinical Flow: Patient Case Analysis With HIPAA De-identification
+
+The platform now supports case-level clinical analysis for patient notes and uploads.
+
+Endpoint:
+
+- POST `/api/v1/agent/patient/analyze/`
+
+Input:
+
+- `text` (free text), or
+- `file` (`.txt`, `.pdf`, `.docx`, `.csv`, `.json`)
+- optional `domain`, `subdomain`, `question`, `user_id`
+
+What the backend does:
+
+1. Extracts text from the uploaded payload.
+2. Redacts PHI with HIPAA Safe Harbor rules before LLM processing.
+3. Builds a structured clinical prompt from de-identified content.
+4. Retrieves evidence from the domain knowledge base.
+5. Returns analysis with citations and redaction summary.
+6. Stores only audit metadata (no raw PHI text persisted).
+
+See full examples and operational rules in [clinigraph-ai/docs/CLIENT_MANUAL.md](clinigraph-ai/docs/CLIENT_MANUAL.md).
+
+## New Operational Flow: Automatic Medical Corpus Updates
+
+The SaaS deployment now includes an automated updater service:
+
+- `corpus-updater` calls `manage.py auto_update_corpus`
+- Fetches fresh PubMed evidence by domain topics
+- Deduplicates by persistent PMID state file
+- Ingests new evidence into the vector index
+
+Key environment variables:
+
+- `CORPUS_UPDATE_INTERVAL_HOURS`
+- `NCBI_API_KEY`
 
 ## SaaS Container Deployment
 
