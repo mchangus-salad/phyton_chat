@@ -1,9 +1,12 @@
 import secrets
 import csv
 import io
+import json
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db import IntegrityError, transaction
 from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -17,7 +20,15 @@ from .models import BillingEvent, BillingInvoice, BillingInvoiceLineItem, Securi
 from .billing import BillingConfigurationError, StripeBillingProvider
 from .invoice_render import render_invoice_pdf
 from .permissions import HasAgentApiKeyOrAuthenticated
+from .permissions import HasActiveEntitlement
+from .permissions import IsTenantBillingAdminOrOwner
 from .permissions import IsTenantAdminOrOwner
+from .services.entitlement_service import (
+    begin_grace_period,
+    notify_subscription_event,
+    restore_entitlement,
+    revoke_entitlement,
+)
 from .services.platform_service import (
     change_subscription_plan,
     close_current_billing_period,
@@ -45,6 +56,9 @@ from .serializers import (
     ErrorResponseSerializer,
     MetricsResponseSerializer,
     SecurityEventSerializer,
+    TenantMemberSerializer,
+    TenantMembershipCreateSerializer,
+    TenantMembershipUpdateSerializer,
     SubscriptionCreateResponseSerializer,
     SubscriptionCreateSerializer,
     SubscriptionPlanChangeResponseSerializer,
@@ -100,6 +114,21 @@ def _serialize_invoice_detail(invoice: BillingInvoice | None) -> dict | None:
         for item in line_items
     ]
     return base
+
+
+def _serialize_membership(membership: TenantMembership) -> dict:
+    user = membership.user
+    return {
+        "membership_id": int(membership.pk or 0),
+        "tenant_id": membership.tenant.tenant_id,
+        "user_id": int(user.pk or 0),
+        "username": user.username,
+        "email": user.email or "",
+        "role": membership.role,
+        "is_active": membership.is_active,
+        "created_at": membership.created_at,
+        "updated_at": membership.updated_at,
+    }
 
 
 @extend_schema(
@@ -227,7 +256,7 @@ def subscription_plans(request):
     ],
 )
 @api_view(["POST"])
-@permission_classes([IsTenantAdminOrOwner])
+@permission_classes([IsTenantBillingAdminOrOwner, HasActiveEntitlement])
 def billing_estimate(request):
     serializer = BillingEstimateSerializer(data=request.data or {})
     if not serializer.is_valid():
@@ -288,7 +317,7 @@ def billing_estimate(request):
     ],
 )
 @api_view(["POST"])
-@permission_classes([IsTenantAdminOrOwner])
+@permission_classes([IsTenantBillingAdminOrOwner, HasActiveEntitlement])
 def billing_invoice_close(request):
     serializer = BillingInvoiceCloseSerializer(data=request.data or {})
     if not serializer.is_valid():
@@ -326,7 +355,7 @@ def billing_invoice_close(request):
     ],
 )
 @api_view(["GET"])
-@permission_classes([IsTenantAdminOrOwner])
+@permission_classes([IsTenantBillingAdminOrOwner, HasActiveEntitlement])
 def billing_invoice_latest(request):
     tenant = getattr(request, "tenant", None)
     if tenant is None:
@@ -353,7 +382,7 @@ def billing_invoice_latest(request):
     ],
 )
 @api_view(["GET"])
-@permission_classes([IsTenantAdminOrOwner])
+@permission_classes([IsTenantBillingAdminOrOwner, HasActiveEntitlement])
 def billing_invoice_list(request):
     tenant = getattr(request, "tenant", None)
     if tenant is None:
@@ -377,7 +406,7 @@ def billing_invoice_list(request):
     ],
 )
 @api_view(["GET"])
-@permission_classes([IsTenantAdminOrOwner])
+@permission_classes([IsTenantBillingAdminOrOwner, HasActiveEntitlement])
 def billing_invoice_detail(request, invoice_id):
     tenant = getattr(request, "tenant", None)
     if tenant is None:
@@ -403,7 +432,7 @@ def billing_invoice_detail(request, invoice_id):
     ],
 )
 @api_view(["GET"])
-@permission_classes([IsTenantAdminOrOwner])
+@permission_classes([IsTenantBillingAdminOrOwner, HasActiveEntitlement])
 def billing_invoice_receipt(request, invoice_id):
     tenant = getattr(request, "tenant", None)
     if tenant is None:
@@ -450,7 +479,7 @@ def billing_invoice_receipt(request, invoice_id):
     ],
 )
 @api_view(["GET"])
-@permission_classes([IsTenantAdminOrOwner])
+@permission_classes([IsTenantBillingAdminOrOwner, HasActiveEntitlement])
 def billing_invoice_receipt_pdf(request, invoice_id):
     tenant = getattr(request, "tenant", None)
     if tenant is None:
@@ -527,7 +556,7 @@ def billing_invoice_receipt_pdf(request, invoice_id):
     ],
 )
 @api_view(["GET"])
-@permission_classes([IsTenantAdminOrOwner])
+@permission_classes([IsTenantBillingAdminOrOwner, HasActiveEntitlement])
 def billing_invoice_export_csv(request):
     tenant = getattr(request, "tenant", None)
     if tenant is None:
@@ -650,7 +679,7 @@ def billing_invoice_export_csv(request):
     ],
 )
 @api_view(["GET"])
-@permission_classes([IsTenantAdminOrOwner])
+@permission_classes([IsTenantBillingAdminOrOwner])
 def billing_usage_summary(request):
     tenant = getattr(request, "tenant", None)
     if tenant is None:
@@ -658,10 +687,15 @@ def billing_usage_summary(request):
 
     subscription = get_latest_billable_subscription(tenant)
     if not subscription:
-        return Response({"error": "active subscription not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+        subscription = Subscription.objects.filter(tenant=tenant).order_by("-updated_at").first()
+    if not subscription:
+        return Response({"error": "subscription not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
 
     estimate = estimate_hybrid_monthly_bill(tenant=tenant, plan=subscription.plan)
     latest_invoice = BillingInvoice.objects.filter(tenant=tenant).order_by("-generated_at").first()
+    entitlement_allowed = subscription.status in {Subscription.Status.ACTIVE, Subscription.Status.TRIALING}
+    if subscription.status == Subscription.Status.PAST_DUE and subscription.grace_period_ends_at:
+        entitlement_allowed = subscription.grace_period_ends_at > timezone.now()
     return Response(
         {
             "tenant_id": tenant.tenant_id,
@@ -673,10 +707,148 @@ def billing_usage_summary(request):
             "included_api_requests": estimate.included_api_requests,
             "overage_users": estimate.overage_users,
             "overage_api_requests": estimate.overage_api_requests,
+            "subscription_status": subscription.status,
+            "entitlement_allowed": entitlement_allowed,
+            "grace_period_ends_at": subscription.grace_period_ends_at,
             "latest_invoice": _serialize_invoice(latest_invoice),
         },
         status=status.HTTP_200_OK,
     )
+
+
+@extend_schema(
+    operation_id="tenant_memberships_list",
+    description="List users and access roles for a tenant.",
+    responses={200: TenantMemberSerializer(many=True), 400: ErrorResponseSerializer, 401: ErrorResponseSerializer, 403: ErrorResponseSerializer},
+    parameters=[
+        OpenApiParameter(
+            name="X-Tenant-ID",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.HEADER,
+            required=True,
+            description="Tenant UUID required for tenant-scoped user administration.",
+        )
+    ],
+)
+@api_view(["GET"])
+@permission_classes([IsTenantAdminOrOwner])
+def tenant_memberships_list(request):
+    tenant = getattr(request, "tenant", None)
+    if tenant is None:
+        return Response({"error": "tenant not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+
+    memberships = TenantMembership.objects.select_related("user").filter(tenant=tenant).order_by("user__username")
+    payload = [_serialize_membership(membership) for membership in memberships]
+    return Response(payload, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    operation_id="tenant_memberships_create",
+    description="Create or attach a user to a tenant with a specific role.",
+    request=TenantMembershipCreateSerializer,
+    responses={201: TenantMemberSerializer, 400: ErrorResponseSerializer, 401: ErrorResponseSerializer, 403: ErrorResponseSerializer},
+    parameters=[
+        OpenApiParameter(
+            name="X-Tenant-ID",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.HEADER,
+            required=True,
+            description="Tenant UUID required for tenant-scoped user administration.",
+        )
+    ],
+)
+@api_view(["POST"])
+@permission_classes([IsTenantAdminOrOwner])
+def tenant_memberships_create(request):
+    tenant = getattr(request, "tenant", None)
+    if tenant is None:
+        return Response({"error": "tenant not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+
+    serializer = TenantMembershipCreateSerializer(data=request.data or {})
+    if not serializer.is_valid():
+        return Response({"error": "invalid payload", "detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    payload = serializer.validated_data
+    username = (payload.get("username") or "").strip()
+    email = (payload.get("email") or "").strip().lower()
+    password = payload.get("password") or ""
+
+    user_model = get_user_model()
+    user = None
+    if username:
+        user = user_model.objects.filter(username=username).first()
+    if user is None and email:
+        user = user_model.objects.filter(email__iexact=email).first()
+    if user is None:
+        if not username:
+            return Response({"error": "username required for new users", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+        with transaction.atomic():
+            user = user_model.objects.create_user(
+                username=username,
+                email=email,
+                password=password or secrets.token_urlsafe(12),
+            )
+
+    membership, _created = TenantMembership.objects.update_or_create(
+        tenant=tenant,
+        user=user,
+        defaults={
+            "role": payload["role"],
+            "is_active": True,
+        },
+    )
+
+    return Response(_serialize_membership(membership), status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    operation_id="tenant_memberships_update",
+    description="Update role or access state for a tenant membership.",
+    request=TenantMembershipUpdateSerializer,
+    responses={200: TenantMemberSerializer, 400: ErrorResponseSerializer, 401: ErrorResponseSerializer, 403: ErrorResponseSerializer, 404: ErrorResponseSerializer},
+    parameters=[
+        OpenApiParameter(
+            name="X-Tenant-ID",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.HEADER,
+            required=True,
+            description="Tenant UUID required for tenant-scoped user administration.",
+        )
+    ],
+)
+@api_view(["PATCH"])
+@permission_classes([IsTenantAdminOrOwner])
+def tenant_memberships_update(request, membership_id):
+    tenant = getattr(request, "tenant", None)
+    if tenant is None:
+        return Response({"error": "tenant not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+
+    membership = TenantMembership.objects.select_related("user").filter(tenant=tenant, pk=membership_id).first()
+    if membership is None:
+        return Response({"error": "membership not found", "request_id": _request_id(request)}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = TenantMembershipUpdateSerializer(data=request.data or {})
+    if not serializer.is_valid():
+        return Response({"error": "invalid payload", "detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    payload = serializer.validated_data
+    requested_role = payload.get("role", membership.role)
+    requested_is_active = payload.get("is_active", membership.is_active)
+    if membership.role == TenantMembership.Role.OWNER and (
+        requested_role != TenantMembership.Role.OWNER or not requested_is_active
+    ):
+        owner_count = TenantMembership.objects.filter(
+            tenant=tenant,
+            role=TenantMembership.Role.OWNER,
+            is_active=True,
+        ).count()
+        if owner_count <= 1:
+            return Response({"error": "cannot remove last owner", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+
+    membership.role = requested_role
+    membership.is_active = requested_is_active
+    membership.save(update_fields=["role", "is_active", "updated_at"])
+    return Response(_serialize_membership(membership), status=status.HTTP_200_OK)
 
 
 @extend_schema(
@@ -774,7 +946,7 @@ def billing_checkout_session_create(request):
     ],
 )
 @api_view(["POST"])
-@permission_classes([IsTenantAdminOrOwner])
+@permission_classes([IsTenantBillingAdminOrOwner])
 def billing_portal_session_create(request):
     serializer = BillingPortalSessionSerializer(data=request.data or {})
     if not serializer.is_valid():
@@ -785,7 +957,15 @@ def billing_portal_session_create(request):
         return Response({"error": "tenant not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
     subscription = get_latest_billable_subscription(tenant)
     if not subscription:
-        return Response({"error": "active subscription not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+        # Keep portal accessible for suspended/canceled tenants to allow payment recovery.
+        subscription = (
+            Subscription.objects.filter(tenant=tenant, provider="stripe")
+            .exclude(provider_customer_id="")
+            .order_by("-updated_at")
+            .first()
+        )
+    if not subscription:
+        return Response({"error": "stripe subscription not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
     if not subscription.provider_customer_id:
         return Response({"error": "stripe customer not linked", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -819,7 +999,7 @@ def billing_portal_session_create(request):
     ],
 )
 @api_view(["POST"])
-@permission_classes([IsTenantAdminOrOwner])
+@permission_classes([IsTenantBillingAdminOrOwner, HasActiveEntitlement])
 def billing_subscription_change_plan(request):
     serializer = SubscriptionPlanChangeSerializer(data=request.data or {})
     if not serializer.is_valid():
@@ -903,7 +1083,7 @@ def usage_ingest(request):
 
 @extend_schema(
     operation_id="billing_webhook",
-    description="Billing webhook receiver (provider-agnostic foundation; add Stripe signature verification next).",
+    description="Billing webhook receiver with Stripe signature verification and idempotent event handling.",
     request=BillingWebhookSerializer,
     responses={200: OpenApiTypes.OBJECT, 400: ErrorResponseSerializer, 401: ErrorResponseSerializer},
     auth=[],
@@ -921,10 +1101,34 @@ def billing_webhook(request):
             return Response({"error": "invalid stripe webhook", "detail": str(exc), "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
 
         event_type = getattr(event, "type", "") or ""
-        data_object = event["data"]["object"]
+        provider_event_id = getattr(event, "id", "") or ""
+        if provider_event_id and BillingEvent.objects.filter(provider="stripe", provider_event_id=provider_event_id).exists():
+            return Response({"status": "accepted", "duplicate": True, "request_id": _request_id(request)}, status=status.HTTP_200_OK)
+
+        raw_data_object = {}
+        event_data = getattr(event, "data", None)
+        if event_data is not None:
+            if isinstance(event_data, dict):
+                raw_data_object = event_data.get("object", {})
+            elif hasattr(event_data, "object"):
+                raw_data_object = getattr(event_data, "object")
+        elif isinstance(event, dict):
+            raw_data_object = event.get("data", {}).get("object", {})
+        else:
+            try:
+                raw_data_object = event["data"]["object"]
+            except Exception:
+                raw_data_object = {}
+
+        if isinstance(raw_data_object, dict):
+            data_object = raw_data_object
+        elif hasattr(raw_data_object, "to_dict_recursive"):
+            data_object = raw_data_object.to_dict_recursive()
+        else:
+            data_object = {}
         tenant = None
         subscription = None
-        metadata = data_object.get("metadata", {}) if isinstance(data_object, dict) else {}
+        metadata = data_object.get("metadata", {})
         tenant_uuid = metadata.get("tenant_id")
         if tenant_uuid:
             tenant = Tenant.objects.filter(tenant_id=tenant_uuid).first()
@@ -952,25 +1156,55 @@ def billing_webhook(request):
             if provider_subscription_id:
                 subscription = Subscription.objects.filter(provider_subscription_id=provider_subscription_id).first()
             if subscription:
-                subscription.status = Subscription.Status.CANCELED
-                subscription.canceled_at = timezone.now()
-                subscription.save(update_fields=["status", "canceled_at", "updated_at"])
+                revoke_entitlement(subscription)
+                notify_subscription_event(tenant or subscription.tenant, "subscription_canceled", subscription)
         elif event_type == "invoice.payment_failed":
             provider_subscription_id = data_object.get("subscription", "")
             if provider_subscription_id:
                 subscription = Subscription.objects.filter(provider_subscription_id=provider_subscription_id).first()
             if subscription:
-                subscription.status = Subscription.Status.PAST_DUE
-                subscription.save(update_fields=["status", "updated_at"])
+                begin_grace_period(subscription)
+                notify_subscription_event(tenant or subscription.tenant, "payment_failed", subscription)
+        elif event_type == "invoice.paid":
+            provider_subscription_id = data_object.get("subscription", "")
+            stripe_invoice_id = data_object.get("id", "")
+            if provider_subscription_id:
+                subscription = Subscription.objects.filter(provider_subscription_id=provider_subscription_id).first()
+            if subscription:
+                restore_entitlement(subscription)
+                notify_subscription_event(tenant or subscription.tenant, "payment_recovered", subscription)
+                invoice = None
+                if stripe_invoice_id:
+                    invoice = BillingInvoice.objects.filter(external_invoice_id=stripe_invoice_id).first()
+                if invoice is None:
+                    invoice = (
+                        BillingInvoice.objects.filter(subscription=subscription)
+                        .order_by("-generated_at")
+                        .first()
+                    )
+                if invoice:
+                    invoice.external_invoice_id = stripe_invoice_id or invoice.external_invoice_id
+                    invoice.status = BillingInvoice.Status.PAID
+                    invoice.paid_at = timezone.now()
+                    invoice.save(update_fields=["external_invoice_id", "status", "paid_at"])
 
-        BillingEvent.objects.create(
-            tenant=tenant,
-            event_type=event_type,
-            provider="stripe",
-            provider_event_id=getattr(event, "id", "") or "",
-            status="received",
-            payload=data_object if isinstance(data_object, dict) else {},
-        )
+        try:
+            safe_payload = json.loads(json.dumps(data_object, default=str))
+        except Exception:
+            safe_payload = {"serialization_error": True}
+
+        try:
+            BillingEvent.objects.create(
+                tenant=tenant,
+                event_type=event_type,
+                provider="stripe",
+                provider_event_id=provider_event_id,
+                status="received",
+                payload=safe_payload,
+            )
+        except IntegrityError:
+            # Race: another concurrent request already inserted this event
+            return Response({"status": "accepted", "duplicate": True, "request_id": _request_id(request)}, status=status.HTTP_200_OK)
         incr("billing.events.total")
         return Response({"status": "accepted", "request_id": _request_id(request)}, status=status.HTTP_200_OK)
 

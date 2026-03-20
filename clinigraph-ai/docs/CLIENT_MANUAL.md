@@ -167,7 +167,84 @@ Token endpoints:
 - POST /api/v1/auth/token/
 - POST /api/v1/auth/token/refresh/
 
-## 6. Health and Support Checks
+## 6. Roles y Accesos
+
+La plataforma usa roles por tenant (organizacion) via `TenantMembership`.
+
+Roles disponibles:
+
+1. `owner`
+2. `admin`
+3. `billing`
+4. `clinician`
+5. `auditor`
+
+Matriz de acceso resumida:
+
+1. `owner`: control total de tenant, billing y operaciones administrativas.
+2. `admin`: operaciones administrativas de tenant y billing segun endpoint.
+3. `billing`: gestion de facturacion (portal, invoices, resumen) pero sin acceso a endpoints LLM.
+4. `clinician`: uso de flujos clinicos/LLM (query, evidence, patient analyze).
+5. `auditor`: rol de auditoria; no implica acceso automatico a LLM ni acciones de billing restringidas.
+
+Politica clave:
+
+1. El rol `billing` no puede usar endpoints LLM (`/api/v1/agent/*`).
+2. El rol `billing` si puede gestionar billing y recuperacion de pago.
+3. El control de entitlement puede bloquear endpoints de servicio con HTTP 402 cuando aplica.
+
+### 6.1 Administracion de usuarios, roles y accessos por tenant
+
+La plataforma incluye endpoints para administrar usuarios del tenant y sus roles.
+
+Endpoints:
+
+1. `GET /api/v1/tenants/memberships/` lista membresias del tenant.
+2. `POST /api/v1/tenants/memberships/create/` crea o asocia un usuario al tenant con rol.
+3. `PATCH /api/v1/tenants/memberships/{membership_id}/` actualiza rol o estado activo/inactivo.
+
+Permisos:
+
+1. Solo `owner` y `admin` pueden invocar estos endpoints.
+2. `billing`, `clinician` y `auditor` reciben `403`.
+3. Regla de seguridad: no se permite remover/degradar al ultimo `owner` activo del tenant.
+
+Pantalla cliente (React):
+
+1. Dashboard de "Tenant users, roles, and access" integrado en la app web.
+2. Permite listar miembros, crear/asociar usuario y cambiar rol/estado.
+3. Requiere `JWT` y `X-Tenant-ID` del tenant objetivo.
+
+Matriz operativa de permisos (tenant memberships):
+
+| Accion | owner | admin | billing | clinician | auditor |
+|--------|-------|-------|---------|-----------|---------|
+| Ver pantalla de administracion de accesos | Si | Si | No | No | No |
+| Listar membresias (`GET /tenants/memberships/`) | Si | Si | No (403) | No (403) | No (403) |
+| Crear/asociar usuario (`POST /tenants/memberships/create/`) | Si | Si | No (403) | No (403) | No (403) |
+| Cambiar rol de otro miembro (`PATCH /tenants/memberships/{id}/`) | Si | Si | No (403) | No (403) | No (403) |
+| Activar/desactivar membresia (`PATCH /tenants/memberships/{id}/`) | Si | Si | No (403) | No (403) | No (403) |
+| Degradar/desactivar ultimo owner activo | No (400) | No (400) | No | No | No |
+
+Notas para QA/Soporte:
+
+1. Si un usuario tiene rol `billing`, la API debe devolver `403` en todos los endpoints de memberships.
+2. El error esperado al intentar remover el ultimo owner activo es `400` con mensaje `cannot remove last owner`.
+3. Validar siempre requests con `Authorization: Bearer <jwt>` y header `X-Tenant-ID`.
+
+```mermaid
+flowchart LR
+    A[Usuario con rol billing] --> B[Endpoints de Billing]
+    B --> C[Permitido]
+
+    A --> D[Endpoints LLM /api/v1/agent/*]
+    D --> E[403 Forbidden]
+
+    F[Owner/Admin/Clinician] --> D
+    D --> G[Permitido segun politica y auth]
+```
+
+## 7. Health and Support Checks
 
 Health endpoint:
 
@@ -184,7 +261,7 @@ Operational checklist:
 3. Run a medical query and confirm citations are returned.
 4. Run a patient-case analysis and review redaction summary.
 
-## 7. End-user Operational Diagram
+## 8. End-user Operational Diagram
 
 ```mermaid
 flowchart LR
@@ -203,7 +280,7 @@ flowchart LR
     K --> L[Web + Postgres + Redis + Kafka + Weaviate + corpus-updater]
 ```
 
-## 8. Change Log Policy for This Manual
+## 9. Change Log Policy for This Manual
 
 Each future update should include:
 
@@ -213,7 +290,7 @@ Each future update should include:
 - migration or deployment impact
 - client action required
 
-## 9. Documentation Maintenance Workflow
+## 10. Documentation Maintenance Workflow
 
 For every new feature or modification, update these docs together:
 
@@ -228,9 +305,11 @@ Use the standard template:
 - [DOC_UPDATE_TEMPLATE.md](DOC_UPDATE_TEMPLATE.md)
 - [PLATFORM_ROADMAP.md](PLATFORM_ROADMAP.md)
 
-## 10. Document Version History
+## 11. Document Version History
 
 | Version | Date       | Change Summary                                                                 | Affected Endpoints                                | Client Action Required |
 |---------|------------|--------------------------------------------------------------------------------|---------------------------------------------------|------------------------|
 | 1.0.0   | 2026-03-20 | Initial client manual with API, SaaS operations, HIPAA case flow, and diagrams | `/api/v1/agent/*`, `/api/v1/health/`, `/api/docs/` | No                     |
 | 1.1.0   | 2026-03-20 | Added living-document policy, bilingual documentation links, and update workflow | Documentation only                                | No                     |
+| 1.2.0   | 2026-03-20 | Added tenant role matrix and billing-role access policy                         | `/api/v1/agent/*`, `/api/v1/billing/*`           | No                     |
+| 1.3.0   | 2026-03-20 | Added tenant user/role administration endpoints and frontend access-management screen | `/api/v1/tenants/memberships/*`                  | No                     |

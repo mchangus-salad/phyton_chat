@@ -207,6 +207,42 @@ Seed data manually (idempotent):
 .\scripts\dev-seed.ps1
 ```
 
+Local users seed manually (idempotent):
+
+```powershell
+.venv\Scripts\python.exe manage.py seed_local_users
+```
+
+The bootstrap script `.\scripts\dev-up.ps1` now runs this automatically.
+
+## Local RBAC Seed (Development)
+
+For local development, the database seed creates one user per tenant role in a shared tenant (`Local Dev Clinic`).
+
+Default seeded users:
+
+1. `local-owner` (role: `owner`)
+2. `local-admin` (role: `admin`)
+3. `local-billing` (role: `billing`)
+4. `local-clinician` (role: `clinician`)
+5. `local-auditor` (role: `auditor`)
+
+Default password:
+
+1. `LocalDev123!`
+
+You can override password:
+
+```powershell
+.venv\Scripts\python.exe manage.py seed_local_users --password "MyLocalPass123!"
+```
+
+Role policy highlights in local/dev:
+
+1. `billing` role can manage billing endpoints.
+2. `billing` role is explicitly blocked from LLM endpoints (`/api/v1/agent/*`).
+3. `owner`, `admin`, and `clinician` can access LLM flows according to endpoint permissions.
+
 By default, local environment uses deterministic offline embeddings (`AGENT_EMBEDDINGS_PROVIDER=local`) so seed and retrieval can run without external embedding APIs.
 
 Stop local services with:

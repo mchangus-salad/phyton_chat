@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view, parser_classes, permission_class
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
-from .permissions import HasAgentApiKeyOrAuthenticated
+from .permissions import HasLlmAccessOrApiKey
 from .agent_ai.oncology_corpus import load_oncology_corpus_content
 from .serializers import (
 	AgentQueryResponseSerializer,
@@ -125,7 +125,7 @@ def health(request):
 	],
 )
 @api_view(['POST'])
-@permission_classes([HasAgentApiKeyOrAuthenticated])
+@permission_classes([HasLlmAccessOrApiKey])
 @throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
 def agent_query(request):
 	"""Run the default AgentAI graph and return answer + cache metadata."""
@@ -181,7 +181,7 @@ def agent_query(request):
 	auth=['BearerAuth', 'ApiKeyAuth'],
 )
 @api_view(['POST'])
-@permission_classes([HasAgentApiKeyOrAuthenticated])
+@permission_classes([HasLlmAccessOrApiKey])
 @throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
 def oncology_train(request):
 	"""Ingest oncology documents into the knowledge base for domain-scoped retrieval.
@@ -264,7 +264,7 @@ def oncology_train(request):
 	],
 )
 @api_view(['POST'])
-@permission_classes([HasAgentApiKeyOrAuthenticated])
+@permission_classes([HasLlmAccessOrApiKey])
 @throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
 def oncology_query(request):
 	"""Run the oncology-specific AgentAI graph and include a medical safety notice."""
@@ -332,7 +332,7 @@ def oncology_query(request):
 	],
 )
 @api_view(['POST'])
-@permission_classes([HasAgentApiKeyOrAuthenticated])
+@permission_classes([HasLlmAccessOrApiKey])
 @throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
 def oncology_evidence_search(request):
 	"""Return structured oncology evidence snippets with optional metadata filters.
@@ -413,7 +413,7 @@ def oncology_evidence_search(request):
 )
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
-@permission_classes([HasAgentApiKeyOrAuthenticated])
+@permission_classes([HasLlmAccessOrApiKey])
 @throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
 def oncology_upload(request):
 	"""Upload and ingest an oncology corpus file directly through the API."""
@@ -486,7 +486,7 @@ def oncology_upload(request):
 	auth=['BearerAuth', 'ApiKeyAuth'],
 )
 @api_view(['POST'])
-@permission_classes([HasAgentApiKeyOrAuthenticated])
+@permission_classes([HasLlmAccessOrApiKey])
 @throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
 def medical_train(request):
 	"""V2 generic medical ingestion endpoint that supports any disease domain."""
@@ -554,7 +554,7 @@ def medical_train(request):
 	auth=['BearerAuth', 'ApiKeyAuth'],
 )
 @api_view(['POST'])
-@permission_classes([HasAgentApiKeyOrAuthenticated])
+@permission_classes([HasLlmAccessOrApiKey])
 @throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
 def medical_query(request):
 	"""V2 generic medical query endpoint for any configured domain and subdomain."""
@@ -616,7 +616,7 @@ def medical_query(request):
 	auth=['BearerAuth', 'ApiKeyAuth'],
 )
 @api_view(['POST'])
-@permission_classes([HasAgentApiKeyOrAuthenticated])
+@permission_classes([HasLlmAccessOrApiKey])
 @throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
 def medical_evidence_search(request):
 	"""V2 generic evidence search endpoint with condition/marker filters."""
@@ -688,7 +688,7 @@ def medical_evidence_search(request):
 )
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
-@permission_classes([HasAgentApiKeyOrAuthenticated])
+@permission_classes([HasLlmAccessOrApiKey])
 @throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
 def medical_upload(request):
 	"""V2 generic upload endpoint for non-oncology disease corpora."""
@@ -826,7 +826,7 @@ def _build_case_prompt(clean_text: str, question: str, domain: str) -> str:
 )
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
-@permission_classes([HasAgentApiKeyOrAuthenticated])
+@permission_classes([HasLlmAccessOrApiKey])
 @throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
 def patient_case_analyze(request):
 	"""

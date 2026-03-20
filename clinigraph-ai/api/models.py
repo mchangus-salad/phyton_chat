@@ -108,6 +108,7 @@ class TenantMembership(models.Model):
 	class Role(models.TextChoices):
 		OWNER = "owner", "Owner"
 		ADMIN = "admin", "Admin"
+		BILLING = "billing", "Billing"
 		CLINICIAN = "clinician", "Clinician"
 		AUDITOR = "auditor", "Auditor"
 
@@ -185,6 +186,7 @@ class Subscription(models.Model):
 	current_period_start = models.DateTimeField(null=True, blank=True)
 	current_period_end = models.DateTimeField(null=True, blank=True)
 	canceled_at = models.DateTimeField(null=True, blank=True)
+	grace_period_ends_at = models.DateTimeField(null=True, blank=True, help_text="Deadline until service is accessible despite PAST_DUE status.")
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
@@ -232,8 +234,14 @@ class BillingEvent(models.Model):
 	class Meta:
 		ordering = ["-created_at"]
 		indexes = [
-			models.Index(fields=["provider", "provider_event_id"]),
 			models.Index(fields=["event_type", "created_at"]),
+		]
+		constraints = [
+			models.UniqueConstraint(
+				fields=["provider", "provider_event_id"],
+				condition=models.Q(provider_event_id__gt=""),
+				name="unique_billing_event_per_provider",
+			),
 		]
 
 	def __str__(self) -> str:

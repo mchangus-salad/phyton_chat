@@ -34,6 +34,9 @@ from .platform_views import (
     security_events_recent,
     subscription_create,
     subscription_plans,
+    tenant_memberships_create,
+    tenant_memberships_list,
+    tenant_memberships_update,
     usage_ingest,
 )
 
@@ -71,6 +74,9 @@ urlpatterns += [
     path('billing/subscriptions/change-plan/', billing_subscription_change_plan, name='billing-subscription-change-plan'),
     path('billing/subscriptions/create/', subscription_create, name='subscription-create'),
     path('billing/checkout/session/', billing_checkout_session_create, name='billing-checkout-session-create'),
+    path('tenants/memberships/', tenant_memberships_list, name='tenant-memberships-list'),
+    path('tenants/memberships/create/', tenant_memberships_create, name='tenant-memberships-create'),
+    path('tenants/memberships/<int:membership_id>/', tenant_memberships_update, name='tenant-memberships-update'),
     path('billing/usage/ingest/', usage_ingest, name='usage-ingest'),
     path('billing/webhook/', billing_webhook, name='billing-webhook'),
 ]

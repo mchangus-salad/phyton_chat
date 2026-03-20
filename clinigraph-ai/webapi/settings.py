@@ -139,6 +139,8 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 AGENT_API_KEY = os.getenv('AGENT_API_KEY', '')
 BILLING_WEBHOOK_SECRET = os.getenv('BILLING_WEBHOOK_SECRET', '')
+BILLING_GRACE_PERIOD_DAYS = int(os.getenv('BILLING_GRACE_PERIOD_DAYS', '7'))
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@clinigraph.ai')
 
 REDIS_URL = os.getenv('REDIS_URL', '').strip()
 CACHES = {

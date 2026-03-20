@@ -242,6 +242,55 @@ class BillingWebhookSerializer(serializers.Serializer):
     payload = serializers.JSONField(required=False, default=dict)
 
 
+class TenantMemberSerializer(serializers.Serializer):
+    membership_id = serializers.IntegerField()
+    tenant_id = serializers.UUIDField()
+    user_id = serializers.IntegerField()
+    username = serializers.CharField()
+    email = serializers.EmailField(required=False, allow_blank=True)
+    role = serializers.CharField()
+    is_active = serializers.BooleanField()
+    created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField()
+
+
+class TenantMembershipCreateSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150, required=False, allow_blank=True, trim_whitespace=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    password = serializers.CharField(max_length=128, required=False, allow_blank=True, write_only=True)
+    role = serializers.ChoiceField(
+        choices=[
+            "owner",
+            "admin",
+            "billing",
+            "clinician",
+            "auditor",
+        ],
+        default="clinician",
+    )
+
+    def validate(self, attrs):
+        username = (attrs.get("username") or "").strip()
+        email = (attrs.get("email") or "").strip()
+        if not username and not email:
+            raise serializers.ValidationError("Provide either username or email.")
+        return attrs
+
+
+class TenantMembershipUpdateSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(
+        choices=[
+            "owner",
+            "admin",
+            "billing",
+            "clinician",
+            "auditor",
+        ],
+        required=False,
+    )
+    is_active = serializers.BooleanField(required=False)
+
+
 class BillingEstimateSerializer(serializers.Serializer):
     active_users = serializers.IntegerField(required=False, min_value=0)
     api_requests = serializers.IntegerField(required=False, min_value=0)
@@ -314,6 +363,9 @@ class BillingUsageSummaryResponseSerializer(serializers.Serializer):
     included_api_requests = serializers.IntegerField()
     overage_users = serializers.IntegerField()
     overage_api_requests = serializers.IntegerField()
+    subscription_status = serializers.CharField()
+    entitlement_allowed = serializers.BooleanField()
+    grace_period_ends_at = serializers.DateTimeField(required=False, allow_null=True)
     latest_invoice = BillingInvoiceSerializer(required=False, allow_null=True)
 
 

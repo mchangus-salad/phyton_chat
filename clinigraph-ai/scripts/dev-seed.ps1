@@ -20,4 +20,10 @@ if ($LASTEXITCODE -ne 0) {
     throw "Fallo al ejecutar seed_weaviate"
 }
 
+Write-Step "Sembrando usuarios locales por rol"
+& $venvPython manage.py seed_local_users
+if ($LASTEXITCODE -ne 0) {
+    throw "Fallo al ejecutar seed_local_users"
+}
+
 Write-Step "Seed completado"

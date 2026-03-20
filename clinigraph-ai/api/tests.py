@@ -412,8 +412,31 @@ class AgentApiTests(APITestCase):
 
     @override_settings(AGENT_API_KEY='test-key')
     def test_agent_query_accepts_jwt(self):
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
+
         user_model = get_user_model()
-        user_model.objects.create_user(username='agent-user', password='password123')
+        user = user_model.objects.create_user(username='agent-user', password='password123')
+        tenant = Tenant.objects.create(name='Agent Query Tenant', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.CLINICIAN, is_active=True)
+        plan = SubscriptionPlan.objects.create(
+            code='agent-query-active-plan',
+            name='Agent Query Active Plan',
+            description='LLM entitlement allow test',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=10000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=10,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=50,
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.ACTIVE,
+            provider='internal',
+        )
 
         token_response = self.client.post(
             '/api/v1/auth/token/',
@@ -432,6 +455,7 @@ class AgentApiTests(APITestCase):
                 {'question': 'hello'},
                 format='json',
                 HTTP_AUTHORIZATION=f'Bearer {access_token}',
+                HTTP_X_TENANT_ID=str(tenant.tenant_id),
             )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -490,6 +514,259 @@ class AgentApiTests(APITestCase):
         self.assertEqual(response.data['users_overage_cents'], 10000)
         self.assertEqual(response.data['api_overage_cents'], 300)
         self.assertEqual(response.data['total_cents'], 110300)
+
+    def test_billing_estimate_denies_canceled_subscription_with_402(self):
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='billing-canceled-user', password='password123')
+        tenant = Tenant.objects.create(name='Canceled Hospital', tenant_type='hospital', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.OWNER, is_active=True)
+
+        plan = SubscriptionPlan.objects.create(
+            code='hospital-canceled-plan',
+            name='Hospital Canceled Plan',
+            description='Canceled entitlement test',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=100000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=10000,
+            max_users=2,
+            seat_price_cents=5000,
+            api_overage_per_1000_cents=100,
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.CANCELED,
+            provider='internal',
+        )
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'billing-canceled-user', 'password': 'password123'},
+            format='json',
+        )
+        self.assertEqual(token_response.status_code, status.HTTP_200_OK)
+        access_token = token_response.data['access']
+
+        response = self.client.post(
+            '/api/v1/billing/estimate/',
+            {'active_users': 4},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(response.status_code, 402)
+
+    def test_billing_role_can_access_billing_usage_summary(self):
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription, UsageRecord
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='billing-role-user', password='password123')
+        tenant = Tenant.objects.create(name='Billing Role Tenant', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.BILLING, is_active=True)
+
+        plan = SubscriptionPlan.objects.create(
+            code='billing-role-plan',
+            name='Billing Role Plan',
+            description='Billing role access test',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=10000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=2,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=50,
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.CANCELED,
+            provider='stripe',
+            provider_customer_id='cus_billing_role',
+        )
+        UsageRecord.objects.create(tenant=tenant, metric='api.request', quantity=100)
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'billing-role-user', 'password': 'password123'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        response = self.client.get(
+            '/api/v1/billing/usage/summary/',
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_billing_role_cannot_access_llm_endpoints(self):
+        from api.models import Tenant, TenantMembership
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='billing-llm-denied', password='password123')
+        tenant = Tenant.objects.create(name='Billing LLM Denied Tenant', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.BILLING, is_active=True)
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'billing-llm-denied', 'password': 'password123'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        response = self.client.post(
+            '/api/v1/agent/query/',
+            {'question': 'Can I access LLM?'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_llm_endpoints_require_active_entitlement_for_tenant_jwt(self):
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='llm-entitlement-denied', password='password123')
+        tenant = Tenant.objects.create(name='LLM Entitlement Denied Tenant', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.CLINICIAN, is_active=True)
+
+        plan = SubscriptionPlan.objects.create(
+            code='llm-entitlement-denied-plan',
+            name='LLM Entitlement Denied Plan',
+            description='LLM entitlement deny test',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=10000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=10,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=50,
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.CANCELED,
+            provider='internal',
+        )
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'llm-entitlement-denied', 'password': 'password123'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        response = self.client.post(
+            '/api/v1/agent/query/',
+            {'question': 'Can I access LLM after cancel?'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(response.status_code, 402)
+
+    def test_tenant_memberships_owner_can_create_list_and_update(self):
+        from api.models import Tenant, TenantMembership
+
+        user_model = get_user_model()
+        owner = user_model.objects.create_user(username='membership-owner', password='password123')
+        tenant = Tenant.objects.create(name='Membership Tenant', tenant_type='clinic', owner=owner)
+        TenantMembership.objects.create(tenant=tenant, user=owner, role=TenantMembership.Role.OWNER, is_active=True)
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'membership-owner', 'password': 'password123'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        create_response = self.client.post(
+            '/api/v1/tenants/memberships/create/',
+            {'username': 'membership-clinician', 'email': 'membership-clinician@example.com', 'password': 'password123', 'role': 'clinician'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(create_response.data['role'], TenantMembership.Role.CLINICIAN)
+
+        list_response = self.client.get(
+            '/api/v1/tenants/memberships/',
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(list_response.status_code, status.HTTP_200_OK)
+        usernames = {item['username'] for item in list_response.data}
+        self.assertIn('membership-clinician', usernames)
+
+        membership_id = create_response.data['membership_id']
+        update_response = self.client.patch(
+            f'/api/v1/tenants/memberships/{membership_id}/',
+            {'role': 'auditor', 'is_active': False},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(update_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(update_response.data['role'], TenantMembership.Role.AUDITOR)
+        self.assertFalse(update_response.data['is_active'])
+
+    def test_tenant_memberships_billing_role_is_forbidden(self):
+        from api.models import Tenant, TenantMembership
+
+        user_model = get_user_model()
+        billing_user = user_model.objects.create_user(username='membership-billing', password='password123')
+        tenant = Tenant.objects.create(name='Membership Billing Tenant', tenant_type='clinic', owner=billing_user)
+        TenantMembership.objects.create(tenant=tenant, user=billing_user, role=TenantMembership.Role.BILLING, is_active=True)
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'membership-billing', 'password': 'password123'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        list_response = self.client.get(
+            '/api/v1/tenants/memberships/',
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(list_response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_tenant_memberships_cannot_demote_last_owner(self):
+        from api.models import Tenant, TenantMembership
+
+        user_model = get_user_model()
+        owner = user_model.objects.create_user(username='membership-last-owner', password='password123')
+        tenant = Tenant.objects.create(name='Membership Last Owner Tenant', tenant_type='clinic', owner=owner)
+        owner_membership = TenantMembership.objects.create(tenant=tenant, user=owner, role=TenantMembership.Role.OWNER, is_active=True)
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'membership-last-owner', 'password': 'password123'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        response = self.client.patch(
+            f'/api/v1/tenants/memberships/{owner_membership.pk}/',
+            {'role': 'admin'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], 'cannot remove last owner')
 
     def test_billing_invoice_close_and_latest(self):
         from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
@@ -751,6 +1028,198 @@ class AgentApiTests(APITestCase):
         self.assertEqual(response.data['overage_api_requests'], 2500)
         self.assertIsNotNone(response.data['latest_invoice'])
 
+    @patch('api.services.platform_service.StripeBillingProvider')
+    def test_create_checkout_session_reuses_existing_stripe_customer(self, mock_provider_cls):
+        from api.models import SubscriptionPlan, Tenant, Subscription
+        from api.services.platform_service import create_checkout_session
+
+        mock_provider = mock_provider_cls.return_value
+        mock_provider.create_checkout_session.return_value = SimpleNamespace(
+            id='cs_test_reuse',
+            url='https://checkout.stripe.test/cs_test_reuse',
+            customer='cus_existing_123',
+        )
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='reuse-customer-user', password='password123', email='reuse@example.com')
+        tenant = Tenant.objects.create(name='Reuse Tenant', tenant_type='clinic', owner=user)
+
+        current_plan = SubscriptionPlan.objects.create(
+            code='reuse-current-plan',
+            name='Reuse Current Plan',
+            description='Current plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=9900,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=2,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=50,
+            provider_price_id='price_current_reuse',
+        )
+        target_plan = SubscriptionPlan.objects.create(
+            code='reuse-target-plan',
+            name='Reuse Target Plan',
+            description='Target plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=19900,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=5000,
+            max_users=10,
+            seat_price_cents=1200,
+            api_overage_per_1000_cents=40,
+            provider_price_id='price_target_reuse',
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=current_plan,
+            status=Subscription.Status.ACTIVE,
+            provider='stripe',
+            provider_customer_id='cus_existing_123',
+            provider_subscription_id='sub_existing_123',
+        )
+
+        result = create_checkout_session(
+            user=user,
+            tenant_name=tenant.name,
+            tenant_type=tenant.tenant_type,
+            plan=target_plan,
+        )
+
+        self.assertEqual(result.subscription.provider_customer_id, 'cus_existing_123')
+        kwargs = mock_provider.create_checkout_session.call_args.kwargs
+        self.assertEqual(kwargs.get('existing_customer_id'), 'cus_existing_123')
+        self.assertEqual(kwargs.get('user_email'), 'reuse@example.com')
+
+    @patch('api.services.platform_service.StripeBillingProvider')
+    def test_create_checkout_session_retries_when_existing_customer_is_stale(self, mock_provider_cls):
+        from api.models import SubscriptionPlan, Tenant, Subscription
+        from api.services.platform_service import create_checkout_session
+
+        mock_provider = mock_provider_cls.return_value
+        mock_provider.create_checkout_session.side_effect = [
+            Exception("No such customer: 'cus_stale_123'"),
+            SimpleNamespace(id='cs_test_retry', url='https://checkout.stripe.test/cs_test_retry', customer='cus_new_456'),
+        ]
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='retry-customer-user', password='password123', email='retry@example.com')
+        tenant = Tenant.objects.create(name='Retry Tenant', tenant_type='clinic', owner=user)
+
+        previous_plan = SubscriptionPlan.objects.create(
+            code='retry-prev-plan',
+            name='Retry Prev Plan',
+            description='Previous plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=9000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=2,
+            seat_price_cents=800,
+            api_overage_per_1000_cents=30,
+            provider_price_id='price_retry_prev',
+        )
+        target_plan = SubscriptionPlan.objects.create(
+            code='retry-target-plan',
+            name='Retry Target Plan',
+            description='Target plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=15000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=5000,
+            max_users=10,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=40,
+            provider_price_id='price_retry_target',
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=previous_plan,
+            status=Subscription.Status.ACTIVE,
+            provider='stripe',
+            provider_customer_id='cus_stale_123',
+            provider_subscription_id='sub_stale_123',
+        )
+
+        result = create_checkout_session(
+            user=user,
+            tenant_name=tenant.name,
+            tenant_type=tenant.tenant_type,
+            plan=target_plan,
+        )
+
+        self.assertEqual(mock_provider.create_checkout_session.call_count, 2)
+        first_call = mock_provider.create_checkout_session.call_args_list[0].kwargs
+        second_call = mock_provider.create_checkout_session.call_args_list[1].kwargs
+        self.assertEqual(first_call.get('existing_customer_id'), 'cus_stale_123')
+        self.assertIsNone(second_call.get('existing_customer_id'))
+        self.assertEqual(result.subscription.provider_customer_id, 'cus_new_456')
+
+    @patch('api.services.platform_service.StripeBillingProvider')
+    def test_create_checkout_session_does_not_keep_stale_customer_when_retry_session_customer_missing(self, mock_provider_cls):
+        from api.models import SubscriptionPlan, Tenant, Subscription
+        from api.services.platform_service import create_checkout_session
+
+        mock_provider = mock_provider_cls.return_value
+        mock_provider.create_checkout_session.side_effect = [
+            Exception("No such customer: 'cus_stale_789'"),
+            SimpleNamespace(id='cs_test_retry_empty', url='https://checkout.stripe.test/cs_test_retry_empty', customer=''),
+        ]
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='retry-empty-user', password='password123', email='retry-empty@example.com')
+        tenant = Tenant.objects.create(name='Retry Empty Tenant', tenant_type='clinic', owner=user)
+        previous_plan = SubscriptionPlan.objects.create(
+            code='retry-empty-prev-plan',
+            name='Retry Empty Prev Plan',
+            description='Previous plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=9000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=2,
+            seat_price_cents=800,
+            api_overage_per_1000_cents=30,
+            provider_price_id='price_retry_empty_prev',
+        )
+        target_plan = SubscriptionPlan.objects.create(
+            code='retry-empty-target-plan',
+            name='Retry Empty Target Plan',
+            description='Target plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=15000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=5000,
+            max_users=10,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=40,
+            provider_price_id='price_retry_empty_target',
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=previous_plan,
+            status=Subscription.Status.ACTIVE,
+            provider='stripe',
+            provider_customer_id='cus_stale_789',
+            provider_subscription_id='sub_stale_789',
+        )
+
+        result = create_checkout_session(
+            user=user,
+            tenant_name=tenant.name,
+            tenant_type=tenant.tenant_type,
+            plan=target_plan,
+        )
+
+        self.assertEqual(mock_provider.create_checkout_session.call_count, 2)
+        self.assertEqual(result.subscription.provider_customer_id, '')
+
     @patch('api.platform_views.create_portal_session')
     def test_billing_portal_session_create(self, mock_create_portal_session):
         from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
@@ -799,6 +1268,56 @@ class AgentApiTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['session_id'], 'bps_123')
+
+    @patch('api.platform_views.create_portal_session')
+    def test_billing_portal_session_create_allows_canceled_subscription_for_recovery(self, mock_create_portal_session):
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
+
+        mock_create_portal_session.return_value = SimpleNamespace(url='https://billing.example.com/portal', id='bps_recovery_123')
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='portal-recovery-user', password='password123')
+        tenant = Tenant.objects.create(name='Portal Recovery Clinic', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.OWNER, is_active=True)
+
+        plan = SubscriptionPlan.objects.create(
+            code='portal-recovery-plan',
+            name='Portal Recovery Plan',
+            description='Portal recovery test plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=50000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=10000,
+            max_users=10,
+            seat_price_cents=2000,
+            api_overage_per_1000_cents=100,
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.CANCELED,
+            provider='stripe',
+            provider_customer_id='cus_recovery_123',
+            provider_subscription_id='sub_recovery_123',
+        )
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'portal-recovery-user', 'password': 'password123'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        response = self.client.post(
+            '/api/v1/billing/portal/session/',
+            {'return_url': 'https://app.example.com/billing'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['session_id'], 'bps_recovery_123')
 
     @patch('api.platform_views.change_subscription_plan')
     def test_billing_subscription_change_plan_preview(self, mock_change_subscription_plan):
@@ -868,3 +1387,444 @@ class AgentApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['applied'], False)
         self.assertEqual(response.data['target_plan_code'], target_plan.code)
+
+    @patch('api.platform_views.StripeBillingProvider')
+    def test_billing_webhook_idempotent_by_provider_event_id(self, mock_provider_cls):
+        from api.models import SubscriptionPlan, Tenant, Subscription, BillingEvent
+
+        class FakeStripeEvent(dict):
+            def __init__(self, *, event_id, event_type, data_object):
+                super().__init__({"data": {"object": data_object}})
+                self.id = event_id
+                self.type = event_type
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='webhook-idempotency-user', password='password123')
+        tenant = Tenant.objects.create(name='Webhook Idempotency Tenant', tenant_type='clinic', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='webhook-idempotency-plan',
+            name='Webhook Idempotency Plan',
+            description='Webhook plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=10000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=3,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=50,
+            provider_price_id='price_webhook_idempotency',
+        )
+        subscription = Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.ACTIVE,
+            provider='stripe',
+            provider_subscription_id='sub_webhook_idempotency',
+            provider_customer_id='cus_webhook_idempotency',
+        )
+        event_payload = FakeStripeEvent(
+            event_id='evt_idempotent_123',
+            event_type='invoice.payment_failed',
+            data_object={'subscription': subscription.provider_subscription_id},
+        )
+        mock_provider = mock_provider_cls.return_value
+        mock_provider.construct_event.return_value = event_payload
+
+        response_first = self.client.post(
+            '/api/v1/billing/webhook/',
+            data='{}',
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='sig_test',
+        )
+        self.assertEqual(response_first.status_code, status.HTTP_200_OK)
+
+        response_second = self.client.post(
+            '/api/v1/billing/webhook/',
+            data='{}',
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='sig_test',
+        )
+        self.assertEqual(response_second.status_code, status.HTTP_200_OK)
+        self.assertTrue(response_second.data.get('duplicate'))
+        self.assertEqual(BillingEvent.objects.filter(provider='stripe', provider_event_id='evt_idempotent_123').count(), 1)
+
+    @patch('api.platform_views.StripeBillingProvider')
+    def test_billing_webhook_invoice_paid_sets_subscription_and_invoice_paid(self, mock_provider_cls):
+        from api.models import SubscriptionPlan, Tenant, Subscription, BillingInvoice
+
+        class FakeStripeEvent(dict):
+            def __init__(self, *, event_id, event_type, data_object):
+                super().__init__({"data": {"object": data_object}})
+                self.id = event_id
+                self.type = event_type
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='webhook-invoice-paid-user', password='password123')
+        tenant = Tenant.objects.create(name='Webhook Invoice Paid Tenant', tenant_type='clinic', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='webhook-invoice-paid-plan',
+            name='Webhook Invoice Paid Plan',
+            description='Webhook invoice paid plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=12000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=3,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=50,
+            provider_price_id='price_webhook_invoice_paid',
+        )
+        subscription = Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.PAST_DUE,
+            provider='stripe',
+            provider_subscription_id='sub_invoice_paid_123',
+            provider_customer_id='cus_invoice_paid_123',
+        )
+        invoice = BillingInvoice.objects.create(
+            tenant=tenant,
+            subscription=subscription,
+            period_start=timezone.now() - timedelta(days=30),
+            period_end=timezone.now(),
+            currency='USD',
+            status=BillingInvoice.Status.FINALIZED,
+            total_cents=12000,
+            platform_fee_cents=12000,
+        )
+        event_payload = FakeStripeEvent(
+            event_id='evt_invoice_paid_123',
+            event_type='invoice.paid',
+            data_object={'id': 'in_test_paid_123', 'subscription': subscription.provider_subscription_id},
+        )
+        mock_provider = mock_provider_cls.return_value
+        mock_provider.construct_event.return_value = event_payload
+
+        response = self.client.post(
+            '/api/v1/billing/webhook/',
+            data='{}',
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='sig_test',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        subscription.refresh_from_db()
+        invoice.refresh_from_db()
+        self.assertEqual(subscription.status, Subscription.Status.ACTIVE)
+        self.assertEqual(invoice.status, BillingInvoice.Status.PAID)
+        self.assertEqual(invoice.external_invoice_id, 'in_test_paid_123')
+        self.assertIsNotNone(invoice.paid_at)
+
+
+# ---------------------------------------------------------------------------
+# Entitlement service tests
+# ---------------------------------------------------------------------------
+
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tests-entitlement-cache',
+        }
+    },
+    BILLING_GRACE_PERIOD_DAYS=7,
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+)
+class EntitlementServiceTests(APITestCase):
+    """Unit tests for check_tenant_entitlement, begin_grace_period, restore / revoke."""
+
+    def _make_tenant_and_plan(self, username: str):
+        from api.models import SubscriptionPlan, Tenant
+        User = get_user_model()
+        user = User.objects.create_user(username=username, password='pw', email=f'{username}@example.com')
+        tenant = Tenant.objects.create(name=f'Tenant {username}', tenant_type='individual', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code=f'plan-{username}',
+            name='Test Plan',
+            description='',
+            billing_cycle='monthly',
+            price_cents=5000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=3,
+            seat_price_cents=500,
+            api_overage_per_1000_cents=50,
+        )
+        return tenant, plan, user
+
+    def test_active_subscription_is_allowed(self):
+        from api.models import Subscription
+        from api.services.entitlement_service import check_tenant_entitlement
+        tenant, plan, _ = self._make_tenant_and_plan('ent-active')
+        Subscription.objects.create(tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE)
+        result = check_tenant_entitlement(tenant)
+        self.assertTrue(result.allowed)
+        self.assertFalse(result.in_grace)
+
+    def test_trialing_subscription_is_allowed(self):
+        from api.models import Subscription
+        from api.services.entitlement_service import check_tenant_entitlement
+        tenant, plan, _ = self._make_tenant_and_plan('ent-trial')
+        Subscription.objects.create(tenant=tenant, plan=plan, status=Subscription.Status.TRIALING)
+        result = check_tenant_entitlement(tenant)
+        self.assertTrue(result.allowed)
+
+    def test_canceled_subscription_is_denied(self):
+        from api.models import Subscription
+        from api.services.entitlement_service import check_tenant_entitlement
+        tenant, plan, _ = self._make_tenant_and_plan('ent-canceled')
+        Subscription.objects.create(tenant=tenant, plan=plan, status=Subscription.Status.CANCELED)
+        result = check_tenant_entitlement(tenant)
+        self.assertFalse(result.allowed)
+
+    def test_no_subscription_is_denied(self):
+        from api.models import Tenant
+        from api.services.entitlement_service import check_tenant_entitlement
+        User = get_user_model()
+        user = User.objects.create_user(username='ent-nosub', password='pw')
+        tenant = Tenant.objects.create(name='No Sub Tenant', tenant_type='individual', owner=user)
+        result = check_tenant_entitlement(tenant)
+        self.assertFalse(result.allowed)
+        self.assertEqual(result.status, 'no_subscription')
+
+    def test_past_due_within_grace_is_allowed_with_warning(self):
+        from api.models import Subscription
+        from api.services.entitlement_service import check_tenant_entitlement
+        tenant, plan, _ = self._make_tenant_and_plan('ent-grace-ok')
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.PAST_DUE,
+            grace_period_ends_at=timezone.now() + timedelta(days=3),
+        )
+        result = check_tenant_entitlement(tenant)
+        self.assertTrue(result.allowed)
+        self.assertTrue(result.in_grace)
+        self.assertIsNotNone(result.grace_ends_at)
+
+    def test_past_due_with_expired_grace_is_denied(self):
+        from api.models import Subscription
+        from api.services.entitlement_service import check_tenant_entitlement
+        tenant, plan, _ = self._make_tenant_and_plan('ent-grace-expired')
+        Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.PAST_DUE,
+            grace_period_ends_at=timezone.now() - timedelta(hours=1),
+        )
+        result = check_tenant_entitlement(tenant)
+        self.assertFalse(result.allowed)
+        self.assertEqual(result.status, 'grace_expired')
+
+    def test_past_due_without_grace_date_is_denied(self):
+        from api.models import Subscription
+        from api.services.entitlement_service import check_tenant_entitlement
+        tenant, plan, _ = self._make_tenant_and_plan('ent-pastdue-nograce')
+        Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.PAST_DUE,
+            grace_period_ends_at=None,
+        )
+        result = check_tenant_entitlement(tenant)
+        self.assertFalse(result.allowed)
+
+    def test_begin_grace_period_sets_status_and_deadline(self):
+        from api.models import Subscription
+        from api.services.entitlement_service import begin_grace_period
+        tenant, plan, _ = self._make_tenant_and_plan('ent-begin-grace')
+        sub = Subscription.objects.create(tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE)
+        before = timezone.now()
+        begin_grace_period(sub)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.PAST_DUE)
+        self.assertIsNotNone(sub.grace_period_ends_at)
+        # Should be ~7 days out
+        delta = sub.grace_period_ends_at - before
+        self.assertGreater(delta.total_seconds(), 6 * 86400)
+        self.assertLess(delta.total_seconds(), 8 * 86400)
+
+    def test_restore_entitlement_clears_grace_and_sets_active(self):
+        from api.models import Subscription
+        from api.services.entitlement_service import restore_entitlement
+        tenant, plan, _ = self._make_tenant_and_plan('ent-restore')
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.PAST_DUE,
+            grace_period_ends_at=timezone.now() + timedelta(days=2),
+        )
+        restore_entitlement(sub)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.ACTIVE)
+        self.assertIsNone(sub.grace_period_ends_at)
+
+    def test_revoke_entitlement_cancels_subscription(self):
+        from api.models import Subscription
+        from api.services.entitlement_service import revoke_entitlement
+        tenant, plan, _ = self._make_tenant_and_plan('ent-revoke')
+        sub = Subscription.objects.create(tenant=tenant, plan=plan, status=Subscription.Status.PAST_DUE)
+        revoke_entitlement(sub)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.CANCELED)
+        self.assertIsNotNone(sub.canceled_at)
+        self.assertIsNone(sub.grace_period_ends_at)
+
+
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tests-webhook-grace-cache',
+        }
+    },
+    BILLING_GRACE_PERIOD_DAYS=7,
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+)
+class WebhookGracePeriodTests(APITestCase):
+    """Verify that payment_failed webhook triggers grace period instead of simple PAST_DUE."""
+
+    @patch('api.platform_views.StripeBillingProvider')
+    def test_payment_failed_webhook_begins_grace_period(self, mock_provider_cls):
+        from api.models import SubscriptionPlan, Tenant, Subscription
+
+        class FakeStripeEvent(dict):
+            def __init__(self, *, event_id, event_type, data_object):
+                super().__init__({"data": {"object": data_object}})
+                self.id = event_id
+                self.type = event_type
+
+        User = get_user_model()
+        user = User.objects.create_user(username='wh-grace-user', password='pw', email='grace@example.com')
+        tenant = Tenant.objects.create(name='Grace Webhook Tenant', tenant_type='clinic', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='wh-grace-plan', name='WH Grace Plan', description='',
+            billing_cycle='monthly', price_cents=9000, billing_model='hybrid',
+            currency='USD', max_monthly_requests=1000, max_users=3,
+            seat_price_cents=500, api_overage_per_1000_cents=50,
+            provider_price_id='price_wh_grace',
+        )
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE,
+            provider='stripe', provider_subscription_id='sub_wh_grace',
+        )
+        event_payload = FakeStripeEvent(
+            event_id='evt_wh_grace_001',
+            event_type='invoice.payment_failed',
+            data_object={'subscription': sub.provider_subscription_id},
+        )
+        mock_provider_cls.return_value.construct_event.return_value = event_payload
+
+        response = self.client.post(
+            '/api/v1/billing/webhook/', data='{}',
+            content_type='application/json', HTTP_STRIPE_SIGNATURE='sig_test',
+        )
+        self.assertEqual(response.status_code, 200)
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.PAST_DUE)
+        self.assertIsNotNone(sub.grace_period_ends_at)
+        self.assertGreater(sub.grace_period_ends_at, timezone.now())
+
+    @patch('api.platform_views.StripeBillingProvider')
+    def test_subscription_deleted_webhook_revokes_entitlement(self, mock_provider_cls):
+        from api.models import SubscriptionPlan, Tenant, Subscription
+
+        class FakeStripeEvent(dict):
+            def __init__(self, *, event_id, event_type, data_object):
+                super().__init__({"data": {"object": data_object}})
+                self.id = event_id
+                self.type = event_type
+
+        User = get_user_model()
+        user = User.objects.create_user(username='wh-revoke-user', password='pw', email='revoke@example.com')
+        tenant = Tenant.objects.create(name='Revoke Webhook Tenant', tenant_type='clinic', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='wh-revoke-plan', name='WH Revoke Plan', description='',
+            billing_cycle='monthly', price_cents=9000, billing_model='hybrid',
+            currency='USD', max_monthly_requests=1000, max_users=3,
+            seat_price_cents=500, api_overage_per_1000_cents=50,
+            provider_price_id='price_wh_revoke',
+        )
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE,
+            provider='stripe', provider_subscription_id='sub_wh_revoke',
+        )
+        event_payload = FakeStripeEvent(
+            event_id='evt_wh_revoke_001',
+            event_type='customer.subscription.deleted',
+            data_object={'id': sub.provider_subscription_id},
+        )
+        mock_provider_cls.return_value.construct_event.return_value = event_payload
+
+        response = self.client.post(
+            '/api/v1/billing/webhook/', data='{}',
+            content_type='application/json', HTTP_STRIPE_SIGNATURE='sig_test',
+        )
+        self.assertEqual(response.status_code, 200)
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.CANCELED)
+        self.assertIsNotNone(sub.canceled_at)
+
+
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tests-expire-grace-cache',
+        }
+    },
+    BILLING_GRACE_PERIOD_DAYS=7,
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+)
+class ExpireGracePeriodsCommandTests(APITestCase):
+    """Test the expire_grace_periods management command."""
+
+    def test_command_cancels_expired_grace_subscriptions(self):
+        from io import StringIO
+        from api.models import SubscriptionPlan, Tenant, Subscription
+        from django.core.management import call_command
+
+        User = get_user_model()
+        user = User.objects.create_user(username='cmd-expire-user', password='pw', email='expire@example.com')
+        tenant = Tenant.objects.create(name='Expire Cmd Tenant', tenant_type='individual', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='cmd-expire-plan', name='Expire Plan', description='',
+            billing_cycle='monthly', price_cents=4000, billing_model='hybrid',
+            currency='USD', max_monthly_requests=500, max_users=2,
+            seat_price_cents=400, api_overage_per_1000_cents=40,
+        )
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.PAST_DUE,
+            grace_period_ends_at=timezone.now() - timedelta(hours=2),
+        )
+
+        out = StringIO()
+        call_command('expire_grace_periods', stdout=out)
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.CANCELED)
+        self.assertIsNotNone(sub.canceled_at)
+
+    def test_command_dry_run_does_not_cancel(self):
+        from io import StringIO
+        from api.models import SubscriptionPlan, Tenant, Subscription
+        from django.core.management import call_command
+
+        User = get_user_model()
+        user = User.objects.create_user(username='cmd-dryrun-user', password='pw', email='dryrun@example.com')
+        tenant = Tenant.objects.create(name='DryRun Tenant', tenant_type='individual', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='cmd-dryrun-plan', name='DryRun Plan', description='',
+            billing_cycle='monthly', price_cents=4000, billing_model='hybrid',
+            currency='USD', max_monthly_requests=500, max_users=2,
+            seat_price_cents=400, api_overage_per_1000_cents=40,
+        )
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.PAST_DUE,
+            grace_period_ends_at=timezone.now() - timedelta(hours=2),
+        )
+
+        out = StringIO()
+        call_command('expire_grace_periods', '--dry-run', stdout=out)
+
+        sub.refresh_from_db()
+        # Status must NOT have changed
+        self.assertEqual(sub.status, Subscription.Status.PAST_DUE)
+        self.assertIn('dry-run', out.getvalue())

@@ -302,6 +302,7 @@ if (-not $SkipDocker) {
 
 Invoke-CheckedCommand -Command @($venvPython, "manage.py", "migrate") -Description "Aplicando migraciones"
 Invoke-CheckedCommand -Command @($venvPython, "manage.py", "seed_subscription_plans") -Description "Sembrando planes de suscripcion"
+Invoke-CheckedCommand -Command @($venvPython, "manage.py", "seed_local_users") -Description "Sembrando usuarios locales por rol"
 Invoke-CheckedCommand -Command @($venvPython, "manage.py", "check") -Description "Validando proyecto Django"
 
 if (-not $SkipSeed) {

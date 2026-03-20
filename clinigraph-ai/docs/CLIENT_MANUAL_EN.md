@@ -122,7 +122,72 @@ Token endpoints:
 - POST /api/v1/auth/token/
 - POST /api/v1/auth/token/refresh/
 
-## 6. Health and Support Checks
+## 6. Roles and Access
+
+The platform uses tenant-scoped roles through `TenantMembership`.
+
+Available roles:
+
+1. `owner`
+2. `admin`
+3. `billing`
+4. `clinician`
+5. `auditor`
+
+Access matrix (summary):
+
+1. `owner`: full tenant control, billing control, and administrative operations.
+2. `admin`: tenant administration and billing operations based on endpoint policy.
+3. `billing`: billing management (portal, invoices, usage summary) with no LLM endpoint access.
+4. `clinician`: clinical/LLM workflows (query, evidence, patient analyze).
+5. `auditor`: audit-oriented role; no automatic LLM or restricted billing privileges.
+
+Key policy:
+
+1. `billing` users are blocked from LLM endpoints (`/api/v1/agent/*`).
+2. `billing` users can still manage billing and payment recovery workflows.
+3. Entitlement enforcement may return HTTP 402 for service-protected endpoints.
+
+### 6.1 Tenant User, Role, and Access Administration
+
+The platform now includes tenant membership administration endpoints.
+
+Endpoints:
+
+1. `GET /api/v1/tenants/memberships/` list tenant memberships.
+2. `POST /api/v1/tenants/memberships/create/` create or attach a user to tenant with a role.
+3. `PATCH /api/v1/tenants/memberships/{membership_id}/` update role or active/inactive state.
+
+Permissions:
+
+1. Only `owner` and `admin` can call these endpoints.
+2. `billing`, `clinician`, and `auditor` receive `403`.
+3. Safety rule: the API prevents removing/demoting the last active `owner` in a tenant.
+
+Frontend screen (React):
+
+1. New "Tenant users, roles, and access" section in the web dashboard.
+2. Supports member listing, user create/attach, role change, and activate/deactivate actions.
+3. Requires `JWT` and `X-Tenant-ID` for the target tenant.
+
+Operational permissions matrix (tenant memberships):
+
+| Action | owner | admin | billing | clinician | auditor |
+|--------|-------|-------|---------|-----------|---------|
+| View access-management screen | Yes | Yes | No | No | No |
+| List memberships (`GET /tenants/memberships/`) | Yes | Yes | No (403) | No (403) | No (403) |
+| Create/attach user (`POST /tenants/memberships/create/`) | Yes | Yes | No (403) | No (403) | No (403) |
+| Change another member role (`PATCH /tenants/memberships/{id}/`) | Yes | Yes | No (403) | No (403) | No (403) |
+| Activate/deactivate membership (`PATCH /tenants/memberships/{id}/`) | Yes | Yes | No (403) | No (403) | No (403) |
+| Demote/deactivate last active owner | No (400) | No (400) | No | No | No |
+
+QA/Support notes:
+
+1. For `billing` users, all membership admin endpoints must return `403`.
+2. Expected error when trying to remove the last active owner is `400` with `cannot remove last owner`.
+3. Validate requests with `Authorization: Bearer <jwt>` and `X-Tenant-ID` headers.
+
+## 7. Health and Support Checks
 
 Health endpoint:
 
@@ -139,13 +204,13 @@ Operational checklist:
 3. Run a medical query and confirm citations are returned.
 4. Run a patient-case analysis and review redaction summary.
 
-## 7. Diagrams
+## 8. Diagrams
 
 Detailed architecture and flow diagrams are maintained in:
 
 - [MERMAID_DIAGRAMS.md](MERMAID_DIAGRAMS.md)
 
-## 8. Maintenance Workflow
+## 9. Maintenance Workflow
 
 For every feature change, update:
 
@@ -160,8 +225,10 @@ Template:
 - [DOC_UPDATE_TEMPLATE.md](DOC_UPDATE_TEMPLATE.md)
 - [PLATFORM_ROADMAP.md](PLATFORM_ROADMAP.md)
 
-## 9. Document Version History
+## 10. Document Version History
 
 | Version | Date       | Change Summary                                                            | Affected Endpoints                                | Client Action Required |
 |---------|------------|---------------------------------------------------------------------------|---------------------------------------------------|------------------------|
 | 1.0.0   | 2026-03-20 | Initial EN client manual aligned to ES manual                             | `/api/v1/agent/*`, `/api/v1/health/`, `/api/docs/` | No                     |
+| 1.1.0   | 2026-03-20 | Added tenant role matrix and billing-role access policy                  | `/api/v1/agent/*`, `/api/v1/billing/*`           | No                     |
+| 1.2.0   | 2026-03-20 | Added tenant user/role administration endpoints and frontend access-management screen | `/api/v1/tenants/memberships/*`                  | No                     |

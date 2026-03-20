@@ -195,7 +195,103 @@ Each includes:
 4. Revenue recognition and accounting export adapters.
 5. Contract pricing tiers and committed-use discounts.
 
-## 11. Frontend Billing Dashboard
+## 11. Entitlement Control and Grace Period
+
+The platform now includes an entitlement lifecycle tied to payment events.
+
+Policy:
+
+1. `active` and `trialing` subscriptions have normal access.
+2. `past_due` subscriptions keep temporary access during a grace window.
+3. If the grace window ends without payment, service is suspended (`canceled`).
+4. If payment is recovered (`invoice.paid`), entitlement is restored and grace is cleared.
+
+Defaults:
+
+1. `BILLING_GRACE_PERIOD_DAYS=7`.
+2. `expire_grace_periods` command should run periodically (for example hourly).
+
+### 11.1 Payment Failure to Grace Flow
+
+```mermaid
+flowchart TD
+   A[Stripe webhook: invoice.payment_failed] --> B[billing_webhook]
+   B --> C[begin_grace_period subscription]
+   C --> D[status = past_due]
+   D --> E[grace_period_ends_at = now + BILLING_GRACE_PERIOD_DAYS]
+   E --> F[notify_subscription_event payment_failed]
+   F --> G[Owner email with deadline and billing portal link]
+```
+
+### 11.2 Access Decision Flow
+
+```mermaid
+flowchart TD
+   A[Tenant request] --> B[check_tenant_entitlement]
+   B --> C{Subscription status}
+
+   C -->|active or trialing| D[Allow]
+   C -->|past_due + grace not expired| E[Allow with warning]
+   C -->|past_due + grace expired| F[Deny 402]
+   C -->|canceled/incomplete/no subscription| F
+```
+
+### 11.2.1 Enforcement in API Endpoints
+
+The backend now enforces entitlement with HTTP `402` in tenant-scoped billing operations that require active service.
+
+Protected with entitlement check:
+
+1. `POST /api/v1/billing/estimate/`
+2. `POST /api/v1/billing/invoices/close/`
+3. `GET /api/v1/billing/invoices/`
+4. `GET /api/v1/billing/invoices/latest/`
+5. `GET /api/v1/billing/invoices/<invoice_id>/`
+6. `GET /api/v1/billing/invoices/<invoice_id>/receipt.txt`
+7. `GET /api/v1/billing/invoices/<invoice_id>/receipt.pdf`
+8. `GET /api/v1/billing/invoices/export.csv`
+9. `POST /api/v1/billing/subscriptions/change-plan/`
+
+Recovery endpoints intentionally remain accessible when suspended:
+
+1. `POST /api/v1/billing/portal/session/` (so tenant can update payment method)
+2. `GET /api/v1/billing/usage/summary/` (so frontend can show suspension/grace state)
+
+### 11.3 Grace Expiration to Suspension Flow
+
+```mermaid
+flowchart TD
+   A[Scheduler/Cron] --> B[manage.py expire_grace_periods]
+   B --> C[Find subscriptions past_due with grace_period_ends_at <= now]
+   C --> D[revoke_entitlement]
+   D --> E[status = canceled]
+   E --> F[canceled_at = now]
+   F --> G[notify_subscription_event service_suspended]
+```
+
+### 11.4 Recovery Flow
+
+```mermaid
+flowchart TD
+   A[Stripe webhook: invoice.paid] --> B[billing_webhook]
+   B --> C[restore_entitlement]
+   C --> D[status = active]
+   D --> E[grace_period_ends_at = null]
+   E --> F[notify_subscription_event payment_recovered]
+```
+
+### 11.5 Explicit Cancellation Flow
+
+```mermaid
+flowchart TD
+   A[Stripe webhook: customer.subscription.deleted] --> B[billing_webhook]
+   B --> C[revoke_entitlement]
+   C --> D[status = canceled]
+   D --> E[canceled_at = now]
+   E --> F[notify_subscription_event subscription_canceled]
+```
+
+## 12. Frontend Billing Dashboard
 
 The React app now includes a billing cockpit section with:
 
@@ -207,3 +303,30 @@ The React app now includes a billing cockpit section with:
 6. Visible export filters for status, currency, generated dates, and billed period dates.
 
 This dashboard is designed as operational support and pricing transparency tooling.
+
+It now also displays:
+
+1. Live entitlement status (`active`, `trialing`, `past_due`, `canceled`, `incomplete`).
+2. Grace deadline when the tenant is in `past_due` grace mode.
+3. Service warning/suspension messaging with direct action to open Stripe Billing Portal.
+
+## 13. Tenant Access Administration Screen
+
+The frontend now includes a dedicated tenant access panel for user and role management.
+
+Capabilities:
+
+1. List tenant memberships.
+2. Create or attach users with explicit tenant role.
+3. Update role and activate/deactivate tenant membership.
+
+API backing endpoints:
+
+1. `GET /api/v1/tenants/memberships/`
+2. `POST /api/v1/tenants/memberships/create/`
+3. `PATCH /api/v1/tenants/memberships/{membership_id}/`
+
+Authorization model:
+
+1. Only tenant `owner` and `admin` can manage memberships.
+2. The API blocks demotion or deactivation of the last active owner in a tenant.

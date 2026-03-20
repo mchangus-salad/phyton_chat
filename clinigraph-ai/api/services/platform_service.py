@@ -95,6 +95,14 @@ def create_subscription_draft(*, user, tenant_name: str, tenant_type: str, plan:
 
 def create_checkout_session(*, user, tenant_name: str, tenant_type: str, plan: SubscriptionPlan) -> CheckoutSessionResult:
     tenant = ensure_tenant_for_user(user=user, tenant_name=tenant_name, tenant_type=tenant_type)
+    existing_customer_id = (
+        Subscription.objects.filter(tenant=tenant, provider="stripe")
+        .exclude(provider_customer_id="")
+        .order_by("-updated_at")
+        .values_list("provider_customer_id", flat=True)
+        .first()
+    )
+    reused_customer_id = existing_customer_id or None
     now = timezone.now()
     subscription = Subscription.objects.create(
         tenant=tenant,
@@ -105,17 +113,33 @@ def create_checkout_session(*, user, tenant_name: str, tenant_type: str, plan: S
     )
     try:
         provider = StripeBillingProvider()
-        session = provider.create_checkout_session(
-            tenant=tenant,
-            subscription=subscription,
-            plan=plan,
-            user_email=getattr(user, "email", "") or None,
-        )
+        try:
+            session = provider.create_checkout_session(
+                tenant=tenant,
+                subscription=subscription,
+                plan=plan,
+                user_email=getattr(user, "email", "") or None,
+                existing_customer_id=reused_customer_id,
+            )
+        except Exception as exc:
+            # If local state has a stale Stripe customer id, retry once without forcing customer.
+            if reused_customer_id and "No such customer" in str(exc):
+                reused_customer_id = None
+                session = provider.create_checkout_session(
+                    tenant=tenant,
+                    subscription=subscription,
+                    plan=plan,
+                    user_email=getattr(user, "email", "") or None,
+                    existing_customer_id=None,
+                )
+            else:
+                raise
     except BillingConfigurationError:
         subscription.delete()
         raise
 
-    subscription.provider_customer_id = getattr(session, "customer", "") or ""
+    resolved_customer_id = getattr(session, "customer", "") or reused_customer_id or ""
+    subscription.provider_customer_id = resolved_customer_id
     subscription.save(update_fields=["provider_customer_id", "updated_at"])
     BillingEvent.objects.create(
         tenant=tenant,
@@ -123,7 +147,11 @@ def create_checkout_session(*, user, tenant_name: str, tenant_type: str, plan: S
         provider="stripe",
         provider_event_id=getattr(session, "id", "") or "",
         status="created",
-        payload={"plan_code": plan.code},
+        payload={
+            "plan_code": plan.code,
+            "reused_customer": bool(reused_customer_id),
+            "customer_id": resolved_customer_id,
+        },
     )
     incr("billing.events.total")
     return CheckoutSessionResult(tenant=tenant, subscription=subscription, session=session)

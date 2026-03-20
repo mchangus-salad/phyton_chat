@@ -26,7 +26,7 @@ class StripeBillingProvider:
         self.portal_return_url = (os.getenv("STRIPE_BILLING_PORTAL_RETURN_URL", "") or "").strip()
         self.webhook_secret = (os.getenv("STRIPE_WEBHOOK_SECRET", "") or "").strip()
 
-    def create_checkout_session(self, *, tenant, subscription, plan, user_email: str | None) -> object:
+    def create_checkout_session(self, *, tenant, subscription, plan, user_email: str | None, existing_customer_id: str | None = None) -> object:
         if not plan.provider_price_id:
             raise BillingConfigurationError(f"Plan '{plan.code}' does not have provider_price_id configured")
         if not self.success_url or not self.cancel_url:
@@ -46,7 +46,9 @@ class StripeBillingProvider:
             "subscription_data": {"trial_period_days": int(plan.trial_days_default), "metadata": metadata},
             "metadata": metadata,
         }
-        if user_email:
+        if existing_customer_id:
+            payload["customer"] = existing_customer_id
+        elif user_email:
             payload["customer_email"] = user_email
         return self.stripe.checkout.Session.create(
             **payload,
