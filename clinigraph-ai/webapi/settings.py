@@ -159,8 +159,8 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Chat Build Agent API',
-    'DESCRIPTION': 'AgentAI endpoints with JWT Bearer and API key authentication options.',
+    'TITLE': 'CliniGraph AI API',
+    'DESCRIPTION': 'CliniGraph AI endpoints with JWT Bearer and API key authentication options.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'PREPROCESSING_HOOKS': [

@@ -86,6 +86,50 @@ Start local services with:
 docker compose -f docker-compose.local.yml up -d
 ```
 
+## SaaS Container Stack
+
+For a full containerized runtime (web app + Postgres + Redis + Kafka + Weaviate), use:
+
+```powershell
+.\scripts\saas-up.ps1
+```
+
+The script is idempotent: it creates `.env.saas.local` if missing, generates application secrets when placeholders are still present, builds the image, starts the stack, and waits for `/api/v1/health/` to return `ok`.
+
+Manual compose remains available:
+
+```powershell
+docker compose -f docker-compose.saas.yml --env-file .env.saas.local up -d --build
+```
+
+Recommended setup:
+
+1. Copy `.env.saas.example` to `.env.saas.local`
+2. Set production-grade secrets (`DJANGO_SECRET_KEY`, `AGENT_API_KEY`, database password)
+3. Set `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` for your domain
+4. Ensure Ollama is reachable (for local models) via `OLLAMA_BASE_URL`
+5. If host ports are already used, adjust external port vars: `WEB_EXTERNAL_PORT`, `POSTGRES_EXTERNAL_PORT`, `REDIS_EXTERNAL_PORT`, `KAFKA_EXTERNAL_PORT`, `WEAVIATE_HTTP_EXTERNAL_PORT`, `WEAVIATE_GRPC_EXTERNAL_PORT`
+
+Health check endpoint:
+
+- GET /api/v1/health/
+
+Cleanup script:
+
+```powershell
+.\scripts\saas-down.ps1
+```
+
+By default it removes containers, networks, named volumes, the local built image, and `.env.saas.local`. Use switches like `-KeepVolumes`, `-KeepImage`, or `-KeepEnvFile` when you want a softer shutdown.
+
+Refresh script:
+
+```powershell
+.\scripts\saas-refresh.ps1
+```
+
+Use it for quick updates without deleting volumes or the local environment file. It supports `-Pull` to fetch newer remote images, `-NoBuild` to skip rebuilding the web image, and `-RestartOnly` when you only need a controlled restart plus health validation.
+
 ## One-command developer setup
 
 For a new developer on Windows, the easiest setup is:

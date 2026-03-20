@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Environments
+.venv/
+venv/
+.env
+.env.agentai.local
+
+# Git / editor
+.git/
+.vscode/
+
+# Local runtime artifacts
+db.sqlite3
+*.log

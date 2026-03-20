@@ -12,6 +12,7 @@ db.sqlite3
 # Environment overrides
 .env
 .env.agentai.local
+.env.saas.local
 
 # Django development artifacts
 *.log
