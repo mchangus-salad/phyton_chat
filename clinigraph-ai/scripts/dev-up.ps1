@@ -212,6 +212,16 @@ function Initialize-WeaviateSchema {
     Write-Host "Coleccion Weaviate creada: $weaviateIndex"
 }
 
+function Ensure-OllamaModel {
+    param([string]$EnvFile)
+
+    $ollamaContainer = Get-EnvSetting -FilePath $EnvFile -Key "OLLAMA_CONTAINER_NAME" -DefaultValue "agentai-ollama"
+    & "$scriptDir\ensure-ollama-model.ps1" -EnvFile $EnvFile -ContainerName $ollamaContainer
+    if ($LASTEXITCODE -ne 0) {
+        throw "Fallo ensure-ollama-model.ps1"
+    }
+}
+
 function Invoke-DjangoSmokeTest {
     param(
         [string]$PythonExe,
@@ -279,16 +289,19 @@ if (-not $SkipDocker) {
         throw "Docker no esta disponible. Instala Docker Desktop o usa -SkipDocker."
     }
 
-    Invoke-CheckedCommand -Command @("docker", "compose", "-f", $composeFile, "up", "-d") -Description "Levantando Redis, Kafka y Weaviate"
+    Invoke-CheckedCommand -Command @("docker", "compose", "-f", $composeFile, "up", "-d") -Description "Levantando Redis, Kafka, Weaviate y Ollama"
 
-    Write-Step "Esperando Redis, Kafka y Weaviate"
+    Write-Step "Esperando Redis, Kafka, Weaviate y Ollama"
     Wait-ForTcpPort -Address "127.0.0.1" -Port 6379 -TimeoutSeconds 60
     Wait-ForTcpPort -Address "127.0.0.1" -Port 9094 -TimeoutSeconds 120
     Wait-ForTcpPort -Address "127.0.0.1" -Port 8088 -TimeoutSeconds 120
+    Wait-ForTcpPort -Address "127.0.0.1" -Port 11434 -TimeoutSeconds 180
     Initialize-WeaviateSchema -EnvFile $envLocalFile
+    Ensure-OllamaModel -EnvFile $envLocalFile
 }
 
 Invoke-CheckedCommand -Command @($venvPython, "manage.py", "migrate") -Description "Aplicando migraciones"
+Invoke-CheckedCommand -Command @($venvPython, "manage.py", "seed_subscription_plans") -Description "Sembrando planes de suscripcion"
 Invoke-CheckedCommand -Command @($venvPython, "manage.py", "check") -Description "Validando proyecto Django"
 
 if (-not $SkipSeed) {
@@ -305,6 +318,7 @@ Write-Host "Redis: redis://127.0.0.1:6379/0"
 Write-Host "Kafka: 127.0.0.1:9094"
 Write-Host "Kafka UI: http://127.0.0.1:8085"
 Write-Host "Weaviate: http://127.0.0.1:8088"
+Write-Host "Ollama: http://127.0.0.1:11434"
 Write-Host "Django health: http://127.0.0.1:8000/api/health/"
 Write-Host "Agent API key configured in .env.agentai.local (AGENT_API_KEY)."
 

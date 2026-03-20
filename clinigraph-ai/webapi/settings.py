@@ -47,6 +47,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'api.middleware.SecurityObservabilityMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -81,6 +82,7 @@ DATABASES = {
         'PASSWORD': os.getenv('DJANGO_DB_PASSWORD', ''),
         'HOST': os.getenv('DJANGO_DB_HOST', ''),
         'PORT': os.getenv('DJANGO_DB_PORT', ''),
+        'CONN_MAX_AGE': int(os.getenv('DJANGO_DB_CONN_MAX_AGE', '60')),
     }
 }
 
@@ -120,6 +122,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = os.getenv('DJANGO_SECURE_REFERRER_POLICY', 'same-origin')
+X_FRAME_OPTIONS = os.getenv('DJANGO_X_FRAME_OPTIONS', 'DENY')
+SECURE_BROWSER_XSS_FILTER = True
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv('DJANGO_DATA_UPLOAD_MAX_MEMORY_SIZE', str(10 * 1024 * 1024)))
+FILE_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv('DJANGO_FILE_UPLOAD_MAX_MEMORY_SIZE', str(10 * 1024 * 1024)))
 
 SECURE_SSL_REDIRECT = os.getenv('DJANGO_SECURE_SSL_REDIRECT', 'false').lower() == 'true'
 SESSION_COOKIE_SECURE = os.getenv('DJANGO_SESSION_COOKIE_SECURE', 'false').lower() == 'true'
@@ -130,7 +138,20 @@ SECURE_HSTS_PRELOAD = os.getenv('DJANGO_SECURE_HSTS_PRELOAD', 'false').lower() =
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 AGENT_API_KEY = os.getenv('AGENT_API_KEY', '')
+BILLING_WEBHOOK_SECRET = os.getenv('BILLING_WEBHOOK_SECRET', '')
 
+REDIS_URL = os.getenv('REDIS_URL', '').strip()
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'clinigraph-default-cache',
+    }
+}
+if REDIS_URL:
+    CACHES['default'] = {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_URL,
+    }
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
@@ -197,18 +218,29 @@ SIMPLE_JWT = {
 }
 
 LOG_LEVEL = os.getenv('DJANGO_LOG_LEVEL', 'INFO')
+LOG_JSON = os.getenv('DJANGO_LOG_JSON', 'true').lower() == 'true'
+LOGGING_FORMATTER = 'json' if LOG_JSON else 'verbose'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'request_context': {
+            '()': 'api.logging_utils.RequestContextLogFilter',
+        },
+    },
     'formatters': {
         'verbose': {
-            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+            'format': '%(asctime)s %(levelname)s %(name)s [request_id=%(request_id)s] %(message)s',
+        },
+        'json': {
+            '()': 'api.logging_utils.JsonFormatter',
         },
     },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
+            'formatter': LOGGING_FORMATTER,
+            'filters': ['request_context'],
         },
     },
     'loggers': {

@@ -126,6 +126,16 @@ function Wait-ForHealthEndpoint {
     throw "Timeout esperando health endpoint: $Url"
 }
 
+function Ensure-OllamaModel {
+    param([string]$EnvFile)
+
+    $ollamaContainer = Get-EnvSetting -FilePath $EnvFile -Key "OLLAMA_CONTAINER_NAME" -DefaultValue "clinigraph-ollama"
+    & "$scriptDir\ensure-ollama-model.ps1" -EnvFile $EnvFile -ContainerName $ollamaContainer
+    if ($LASTEXITCODE -ne 0) {
+        throw "Fallo ensure-ollama-model.ps1"
+    }
+}
+
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptDir
 Set-Location $repoRoot
@@ -167,6 +177,8 @@ if (-not $SkipBuild) {
 
 Write-Step "Construyendo y levantando stack SaaS"
 Invoke-Compose -ComposeArgs $composeArgs
+
+Ensure-OllamaModel -EnvFile $envLocalFile
 
 Write-Step "Estado actual de servicios"
 Invoke-Compose -ComposeArgs @("-f", $composeFile, "--env-file", $envLocalFile, "ps")

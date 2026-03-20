@@ -4,6 +4,9 @@ set -eu
 echo "[entrypoint] running migrations"
 python manage.py migrate --noinput
 
+echo "[entrypoint] seeding subscription plans"
+python manage.py seed_subscription_plans
+
 echo "[entrypoint] starting gunicorn"
 exec gunicorn webapi.wsgi:application \
   --bind 0.0.0.0:8000 \

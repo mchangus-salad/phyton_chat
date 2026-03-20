@@ -17,5 +17,9 @@ db.sqlite3
 # Django development artifacts
 *.log
 
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+
 # VS Code local settings
 .vscode/

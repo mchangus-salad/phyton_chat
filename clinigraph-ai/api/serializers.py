@@ -1,9 +1,17 @@
+import os
+
 from rest_framework import serializers
+
+
+class ConversationTurnSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=["user", "assistant"], default="user")
+    content = serializers.CharField(max_length=4000, allow_blank=False, trim_whitespace=True)
 
 
 class AgentQuerySerializer(serializers.Serializer):
     question = serializers.CharField(max_length=2000, allow_blank=False, trim_whitespace=True)
     user_id = serializers.CharField(max_length=128, required=False, default="anonymous")
+    conversation_history = ConversationTurnSerializer(many=True, required=False, default=list)
 
 
 class HealthResponseSerializer(serializers.Serializer):
@@ -21,6 +29,7 @@ class DomainQueryResponseSerializer(AgentQueryResponseSerializer):
     domain = serializers.CharField()
     subdomain = serializers.CharField(required=False, allow_blank=True)
     safety_notice = serializers.CharField()
+    citations = serializers.ListField(child=serializers.CharField(), required=False, default=list)
 
 
 class KnowledgeDocumentSerializer(serializers.Serializer):
@@ -146,3 +155,283 @@ class ErrorResponseSerializer(serializers.Serializer):
     error = serializers.CharField()
     request_id = serializers.CharField(required=False)
     detail = serializers.JSONField(required=False)
+
+
+class MetricsResponseSerializer(serializers.Serializer):
+    metrics = serializers.DictField(child=serializers.FloatField())
+    generated_at = serializers.DateTimeField()
+
+
+class SecurityEventSerializer(serializers.Serializer):
+    event_type = serializers.CharField()
+    severity = serializers.CharField()
+    ip_address = serializers.CharField(required=False, allow_blank=True)
+    path = serializers.CharField(required=False, allow_blank=True)
+    method = serializers.CharField(required=False, allow_blank=True)
+    user_agent = serializers.CharField(required=False, allow_blank=True)
+    meta = serializers.JSONField(required=False)
+    created_at = serializers.DateTimeField()
+
+
+class SubscriptionPlanSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    name = serializers.CharField()
+    description = serializers.CharField(required=False, allow_blank=True)
+    billing_cycle = serializers.CharField()
+    billing_model = serializers.CharField(required=False)
+    price_cents = serializers.IntegerField()
+    currency = serializers.CharField()
+    provider = serializers.CharField(required=False)
+    provider_price_id = serializers.CharField(required=False, allow_blank=True)
+    trial_days_default = serializers.IntegerField()
+    max_monthly_requests = serializers.IntegerField()
+    max_users = serializers.IntegerField()
+    seat_price_cents = serializers.IntegerField(required=False)
+    api_overage_per_1000_cents = serializers.IntegerField(required=False)
+
+
+class SubscriptionCreateSerializer(serializers.Serializer):
+    tenant_name = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    tenant_type = serializers.ChoiceField(
+        choices=["individual", "clinic", "hospital", "institution"],
+        required=False,
+        default="individual",
+    )
+    plan_code = serializers.CharField(max_length=64)
+    trial_days = serializers.IntegerField(required=False, min_value=0, max_value=60)
+
+
+class SubscriptionCreateResponseSerializer(serializers.Serializer):
+    tenant_id = serializers.UUIDField()
+    subscription_id = serializers.IntegerField()
+    status = serializers.CharField()
+    trial_ends_at = serializers.DateTimeField(required=False, allow_null=True)
+    checkout_hint = serializers.CharField()
+
+
+class CheckoutSessionCreateSerializer(serializers.Serializer):
+    tenant_name = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    tenant_type = serializers.ChoiceField(
+        choices=["individual", "clinic", "hospital", "institution"],
+        required=False,
+        default="individual",
+    )
+    plan_code = serializers.CharField(max_length=64)
+
+
+class CheckoutSessionResponseSerializer(serializers.Serializer):
+    tenant_id = serializers.UUIDField()
+    subscription_id = serializers.IntegerField()
+    provider = serializers.CharField()
+    checkout_url = serializers.CharField()
+    checkout_session_id = serializers.CharField()
+
+
+class UsageIngestSerializer(serializers.Serializer):
+    tenant_id = serializers.UUIDField()
+    metric = serializers.CharField(max_length=64)
+    quantity = serializers.IntegerField(min_value=1, default=1)
+    meta = serializers.JSONField(required=False, default=dict)
+
+
+class BillingWebhookSerializer(serializers.Serializer):
+    provider = serializers.CharField(max_length=32)
+    event_type = serializers.CharField(max_length=64)
+    provider_event_id = serializers.CharField(max_length=128, required=False, allow_blank=True)
+    tenant_id = serializers.UUIDField(required=False)
+    payload = serializers.JSONField(required=False, default=dict)
+
+
+class BillingEstimateSerializer(serializers.Serializer):
+    active_users = serializers.IntegerField(required=False, min_value=0)
+    api_requests = serializers.IntegerField(required=False, min_value=0)
+
+
+class BillingEstimateResponseSerializer(serializers.Serializer):
+    tenant_id = serializers.UUIDField()
+    plan_code = serializers.CharField()
+    currency = serializers.CharField()
+    billing_cycle = serializers.CharField()
+    period_start = serializers.DateTimeField()
+    period_end = serializers.DateTimeField()
+    included_users = serializers.IntegerField()
+    included_api_requests = serializers.IntegerField()
+    active_users = serializers.IntegerField()
+    api_requests = serializers.IntegerField()
+    overage_users = serializers.IntegerField()
+    overage_api_requests = serializers.IntegerField()
+    platform_fee_cents = serializers.IntegerField()
+    users_overage_cents = serializers.IntegerField()
+    api_overage_cents = serializers.IntegerField()
+    total_cents = serializers.IntegerField()
+
+
+class BillingInvoiceCloseSerializer(serializers.Serializer):
+    active_users = serializers.IntegerField(required=False, min_value=0)
+    api_requests = serializers.IntegerField(required=False, min_value=0)
+
+
+class BillingInvoiceSerializer(serializers.Serializer):
+    invoice_id = serializers.UUIDField()
+    tenant_id = serializers.UUIDField()
+    subscription_id = serializers.IntegerField(required=False, allow_null=True)
+    period_start = serializers.DateTimeField()
+    period_end = serializers.DateTimeField()
+    currency = serializers.CharField()
+    status = serializers.CharField()
+    platform_fee_cents = serializers.IntegerField()
+    users_overage_cents = serializers.IntegerField()
+    api_overage_cents = serializers.IntegerField()
+    total_cents = serializers.IntegerField()
+    active_users = serializers.IntegerField()
+    api_requests = serializers.IntegerField()
+    overage_users = serializers.IntegerField()
+    overage_api_requests = serializers.IntegerField()
+    generated_at = serializers.DateTimeField()
+
+
+class BillingInvoiceLineItemSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    description = serializers.CharField()
+    quantity = serializers.IntegerField()
+    unit_price_cents = serializers.IntegerField()
+    total_price_cents = serializers.IntegerField()
+    meta = serializers.JSONField(required=False)
+
+
+class BillingInvoiceDetailSerializer(BillingInvoiceSerializer):
+    meta = serializers.JSONField(required=False)
+    line_items = BillingInvoiceLineItemSerializer(many=True)
+
+
+class BillingUsageSummaryResponseSerializer(serializers.Serializer):
+    tenant_id = serializers.UUIDField()
+    period_start = serializers.DateTimeField()
+    period_end = serializers.DateTimeField()
+    active_users = serializers.IntegerField()
+    api_requests = serializers.IntegerField()
+    included_users = serializers.IntegerField()
+    included_api_requests = serializers.IntegerField()
+    overage_users = serializers.IntegerField()
+    overage_api_requests = serializers.IntegerField()
+    latest_invoice = BillingInvoiceSerializer(required=False, allow_null=True)
+
+
+class BillingPortalSessionSerializer(serializers.Serializer):
+    return_url = serializers.CharField(required=False, allow_blank=True)
+
+
+class BillingPortalSessionResponseSerializer(serializers.Serializer):
+    portal_url = serializers.CharField()
+    session_id = serializers.CharField()
+
+
+class SubscriptionPlanChangeSerializer(serializers.Serializer):
+    target_plan_code = serializers.CharField(max_length=64)
+    apply = serializers.BooleanField(required=False, default=False)
+
+
+class SubscriptionPlanChangeResponseSerializer(serializers.Serializer):
+    subscription_id = serializers.IntegerField()
+    previous_plan_code = serializers.CharField()
+    target_plan_code = serializers.CharField()
+    applied = serializers.BooleanField()
+    proration_preview = serializers.DictField()
+
+
+class PatientCaseUploadSerializer(serializers.Serializer):
+    """
+    Input for the patient case analysis endpoint.
+
+    Either ``text`` (free-text clinical note) or ``file`` (document upload)
+    must be provided.  Both may be supplied simultaneously — the file takes
+    precedence when both are present.
+    """
+
+    text = serializers.CharField(
+        max_length=100_000,
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+        help_text=(
+            "Free-text patient case: history, symptoms, lab results, medications, etc. "
+            "All PHI is automatically redacted before processing."
+        ),
+    )
+    file = serializers.FileField(
+        required=False,
+        help_text="Patient document file (.txt, .pdf, .docx, .csv, .json). Max 10 MB.",
+    )
+    domain = serializers.CharField(
+        max_length=64,
+        required=False,
+        default="medical",
+        trim_whitespace=True,
+        help_text="Medical domain for evidence retrieval (e.g. 'cardiology', 'neurology').",
+    )
+    subdomain = serializers.CharField(
+        max_length=128,
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+        help_text="Optional subdomain filter (e.g. 'heart-failure', 'arrhythmia').",
+    )
+    question = serializers.CharField(
+        max_length=2000,
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+        help_text="Optional specific clinical question to answer about this case.",
+    )
+    user_id = serializers.CharField(
+        max_length=128,
+        required=False,
+        default="anonymous",
+        trim_whitespace=True,
+    )
+
+    def validate_file(self, value):
+        allowed = frozenset({".txt", ".pdf", ".docx", ".csv", ".json"})
+        ext = os.path.splitext(value.name)[1].lower()
+        if ext not in allowed:
+            raise serializers.ValidationError(
+                f"File type '{ext}' is not supported. "
+                f"Accepted types: {', '.join(sorted(allowed))}"
+            )
+        max_bytes = 10 * 1024 * 1024  # 10 MB
+        if value.size > max_bytes:
+            raise serializers.ValidationError("File must not exceed 10 MB.")
+        return value
+
+    def validate(self, data):
+        if not data.get("text") and not data.get("file"):
+            raise serializers.ValidationError(
+                "Provide either 'text' (clinical note) or 'file' (document upload)."
+            )
+        return data
+
+
+class PatientCaseAnalysisResponseSerializer(serializers.Serializer):
+    """Response returned by the patient case analysis endpoint."""
+
+    session_id = serializers.UUIDField(
+        help_text="Unique ID for this analysis session — use for audit trail queries.",
+    )
+    analysis = serializers.CharField(
+        help_text="Evidence-based clinical recommendations and findings.",
+    )
+    citations = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list,
+        help_text="Reference studies and guidelines used in the analysis.",
+    )
+    redaction_summary = serializers.DictField(
+        help_text=(
+            "Audit summary of PHI categories detected and redacted from the document. "
+            'E.g. {"total_redactions": 4, "categories": {"DATE": 3, "PHONE_FAX": 1}}'
+        ),
+    )
+    domain = serializers.CharField()
+    safety_notice = serializers.CharField()
+    request_id = serializers.CharField()

@@ -60,7 +60,86 @@ services:
     volumes:
       - weaviate_data:/var/lib/weaviate
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: agentai-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: agentai-prometheus
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "9090:9090"
+    environment:
+      AGENT_API_KEY: ${AGENT_API_KEY:-changeme}
+    command:
+      - /bin/sh
+      - -c
+      - sed "s/PROMETHEUS_API_KEY_PLACEHOLDER/$${AGENT_API_KEY}/g" /etc/prometheus/prometheus.template.yml > /tmp/prometheus.yml && /bin/prometheus --config.file=/tmp/prometheus.yml --storage.tsdb.path=/prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.template.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: agentai-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: clinigraph-ai-web
+    container_name: agentai-web
+    restart: unless-stopped
+    env_file:
+      - .env.agentai.local
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      OLLAMA_BASE_URL: http://ollama:11434
+      WEAVIATE_HTTP_HOST: weaviate
+      WEAVIATE_HTTP_PORT: 8080
+      WEAVIATE_GRPC_HOST: weaviate
+      WEAVIATE_GRPC_PORT: 50051
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - kafka
+      - weaviate
+      - ollama
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agentai-frontend
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      VITE_API_BASE_URL: http://web:8000/api/v1
+    ports:
+      - "5173:5173"
+
 volumes:
   redis_data:
   kafka_data:
   weaviate_data:
+  ollama_data:

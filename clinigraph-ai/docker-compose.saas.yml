@@ -8,6 +8,14 @@ services:
     restart: unless-stopped
     env_file:
       - .env.saas.local
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      OLLAMA_BASE_URL: http://ollama:11434
+      WEAVIATE_HTTP_HOST: weaviate
+      WEAVIATE_HTTP_PORT: 8080
+      WEAVIATE_GRPC_HOST: weaviate
+      WEAVIATE_GRPC_PORT: 50051
     ports:
       - "${WEB_EXTERNAL_PORT:-8000}:8000"
     healthcheck:
@@ -23,6 +31,8 @@ services:
       kafka:
         condition: service_started
       weaviate:
+        condition: service_started
+      ollama:
         condition: service_started
 
   postgres:
@@ -97,12 +107,76 @@ services:
     volumes:
       - weaviate_data:/var/lib/weaviate
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: clinigraph-ollama
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_EXTERNAL_PORT:-11434}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: clinigraph-prometheus
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      - "${PROMETHEUS_EXTERNAL_PORT:-9090}:9090"
+    environment:
+      AGENT_API_KEY: ${AGENT_API_KEY:-changeme}
+    command:
+      - /bin/sh
+      - -c
+      - sed "s/PROMETHEUS_API_KEY_PLACEHOLDER/$${AGENT_API_KEY}/g" /etc/prometheus/prometheus.template.yml > /tmp/prometheus.yml && /bin/prometheus --config.file=/tmp/prometheus.yml --storage.tsdb.path=/prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.template.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: clinigraph-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    ports:
+      - "${GRAFANA_EXTERNAL_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: clinigraph-ai-frontend
+    container_name: clinigraph-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: http://web:8000/api/v1
+    ports:
+      - "${FRONTEND_EXTERNAL_PORT:-5173}:5173"
+    depends_on:
+      web:
+        condition: service_healthy
+
   corpus-updater:
     image: clinigraph-ai-web
     container_name: clinigraph-corpus-updater
     restart: unless-stopped
     env_file:
       - .env.saas.local
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      OLLAMA_BASE_URL: http://ollama:11434
+      WEAVIATE_HTTP_HOST: weaviate
+      WEAVIATE_HTTP_PORT: 8080
+      WEAVIATE_GRPC_HOST: weaviate
+      WEAVIATE_GRPC_PORT: 50051
     command: ["/bin/sh", "/app/scripts/corpus-updater-entrypoint.sh"]
     depends_on:
       web:
@@ -115,4 +189,5 @@ volumes:
   redis_data:
   kafka_data:
   weaviate_data:
+  ollama_data:
   corpus_state:

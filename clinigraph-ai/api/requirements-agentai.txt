@@ -16,3 +16,5 @@ redis
 kafka-python
 python-dotenv
 psycopg2-binary
+stripe
+reportlab

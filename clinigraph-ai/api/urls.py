@@ -1,6 +1,7 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 
+from .auth_views import CliniGraphTokenObtainPairView, my_tenants
 from .views import (
     agent_query,
     health,
@@ -13,11 +14,34 @@ from .views import (
     oncology_train,
     oncology_upload,
 )
+from .views import patient_case_analyze
+from .platform_views import (
+    billing_estimate,
+    billing_invoice_close,
+    billing_invoice_detail,
+    billing_invoice_export_csv,
+    billing_invoice_list,
+    billing_invoice_latest,
+    billing_invoice_receipt_pdf,
+    billing_invoice_receipt,
+    billing_portal_session_create,
+    billing_subscription_change_plan,
+    billing_usage_summary,
+    billing_webhook,
+    billing_checkout_session_create,
+    ops_metrics,
+    ops_metrics_prometheus,
+    security_events_recent,
+    subscription_create,
+    subscription_plans,
+    usage_ingest,
+)
 
 urlpatterns = [
     path('health/', health, name='health'),
-    path('auth/token/', TokenObtainPairView.as_view(), name='token-obtain-pair'),
+    path('auth/token/', CliniGraphTokenObtainPairView.as_view(), name='token-obtain-pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
+    path('auth/my-tenants/', my_tenants, name='auth-my-tenants'),
     path('agent/query/', agent_query, name='agent-query'),
     path('agent/medical/evidence/', medical_evidence_search, name='medical-evidence-search'),
     path('agent/medical/query/', medical_query, name='medical-query'),
@@ -27,4 +51,26 @@ urlpatterns = [
     path('agent/oncology/query/', oncology_query, name='oncology-query'),
     path('agent/oncology/train/', oncology_train, name='oncology-train'),
     path('agent/oncology/upload/', oncology_upload, name='oncology-upload'),
+]
+urlpatterns += [
+    path('agent/patient/analyze/', patient_case_analyze, name='patient-case-analyze'),
+    path('ops/metrics/', ops_metrics, name='ops-metrics'),
+    path('ops/metrics/prometheus/', ops_metrics_prometheus, name='ops-metrics-prometheus'),
+    path('security/events/recent/', security_events_recent, name='security-events-recent'),
+    path('billing/plans/', subscription_plans, name='subscription-plans'),
+    path('billing/estimate/', billing_estimate, name='billing-estimate'),
+    path('billing/invoices/close/', billing_invoice_close, name='billing-invoice-close'),
+    path('billing/invoices/', billing_invoice_list, name='billing-invoice-list'),
+    path('billing/invoices/export.csv', billing_invoice_export_csv, name='billing-invoice-export-csv'),
+    path('billing/invoices/latest/', billing_invoice_latest, name='billing-invoice-latest'),
+    path('billing/invoices/<uuid:invoice_id>/', billing_invoice_detail, name='billing-invoice-detail'),
+    path('billing/invoices/<uuid:invoice_id>/receipt.txt', billing_invoice_receipt, name='billing-invoice-receipt'),
+    path('billing/invoices/<uuid:invoice_id>/receipt.pdf', billing_invoice_receipt_pdf, name='billing-invoice-receipt-pdf'),
+    path('billing/usage/summary/', billing_usage_summary, name='billing-usage-summary'),
+    path('billing/portal/session/', billing_portal_session_create, name='billing-portal-session-create'),
+    path('billing/subscriptions/change-plan/', billing_subscription_change_plan, name='billing-subscription-change-plan'),
+    path('billing/subscriptions/create/', subscription_create, name='subscription-create'),
+    path('billing/checkout/session/', billing_checkout_session_create, name='billing-checkout-session-create'),
+    path('billing/usage/ingest/', usage_ingest, name='usage-ingest'),
+    path('billing/webhook/', billing_webhook, name='billing-webhook'),
 ]

@@ -10,6 +10,7 @@ from .vector_store import build_ingestor, build_retriever
 class AgentAIResult:
     answer: str
     cache_hit: bool
+    citations: list[str] | None = None
 
 
 @dataclass
@@ -56,7 +57,7 @@ class AgentAIService:
         key = self._cache_key(user_id=user_id, question=question)
         cached = self.cache.get(key)
         if cached:
-            return AgentAIResult(answer=cached, cache_hit=True)
+            return AgentAIResult(answer=cached, cache_hit=True, citations=None)
 
         final_state = self.graph.invoke(
             {
@@ -65,9 +66,45 @@ class AgentAIService:
                 "cache_key": key,
                 "domain": self.domain,
                 "subdomain": self.subdomain,
+                "conversation_history": [],
             }
         )
-        return AgentAIResult(answer=final_state["answer"], cache_hit=False)
+        return AgentAIResult(
+            answer=final_state["answer"],
+            cache_hit=False,
+            citations=final_state.get("citations") or [],
+        )
+
+    def ask_with_history(
+        self,
+        question: str,
+        conversation_history: list[dict],
+        user_id: str = "anonymous",
+    ) -> AgentAIResult:
+        """Multi-turn query that passes prior conversation context to the LLM.
+
+        conversation_history: list of {"role": "user"|"assistant", "content": str}
+        The cache is intentionally bypassed for multi-turn queries to avoid stale
+        context collisions across different conversation threads.
+        """
+        if self.graph is None:
+            raise RuntimeError("AgentAIService was initialized without query capabilities")
+
+        final_state = self.graph.invoke(
+            {
+                "user_id": user_id,
+                "question": question,
+                "cache_key": f"no-cache:{user_id}:{question[:40]}",
+                "domain": self.domain,
+                "subdomain": self.subdomain,
+                "conversation_history": conversation_history or [],
+            }
+        )
+        return AgentAIResult(
+            answer=final_state["answer"],
+            cache_hit=False,
+            citations=final_state.get("citations") or [],
+        )
 
     def ingest_documents(
         self,
@@ -191,16 +228,59 @@ class AgentAIService:
 
     @staticmethod
     def _rerank_documents(query: str, docs: list):
-        """Apply a lightweight lexical reranker on top of vector similarity results."""
+        """Weighted reranker combining lexical overlap, evidence quality, and recency."""
+        # Evidence-type quality weights (higher = stronger evidence)
+        _EVIDENCE_WEIGHTS: dict[str, float] = {
+            "meta-analysis": 1.0,
+            "systematic-review": 0.95,
+            "systematic review": 0.95,
+            "clinical-trial": 0.85,
+            "rct": 0.85,
+            "randomized": 0.85,
+            "randomised": 0.85,
+            "cohort": 0.65,
+            "prospective": 0.65,
+            "retrospective": 0.55,
+            "case-control": 0.50,
+            "case control": 0.50,
+            "case-series": 0.35,
+            "case series": 0.35,
+            "case-report": 0.20,
+            "case report": 0.20,
+            "guideline": 0.80,
+            "consensus": 0.75,
+            "review": 0.45,
+            "expert-opinion": 0.25,
+            "opinion": 0.25,
+            "editorial": 0.20,
+        }
+        _CURRENT_YEAR = 2026
         query_tokens = set(re.findall(r"[a-zA-Z0-9\-]+", (query or "").lower()))
+
         ranked = []
         for doc in docs:
             metadata = dict(doc.metadata or {})
             text = doc.page_content or ""
+
+            # Lexical overlap score (normalised by query length to avoid length bias)
             text_tokens = set(re.findall(r"[a-zA-Z0-9\-]+", text.lower()))
-            overlap = len(query_tokens & text_tokens)
+            overlap = len(query_tokens & text_tokens) / max(len(query_tokens), 1)
+
+            # Vector similarity (already computed by Weaviate/Pinecone)
             vector_score = float(metadata.get("score") or 0.0)
-            rerank_score = (overlap * 0.2) + vector_score
+
+            # Evidence quality bonus
+            etype = (metadata.get("evidence_type") or "").lower()
+            quality_bonus = max(
+                (_EVIDENCE_WEIGHTS[k] for k in _EVIDENCE_WEIGHTS if k in etype),
+                default=0.3,
+            )
+
+            # Recency bonus: +0.05 for each decade newer than 2000, capped at 0.25
+            pub_year = int(metadata.get("publication_year") or 0)
+            recency_bonus = min(max((pub_year - 2000) / 10 * 0.05, 0.0), 0.25) if pub_year > 0 else 0.0
+
+            rerank_score = (overlap * 0.25) + (vector_score * 0.40) + (quality_bonus * 0.25) + (recency_bonus * 0.10)
             metadata["rerank_score"] = rerank_score
             ranked.append((rerank_score, doc.__class__(page_content=doc.page_content, metadata=metadata)))
 
