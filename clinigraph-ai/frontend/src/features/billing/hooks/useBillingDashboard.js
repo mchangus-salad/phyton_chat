@@ -17,6 +17,102 @@ const defaultExportFilters = {
   periodEnd: '',
 };
 
+const defaultCheckoutInput = {
+  tenantName: '',
+  tenantType: 'individual',
+};
+
+function formatGraceDate(dateInput) {
+  if (!dateInput) {
+    return '';
+  }
+  const date = new Date(dateInput);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return date.toLocaleString();
+}
+
+function deriveEntitlementState(summary) {
+  if (!summary) {
+    return {
+      status: 'unknown',
+      allowed: false,
+      label: 'No data',
+      tone: 'neutral',
+      message: 'Refresh tenant data to load entitlement status.',
+    };
+  }
+
+  const status = summary.subscription_status || 'unknown';
+  const allowed = Boolean(summary.entitlement_allowed);
+  const graceEndsAt = formatGraceDate(summary.grace_period_ends_at);
+
+  if (status === 'active') {
+    return {
+      status,
+      allowed,
+      label: 'Active',
+      tone: 'ok',
+      message: 'Service is fully active.',
+    };
+  }
+  if (status === 'trialing') {
+    return {
+      status,
+      allowed,
+      label: 'Trialing',
+      tone: 'ok',
+      message: 'Trial is active and service access is enabled.',
+    };
+  }
+  if (status === 'past_due' && allowed) {
+    return {
+      status,
+      allowed,
+      label: 'Grace period',
+      tone: 'warn',
+      message: graceEndsAt
+        ? `Payment failed. Access remains enabled until ${graceEndsAt}.`
+        : 'Payment failed. Access remains enabled for a limited grace period.',
+    };
+  }
+  if (status === 'past_due' && !allowed) {
+    return {
+      status,
+      allowed,
+      label: 'Grace expired',
+      tone: 'critical',
+      message: 'Grace period expired. Service should be suspended until payment is recovered.',
+    };
+  }
+  if (status === 'canceled') {
+    return {
+      status,
+      allowed,
+      label: 'Canceled',
+      tone: 'critical',
+      message: 'Subscription canceled. Service access is suspended.',
+    };
+  }
+  if (status === 'incomplete') {
+    return {
+      status,
+      allowed,
+      label: 'Incomplete',
+      tone: 'warn',
+      message: 'Checkout is incomplete. Complete payment to activate service.',
+    };
+  }
+  return {
+    status,
+    allowed,
+    label: status,
+    tone: 'neutral',
+    message: 'Entitlement state is available but not mapped to a UI hint.',
+  };
+}
+
 export function useBillingDashboard() {
   const [plans, setPlans] = useState([]);
   const [selectedPlanCode, setSelectedPlanCode] = useState('');
@@ -26,8 +122,19 @@ export function useBillingDashboard() {
   const [authToken, setAuthToken] = useState('');
   const [tenantId, setTenantId] = useState('');
   const [exportFilters, setExportFilters] = useState(defaultExportFilters);
+  const [checkoutInput, setCheckoutInput] = useState(defaultCheckoutInput);
+  const [checkoutState, setCheckoutState] = useState({ success: false, canceled: false, sessionId: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    setCheckoutState({
+      success: query.get('success') === 'true',
+      canceled: query.get('canceled') === 'true',
+      sessionId: query.get('session_id') || '',
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,6 +193,8 @@ export function useBillingDashboard() {
     };
   }, [selectedPlan, estimateInput]);
 
+  const entitlementState = useMemo(() => deriveEntitlementState(usageSummary), [usageSummary]);
+
   async function refreshTenantData() {
     if (!authToken.trim() || !tenantId.trim()) {
       setUsageSummary(null);
@@ -113,10 +222,15 @@ export function useBillingDashboard() {
         },
       );
       setEstimateResult(estimate);
-    } catch (_error) {
-      setUsageSummary(null);
+    } catch (apiError) {
       setEstimateResult(null);
-      setError('Unable to load protected billing metrics. Verify JWT token and tenant id.');
+      if (apiError?.status === 402) {
+        const detail = apiError?.payload?.detail || 'Service suspended due to billing status.';
+        setError(detail);
+      } else {
+        setUsageSummary(null);
+        setError('Unable to load protected billing metrics. Verify JWT token and tenant id.');
+      }
     } finally {
       setLoading(false);
     }
@@ -182,6 +296,72 @@ export function useBillingDashboard() {
     }
   }
 
+  async function startStripeCheckout() {
+    if (!authToken.trim()) {
+      setError('JWT token is required to create a checkout session.');
+      return;
+    }
+    if (!selectedPlanCode) {
+      setError('Select a plan before starting checkout.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const payload = {
+        plan_code: selectedPlanCode,
+        tenant_type: checkoutInput.tenantType,
+      };
+      if (checkoutInput.tenantName.trim()) {
+        payload.tenant_name = checkoutInput.tenantName.trim();
+      }
+      const response = await apiPost('/billing/checkout/session/', payload, {
+        headers: {
+          Authorization: `Bearer ${authToken.trim()}`,
+        },
+      });
+      if (!response.checkout_url) {
+        throw new Error('Checkout URL missing in response');
+      }
+      window.location.href = response.checkout_url;
+    } catch (_error) {
+      setError('Unable to start Stripe Checkout. Verify token, plan mapping, and Stripe env config.');
+      setLoading(false);
+    }
+  }
+
+  async function openStripePortal() {
+    if (!authToken.trim() || !tenantId.trim()) {
+      setError('JWT token and tenant id are required to open billing portal.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const response = await apiPost(
+        '/billing/portal/session/',
+        {
+          return_url: window.location.origin,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken.trim()}`,
+            'X-Tenant-ID': tenantId.trim(),
+          },
+        },
+      );
+      if (!response.portal_url) {
+        throw new Error('Portal URL missing in response');
+      }
+      window.location.href = response.portal_url;
+    } catch (_error) {
+      setError('Unable to open Stripe billing portal. Verify tenant, auth, and Stripe linkage.');
+      setLoading(false);
+    }
+  }
+
   return {
     plans,
     selectedPlanCode,
@@ -198,8 +378,14 @@ export function useBillingDashboard() {
     setTenantId,
     exportFilters,
     setExportFilters,
+    checkoutInput,
+    setCheckoutInput,
+    checkoutState,
     refreshTenantData,
     exportTenantCsv,
+    startStripeCheckout,
+    openStripePortal,
+    entitlementState,
     loading,
     error,
   };

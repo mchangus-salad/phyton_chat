@@ -1,15 +1,31 @@
 import { useBillingDashboard } from '../hooks/useBillingDashboard';
+import { useI18n } from '../../../shared/i18n/I18nProvider';
 
-function formatMoney(cents, currency) {
+function formatMoney(cents, currency, locale) {
   const amount = Number(cents || 0) / 100;
   try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+    return new Intl.NumberFormat(locale === 'es' ? 'es-ES' : 'en-US', { style: 'currency', currency }).format(amount);
   } catch (_error) {
     return `${amount.toFixed(2)} ${currency}`;
   }
 }
 
+function entitlementClassName(tone) {
+  if (tone === 'ok') {
+    return 'billing-entitlement billing-entitlement--ok';
+  }
+  if (tone === 'warn') {
+    return 'billing-entitlement billing-entitlement--warn';
+  }
+  if (tone === 'critical') {
+    return 'billing-entitlement billing-entitlement--critical';
+  }
+  return 'billing-entitlement';
+}
+
 export function BillingDashboard() {
+  const { t, locale } = useI18n();
+
   const {
     plans,
     selectedPlanCode,
@@ -26,8 +42,14 @@ export function BillingDashboard() {
     setTenantId,
     exportFilters,
     setExportFilters,
+    checkoutInput,
+    setCheckoutInput,
+    checkoutState,
     refreshTenantData,
     exportTenantCsv,
+    startStripeCheckout,
+    openStripePortal,
+    entitlementState,
     loading,
     error,
   } = useBillingDashboard();
@@ -35,15 +57,15 @@ export function BillingDashboard() {
   return (
     <section className="billing-panel">
       <div className="billing-panel__header">
-        <p className="eyebrow">Billing cockpit</p>
-        <h2>Hybrid billing control plane</h2>
+        <p className="eyebrow">{t('billing.eyebrow')}</p>
+        <h2>{t('billing.title')}</h2>
       </div>
 
       <div className="billing-grid">
         <article className="billing-card">
-          <h3>Plan simulator</h3>
+          <h3>{t('billing.planSimulator')}</h3>
           <label>
-            Plan
+            {t('billing.plan')}
             <select value={selectedPlanCode} onChange={(event) => setSelectedPlanCode(event.target.value)}>
               {plans.map((plan) => (
                 <option key={plan.code} value={plan.code}>
@@ -54,7 +76,7 @@ export function BillingDashboard() {
           </label>
 
           <label>
-            Active users
+            {t('billing.activeUsers')}
             <input
               type="number"
               min="0"
@@ -64,7 +86,7 @@ export function BillingDashboard() {
           </label>
 
           <label>
-            API requests / month
+            {t('billing.apiRequestsPerMonth')}
             <input
               type="number"
               min="0"
@@ -75,59 +97,96 @@ export function BillingDashboard() {
 
           {simulatedEstimate ? (
             <div className="billing-metrics">
-              <p>Base: {formatMoney(simulatedEstimate.platformFeeCents, simulatedEstimate.currency)}</p>
-              <p>User overage: {formatMoney(simulatedEstimate.userOverageCents, simulatedEstimate.currency)}</p>
-              <p>API overage: {formatMoney(simulatedEstimate.apiOverageCents, simulatedEstimate.currency)}</p>
-              <p className="billing-metrics__total">Total: {formatMoney(simulatedEstimate.totalCents, simulatedEstimate.currency)}</p>
+              <p>{t('billing.base')}: {formatMoney(simulatedEstimate.platformFeeCents, simulatedEstimate.currency, locale)}</p>
+              <p>{t('billing.userOverage')}: {formatMoney(simulatedEstimate.userOverageCents, simulatedEstimate.currency, locale)}</p>
+              <p>{t('billing.apiOverage')}: {formatMoney(simulatedEstimate.apiOverageCents, simulatedEstimate.currency, locale)}</p>
+              <p className="billing-metrics__total">{t('billing.total')}: {formatMoney(simulatedEstimate.totalCents, simulatedEstimate.currency, locale)}</p>
             </div>
           ) : null}
 
           {selectedPlan ? (
             <p className="billing-note">
-              Includes {selectedPlan.max_users} users and {selectedPlan.max_monthly_requests} API requests.
+              {t('billing.includes', {
+                users: selectedPlan.max_users,
+                requests: selectedPlan.max_monthly_requests,
+              })}
             </p>
           ) : null}
         </article>
 
         <article className="billing-card">
-          <h3>Tenant live metrics</h3>
+          <h3>{t('billing.tenantLiveMetrics')}</h3>
+
+          <div className={entitlementClassName(entitlementState.tone)}>
+            <p className="billing-entitlement__label">{t('billing.entitlementStatus')}: {entitlementState.label}</p>
+            <p className="billing-entitlement__message">{entitlementState.message}</p>
+            {!entitlementState.allowed ? (
+              <button type="button" className="billing-secondary-button" onClick={openStripePortal} disabled={loading || !authToken || !tenantId}>
+                {t('billing.resolveInPortal')}
+              </button>
+            ) : null}
+          </div>
+
           <label>
-            JWT token
+            {t('billing.jwtToken')}
             <input
               type="password"
-              placeholder="Paste bearer token"
+              placeholder={t('billing.pasteBearer')}
               value={authToken}
               onChange={(event) => setAuthToken(event.target.value)}
             />
           </label>
 
           <label>
-            Tenant id
+            {t('billing.tenantId')}
             <input
               type="text"
-              placeholder="Tenant UUID"
+              placeholder={t('billing.tenantUuid')}
               value={tenantId}
               onChange={(event) => setTenantId(event.target.value)}
             />
           </label>
 
+          <label>
+            {t('billing.checkoutTenantName')}
+            <input
+              type="text"
+              placeholder={t('billing.orgDisplayName')}
+              value={checkoutInput.tenantName}
+              onChange={(event) => setCheckoutInput((current) => ({ ...current, tenantName: event.target.value }))}
+            />
+          </label>
+
+          <label>
+            {t('billing.checkoutTenantType')}
+            <select
+              value={checkoutInput.tenantType}
+              onChange={(event) => setCheckoutInput((current) => ({ ...current, tenantType: event.target.value }))}
+            >
+              <option value="individual">{t('billing.typeIndividual')}</option>
+              <option value="clinic">{t('billing.typeClinic')}</option>
+              <option value="hospital">{t('billing.typeHospital')}</option>
+              <option value="institution">{t('billing.typeInstitution')}</option>
+            </select>
+          </label>
+
           <div className="billing-export-filters">
             <label>
-              Status
+              {t('billing.status')}
               <select
                 value={exportFilters.status}
                 onChange={(event) => setExportFilters((current) => ({ ...current, status: event.target.value }))}
               >
-                <option value="">All</option>
-                <option value="draft">Draft</option>
-                <option value="finalized">Finalized</option>
-                <option value="paid">Paid</option>
-                <option value="void">Void</option>
+                <option value="">{t('billing.statusAll')}</option>
+                <option value="draft">{t('billing.statusDraft')}</option>
+                <option value="finalized">{t('billing.statusFinalized')}</option>
+                <option value="paid">{t('billing.statusPaid')}</option>
+                <option value="void">{t('billing.statusVoid')}</option>
               </select>
             </label>
 
             <label>
-              Currency
+              {t('billing.currency')}
               <input
                 type="text"
                 maxLength="3"
@@ -137,7 +196,7 @@ export function BillingDashboard() {
             </label>
 
             <label>
-              Generated from
+              {t('billing.generatedFrom')}
               <input
                 type="date"
                 value={exportFilters.startDate}
@@ -146,7 +205,7 @@ export function BillingDashboard() {
             </label>
 
             <label>
-              Generated to
+              {t('billing.generatedTo')}
               <input
                 type="date"
                 value={exportFilters.endDate}
@@ -155,7 +214,7 @@ export function BillingDashboard() {
             </label>
 
             <label>
-              Billed period start
+              {t('billing.billedPeriodStart')}
               <input
                 type="date"
                 value={exportFilters.periodStart}
@@ -164,7 +223,7 @@ export function BillingDashboard() {
             </label>
 
             <label>
-              Billed period end
+              {t('billing.billedPeriodEnd')}
               <input
                 type="date"
                 value={exportFilters.periodEnd}
@@ -174,29 +233,47 @@ export function BillingDashboard() {
           </div>
 
           <button type="button" onClick={refreshTenantData} disabled={loading}>
-            {loading ? 'Loading...' : 'Refresh usage and overage'}
+            {loading ? t('ui.loading') : t('billing.refreshUsage')}
           </button>
           <button type="button" className="billing-secondary-button" onClick={exportTenantCsv} disabled={loading}>
-            Export CSV
+            {t('billing.exportCsv')}
           </button>
+          <button type="button" className="billing-secondary-button" onClick={startStripeCheckout} disabled={loading}>
+            {t('billing.startCheckout')}
+          </button>
+          <button type="button" className="billing-secondary-button" onClick={openStripePortal} disabled={loading}>
+            {t('billing.managePortal')}
+          </button>
+
+          {checkoutState.success ? (
+            <p className="billing-note">
+              {t('billing.checkoutCompleted')}
+              {checkoutState.sessionId ? ` ${t('billing.session')}: ${checkoutState.sessionId}` : ''}
+            </p>
+          ) : null}
+          {checkoutState.canceled ? <p className="billing-note">{t('billing.checkoutCanceled')}</p> : null}
 
           {error ? <p className="billing-error">{error}</p> : null}
 
           {usageSummary ? (
             <div className="billing-metrics">
-              <p>Active users: {usageSummary.active_users}</p>
-              <p>API requests: {usageSummary.api_requests}</p>
-              <p>Overage users: {usageSummary.overage_users}</p>
-              <p>Overage API: {usageSummary.overage_api_requests}</p>
+              <p>{t('billing.subscriptionStatus')}: {usageSummary.subscription_status || t('ui.unknown')}</p>
+              {usageSummary.grace_period_ends_at ? (
+                <p>{t('billing.graceEndsAt')}: {new Date(usageSummary.grace_period_ends_at).toLocaleString(locale === 'es' ? 'es-ES' : 'en-US')}</p>
+              ) : null}
+              <p>{t('billing.metricActiveUsers')}: {usageSummary.active_users}</p>
+              <p>{t('billing.metricApiRequests')}: {usageSummary.api_requests}</p>
+              <p>{t('billing.metricOverageUsers')}: {usageSummary.overage_users}</p>
+              <p>{t('billing.metricOverageApi')}: {usageSummary.overage_api_requests}</p>
               {usageSummary.latest_invoice ? (
                 <p>
-                  Latest invoice:{' '}
+                  {t('billing.latestInvoice')}:{' '}
                   <a
                     href={`/api/v1/billing/invoices/${usageSummary.latest_invoice.invoice_id}/receipt.txt`}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    download receipt
+                    {t('billing.downloadReceipt')}
                   </a>
                   {' · '}
                   <a
@@ -204,7 +281,7 @@ export function BillingDashboard() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    download PDF
+                    {t('billing.downloadPdf')}
                   </a>
                 </p>
               ) : null}
@@ -214,7 +291,7 @@ export function BillingDashboard() {
           {estimateResult ? (
             <div className="billing-metrics">
               <p className="billing-metrics__total">
-                Current estimate: {formatMoney(estimateResult.total_cents, estimateResult.currency)}
+                {t('billing.currentEstimate')}: {formatMoney(estimateResult.total_cents, estimateResult.currency, locale)}
               </p>
             </div>
           ) : null}

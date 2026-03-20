@@ -1,3 +1,36 @@
+/**
+ * CliniGraph AI - Frontend App
+ *
+ * This is the main entry point for the CliniGraph AI frontend.
+ *
+ * GenAI Components Available:
+ * - AgentQueryPanel: General medical queries (POST /api/v1/agent/query/)
+ * - OncologyQueryPanel: Oncology research (POST /api/v1/agent/oncology/query/)
+ * - MedicalQueryPanel: Domain-scoped queries (POST /api/v1/agent/medical/query/)
+ * - PatientCaseAnalyzePanel: Patient analysis (POST /api/v1/agent/patient/analyze/)
+ *
+ * Each component includes:
+ * - JWT authentication with tenant selection
+ * - Form inputs (question, domain, file upload, etc.)
+ * - Comprehensive error handling (401, 402, 403, 429, 400, 500+)
+ * - Success display with citations and PHI redaction notices
+ * - Special yellow/orange alert styling for HTTP 402 (Payment Required)
+ *
+ * To use these components, import and render them:
+ * import { AgentQueryPanel } from './features/platform/components/AgentQueryPanel';
+ *
+ * Then add to JSX:
+ * <AgentQueryPanel />
+ *
+ * See README_GENAI_COMPONENTS.md for full documentation.
+ */
+
+ // To add GenAI components, uncomment the imports below and add to JSX:
+ // import { AgentQueryPanel } from './features/platform/components/AgentQueryPanel';
+ // import { OncologyQueryPanel } from './features/platform/components/OncologyQueryPanel';
+ // import { MedicalQueryPanel } from './features/platform/components/MedicalQueryPanel';
+ // import { PatientCaseAnalyzePanel } from './features/platform/components/PatientCaseAnalyzePanel';
+
 const productAreas = [
   {
     title: 'Clinical Workspace',

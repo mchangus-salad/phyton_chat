@@ -1,4 +1,5 @@
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
+import { useI18n } from '../../../shared/i18n/I18nProvider';
 
 function mapHealthTone(status) {
   if (status === 'ok') {
@@ -10,36 +11,35 @@ function mapHealthTone(status) {
   return 'danger';
 }
 
-function renderHealthLabel(status, framework) {
+function renderHealthLabel(status, framework, t) {
   if (status === 'ok') {
-    return `API healthy${framework ? ` · ${framework}` : ''}`;
+    return `${t('hero.healthy')}${framework ? ` · ${framework}` : ''}`;
   }
   if (status === 'loading') {
-    return 'Checking platform health';
+    return t('hero.checking');
   }
-  return 'API unavailable';
+  return t('hero.unavailable');
 }
 
 export function HeroSection({ health }) {
+  const { t } = useI18n();
+
   return (
     <section className="hero-panel">
       <div className="hero-heading-row">
-        <p className="eyebrow">CliniGraph AI</p>
+        <p className="eyebrow">{t('hero.brand')}</p>
         <StatusBadge tone={mapHealthTone(health.status)}>
-          {renderHealthLabel(health.status, health.framework)}
+          {renderHealthLabel(health.status, health.framework, t)}
         </StatusBadge>
       </div>
-      <h1>Medical intelligence built for clinical rigor and SaaS scale.</h1>
-      <p className="hero-copy">
-        This workspace foundation follows a feature-oriented frontend architecture: shared API access,
-        isolated UI primitives, and product modules ready for auth, evidence search, billing, and patient-case flows.
-      </p>
+      <h1>{t('hero.title')}</h1>
+      <p className="hero-copy">{t('hero.copy')}</p>
       <div className="hero-actions">
         <a className="primary-action" href="/api/v1/health/">
-          API health
+          {t('hero.apiHealth')}
         </a>
         <a className="secondary-action" href="/api/schema/swagger-ui/">
-          Swagger UI
+          {t('hero.swagger')}
         </a>
       </div>
     </section>
