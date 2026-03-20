@@ -37,6 +37,13 @@ Detailed diagrams for architecture, execution flow, request lifecycle, and data 
 
 - [CliniGraph AI Mermaid Diagrams](./MERMAID_DIAGRAMS.md)
 
+Client-facing documentation:
+
+- [Client Manual (Spanish)](./CLIENT_MANUAL.md)
+- [Client Manual (English)](./CLIENT_MANUAL_EN.md)
+- [Platform Roadmap](./PLATFORM_ROADMAP.md)
+- [Documentation Update Template](./DOC_UPDATE_TEMPLATE.md)
+
 ## Sandbox mode (no-cost local dev)
 
 This project supports a local sandbox LLM mode with no external API calls:
@@ -465,3 +472,71 @@ Example token request:
   "username": "your-username",
   "password": "your-password"
 }
+
+## Patient Case Analysis (HIPAA-safe)
+
+The API includes a patient-case analysis endpoint for doctors who need case-specific recommendations while enforcing PHI de-identification before model inference.
+
+Endpoint:
+
+- POST /api/v1/agent/patient/analyze/
+
+Payload options:
+
+- `text`: free clinical narrative
+- `file`: upload (`.txt`, `.pdf`, `.docx`, `.csv`, `.json`)
+- `domain`: cardiology, neurology, oncology, etc.
+- `subdomain`: optional specialty focus
+- `question`: optional targeted question for the case
+- `user_id`: audit/user traceability
+
+Response includes:
+
+- `session_id`: audit session identifier
+- `analysis`: evidence-oriented case analysis
+- `citations`: references used by the model
+- `redaction_summary`: PHI redaction counters by category
+- `safety_notice`
+- `request_id`
+
+Processing guarantees:
+
+1. Extract text from text/file payload.
+2. De-identify PHI (HIPAA Safe Harbor categories) before any LLM call.
+3. Build prompt only from de-identified content.
+4. Retrieve domain evidence and generate clinical recommendations.
+5. Persist audit metadata only (no raw PHI text).
+
+Implementation files:
+
+- `api/agent_ai/phi_deidentifier.py`
+- `api/agent_ai/file_extractor.py`
+- `api/models.py` (`PatientCaseSession`)
+- `api/views.py` (`patient_case_analyze`)
+- `api/serializers.py` (`PatientCaseUploadSerializer`, `PatientCaseAnalysisResponseSerializer`)
+
+## Automated Medical Corpus Update
+
+SaaS mode includes scheduled PubMed updates through:
+
+- management command: `manage.py auto_update_corpus`
+- container service: `corpus-updater`
+
+Behavior:
+
+1. Query NCBI PubMed for configured specialty topics.
+2. Fetch and parse MEDLINE abstracts.
+3. Infer evidence type and normalize metadata.
+4. Deduplicate against persistent PMID state.
+5. Ingest only new evidence to the vector store.
+
+Runtime configuration:
+
+- `CORPUS_UPDATE_INTERVAL_HOURS`
+- `NCBI_API_KEY`
+
+Operational scripts:
+
+- `scripts/saas-up.ps1 -Seed`
+- `scripts/saas-seed.ps1`
+- `scripts/corpus-updater-entrypoint.sh`

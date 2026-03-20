@@ -136,3 +136,57 @@ erDiagram
 
     KNOWLEDGE_DOCUMENT ||--o{ EVIDENCE_RESULT : retrieved_as
 ```
+
+## 5) Patient Case Analysis (HIPAA-safe)
+
+This flow documents how uploaded patient information is processed safely before AI analysis.
+
+Key controls:
+
+- PHI is de-identified before LLM invocation.
+- The API returns analysis plus citations and redaction summary.
+- Audit persistence stores metadata only (no raw PHI text).
+
+```mermaid
+flowchart TD
+    A[Doctor Uploads Text or File] --> B[Text Extraction]
+    B --> C[HIPAA Safe Harbor De-identification]
+    C --> D{PHI Found?}
+    D -->|Yes| E[Replace with Redaction Tokens]
+    D -->|No| F[Pass-through De-identified Text]
+    E --> G[Build Clinical Prompt]
+    F --> G
+    G --> H[Domain Retrieval in Vector DB]
+    H --> I[LLM Clinical Analysis]
+    I --> J[Return Analysis with Citations]
+    J --> K[Store Audit Metadata Only]
+    K --> L[Client Receives Session ID + Redaction Summary]
+```
+
+## 6) Automated Corpus Updater Runtime
+
+This sequence diagram explains the periodic evidence refresh pipeline.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Scheduler as corpus-updater
+    participant Django as auto_update_corpus
+    participant NCBI as PubMed E-utilities
+    participant State as corpus_state.json
+    participant Ingest as CliniGraphService
+    participant Vector as Weaviate
+
+    Scheduler->>Django: Run every N hours
+    Django->>State: Load seen PMIDs
+    Django->>NCBI: esearch by topic and days-back
+    NCBI-->>Django: PMIDs
+    Django->>NCBI: efetch MEDLINE records
+    NCBI-->>Django: title/abstract/metadata
+    Django->>Django: Parse + infer evidence type
+    Django->>State: Skip existing PMIDs and save new state
+    Django->>Ingest: ingest_documents by domain/subdomain
+    Ingest->>Vector: Upsert vectors and metadata
+    Vector-->>Ingest: Indexed counts
+    Ingest-->>Django: Ingestion result summary
+```
