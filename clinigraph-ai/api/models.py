@@ -47,6 +47,75 @@ class PatientCaseSession(models.Model):
 		return f"PatientCaseSession({self.session_id}, {self.created_at:%Y-%m-%d})"
 
 
+class AgentChatSession(models.Model):
+	"""Persistent user chat thread for Agent Query, scoped to tenant and user."""
+
+	session_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+	tenant = models.ForeignKey("Tenant", on_delete=models.CASCADE, related_name="agent_chat_sessions")
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="agent_chat_sessions")
+	title = models.CharField(max_length=255, blank=True, default="")
+	is_archived = models.BooleanField(default=False)
+	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
+	last_activity_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ["-last_activity_at", "-created_at"]
+		indexes = [
+			models.Index(fields=["tenant", "user", "is_archived", "-last_activity_at"]),
+			models.Index(fields=["session_id"]),
+		]
+
+	def __str__(self) -> str:
+		return f"AgentChatSession({self.session_id}, tenant={self.tenant_id}, user={self.user_id})"
+
+
+class AgentChatMessage(models.Model):
+	"""Message turns persisted for a chat session."""
+
+	class Role(models.TextChoices):
+		USER = "user", "User"
+		ASSISTANT = "assistant", "Assistant"
+
+	chat_session = models.ForeignKey(AgentChatSession, on_delete=models.CASCADE, related_name="messages")
+	role = models.CharField(max_length=16, choices=Role.choices)
+	content = models.TextField()
+	request_id = models.CharField(max_length=128, blank=True, default="")
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ["created_at", "id"]
+		indexes = [
+			models.Index(fields=["chat_session", "created_at"]),
+		]
+
+	def __str__(self) -> str:
+		return f"AgentChatMessage(session={self.chat_session_id}, role={self.role}, id={self.id})"
+
+
+class AgentChatHighlight(models.Model):
+	"""Highlights on assistant messages with offsets for deep-link navigation."""
+
+	chat_session = models.ForeignKey(AgentChatSession, on_delete=models.CASCADE, related_name="highlights")
+	message = models.ForeignKey(AgentChatMessage, on_delete=models.CASCADE, related_name="highlights")
+	selected_text = models.TextField()
+	start_offset = models.PositiveIntegerField()
+	end_offset = models.PositiveIntegerField()
+	context_snippet = models.CharField(max_length=280, blank=True, default="")
+	created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="agent_chat_highlights")
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ["-created_at", "-id"]
+		indexes = [
+			models.Index(fields=["chat_session", "-created_at"]),
+			models.Index(fields=["message", "start_offset", "end_offset"]),
+		]
+
+	def __str__(self) -> str:
+		return f"AgentChatHighlight(session={self.chat_session_id}, message={self.message_id}, id={self.id})"
+
+
 class SecurityEvent(models.Model):
 	"""Security and abuse telemetry for incident response and threat analysis."""
 

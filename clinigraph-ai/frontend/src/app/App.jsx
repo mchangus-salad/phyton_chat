@@ -5,7 +5,7 @@ import { OperationsPanel } from '../features/platform/components/OperationsPanel
 import { PlatformAreasGrid } from '../features/platform/components/PlatformAreasGrid';
 import { usePlatformSnapshot } from '../features/platform/hooks/usePlatformSnapshot';
 import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher';
-import { AgentQueryPanel } from '../features/platform/components/AgentQueryPanel';
+import { AgentChatWorkspace } from '../features/platform/components/AgentChatWorkspace';
 import { OncologyQueryPanel } from '../features/platform/components/OncologyQueryPanel';
 import { MedicalQueryPanel } from '../features/platform/components/MedicalQueryPanel';
 import { PatientCaseAnalyzePanel } from '../features/platform/components/PatientCaseAnalyzePanel';
@@ -30,7 +30,7 @@ export default function App() {
           <h2>{t('genai.subtitle')}</h2>
         </div>
         <div className="billing-grid">
-          <AgentQueryPanel />
+          <AgentChatWorkspace />
           <OncologyQueryPanel />
         </div>
         <div className="billing-grid">

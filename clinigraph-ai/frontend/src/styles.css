@@ -777,6 +777,210 @@ button.primary-action:disabled {
   color: var(--accent-strong);
 }
 
+.agent-chat-auth {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.agent-chat-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 34%);
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.agent-chat-main {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px;
+  min-height: 420px;
+}
+
+.agent-chat-sidebar {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
+  padding: 12px;
+  resize: horizontal;
+  overflow: auto;
+  min-width: 260px;
+  max-width: 100%;
+}
+
+.agent-chat-sidebar__actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.agent-chat-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agent-chat-list__item {
+  position: relative;
+}
+
+.agent-chat-list__button {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.agent-chat-list__button:hover {
+  border-color: var(--accent);
+}
+
+.agent-chat-list__title {
+  display: block;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.agent-chat-list__preview {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+
+.agent-chat-list__hover-preview {
+  position: absolute;
+  z-index: 10;
+  right: calc(100% + 8px);
+  top: 0;
+  min-width: 250px;
+  max-width: 320px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 10px;
+  display: none;
+}
+
+.agent-chat-list__item:hover .agent-chat-list__hover-preview {
+  display: block;
+}
+
+.agent-chat-list__hover-preview p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.agent-chat-list__jump {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  text-align: left;
+  background: #fff;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.agent-chat-composer textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.agent-chat-composer button {
+  margin-top: 10px;
+}
+
+.agent-chat-load-older {
+  margin-top: 10px;
+}
+
+.agent-chat-messages {
+  margin-top: 14px;
+  max-height: 460px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.agent-chat-message {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.agent-chat-message header {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.agent-chat-message--assistant {
+  background: #f7fbff;
+}
+
+.agent-chat-message--user {
+  background: #fffdf8;
+}
+
+.agent-chat-message p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.agent-chat-message--recent {
+  animation: loaded-message-glow 1.2s ease-out;
+  border-color: rgba(10, 108, 116, 0.45);
+  box-shadow: 0 0 0 2px rgba(10, 108, 116, 0.12);
+}
+
+@keyframes loaded-message-glow {
+  0% {
+    background: rgba(10, 108, 116, 0.14);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+.chat-highlight {
+  background: #ffe082;
+  border-radius: 4px;
+  padding: 0 2px;
+  cursor: context-menu;
+}
+
+.chat-highlight--flash {
+  animation: pulse-highlight 700ms ease-in-out;
+}
+
+@keyframes pulse-highlight {
+  0% {
+    background: #ffd54f;
+  }
+  100% {
+    background: #ffe082;
+  }
+}
+
 @media (max-width: 768px) {
   .card,
   .agent-query-panel,
@@ -798,5 +1002,18 @@ button.primary-action:disabled {
   .action-link {
     text-align: center;
     width: 100%;
+  }
+
+  .agent-chat-auth,
+  .agent-chat-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-chat-sidebar {
+    resize: none;
+  }
+
+  .agent-chat-list__hover-preview {
+    display: none !important;
   }
 }

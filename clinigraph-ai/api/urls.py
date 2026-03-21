@@ -3,6 +3,11 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .auth_views import CliniGraphTokenObtainPairView, my_tenants
 from .views import (
+    agent_chat_highlights_create,
+    agent_chat_highlights_pop,
+    agent_chat_messages_create,
+    agent_chat_session_detail,
+    agent_chat_sessions,
     agent_query,
     health,
     medical_evidence_search,
@@ -46,6 +51,11 @@ urlpatterns = [
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
     path('auth/my-tenants/', my_tenants, name='auth-my-tenants'),
     path('agent/query/', agent_query, name='agent-query'),
+    path('agent/chats/', agent_chat_sessions, name='agent-chat-sessions'),
+    path('agent/chats/<uuid:session_id>/', agent_chat_session_detail, name='agent-chat-session-detail'),
+    path('agent/chats/<uuid:session_id>/messages/', agent_chat_messages_create, name='agent-chat-messages-create'),
+    path('agent/chats/<uuid:session_id>/highlights/', agent_chat_highlights_create, name='agent-chat-highlights-create'),
+    path('agent/chats/<uuid:session_id>/highlights/pop/', agent_chat_highlights_pop, name='agent-chat-highlights-pop'),
     path('agent/medical/evidence/', medical_evidence_search, name='medical-evidence-search'),
     path('agent/medical/query/', medical_query, name='medical-query'),
     path('agent/medical/train/', medical_train, name='medical-train'),

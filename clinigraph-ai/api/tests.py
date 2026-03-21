@@ -673,6 +673,401 @@ class AgentApiTests(APITestCase):
         )
         self.assertEqual(response.status_code, 402)
 
+    def test_agent_chat_session_message_and_highlight_flow(self):
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='chat-flow-user', password='password123')
+        tenant = Tenant.objects.create(name='Chat Flow Tenant', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.CLINICIAN, is_active=True)
+
+        plan = SubscriptionPlan.objects.create(
+            code='chat-flow-plan',
+            name='Chat Flow Plan',
+            description='Chat flow entitlement test',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=10000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=10,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=50,
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.ACTIVE,
+            provider='internal',
+        )
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'chat-flow-user', 'password': 'password123'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        create_session = self.client.post(
+            '/api/v1/agent/chats/',
+            {'title': 'Heart failure follow-up'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(create_session.status_code, status.HTTP_201_CREATED)
+        session_id = create_session.data['session_id']
+
+        user_message = self.client.post(
+            f'/api/v1/agent/chats/{session_id}/messages/',
+            {'role': 'user', 'content': 'Summarize HFrEF treatment options.'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(user_message.status_code, status.HTTP_201_CREATED)
+
+        assistant_message = self.client.post(
+            f'/api/v1/agent/chats/{session_id}/messages/',
+            {
+                'role': 'assistant',
+                'content': 'Use GDMT with ACEi/ARB/ARNI, beta-blocker, MRA, and SGLT2 inhibitor when indicated.',
+            },
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(assistant_message.status_code, status.HTTP_201_CREATED)
+        assistant_message_id = assistant_message.data['message_id']
+
+        create_highlight = self.client.post(
+            f'/api/v1/agent/chats/{session_id}/highlights/',
+            {
+                'message_id': assistant_message_id,
+                'selected_text': 'SGLT2 inhibitor',
+                'start_offset': 55,
+                'end_offset': 70,
+            },
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(create_highlight.status_code, status.HTTP_201_CREATED)
+
+        detail = self.client.get(
+            f'/api/v1/agent/chats/{session_id}/',
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(detail.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(detail.data['messages']), 2)
+        self.assertEqual(len(detail.data['highlights']), 1)
+
+    def test_agent_chat_highlight_pop_uses_lifo(self):
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='chat-highlight-pop-user', password='password123')
+        tenant = Tenant.objects.create(name='Chat Highlight Tenant', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.CLINICIAN, is_active=True)
+
+        plan = SubscriptionPlan.objects.create(
+            code='chat-highlight-plan',
+            name='Chat Highlight Plan',
+            description='Chat highlight pop test',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=10000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=10,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=50,
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.ACTIVE,
+            provider='internal',
+        )
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'chat-highlight-pop-user', 'password': 'password123'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        session_response = self.client.post(
+            '/api/v1/agent/chats/',
+            {'title': 'LIFO test'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        session_id = session_response.data['session_id']
+
+        assistant_message = self.client.post(
+            f'/api/v1/agent/chats/{session_id}/messages/',
+            {
+                'role': 'assistant',
+                'content': 'Aspirin plus statin are commonly used in secondary prevention contexts.',
+            },
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        message_id = assistant_message.data['message_id']
+
+        first_highlight = self.client.post(
+            f'/api/v1/agent/chats/{session_id}/highlights/',
+            {
+                'message_id': message_id,
+                'selected_text': 'Aspirin',
+                'start_offset': 0,
+                'end_offset': 7,
+            },
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(first_highlight.status_code, status.HTTP_201_CREATED)
+
+        second_highlight = self.client.post(
+            f'/api/v1/agent/chats/{session_id}/highlights/',
+            {
+                'message_id': message_id,
+                'selected_text': 'statin',
+                'start_offset': 13,
+                'end_offset': 19,
+            },
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(second_highlight.status_code, status.HTTP_201_CREATED)
+
+        pop_response = self.client.delete(
+            f'/api/v1/agent/chats/{session_id}/highlights/pop/',
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(pop_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(pop_response.data['undone_highlight_id'], second_highlight.data['highlight_id'])
+
+    def test_agent_chat_session_title_auto_generates_from_first_assistant_response(self):
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='chat-title-user', password='password123')
+        tenant = Tenant.objects.create(name='Chat Title Tenant', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.CLINICIAN, is_active=True)
+
+        plan = SubscriptionPlan.objects.create(
+            code='chat-title-plan',
+            name='Chat Title Plan',
+            description='Chat title generation test',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=10000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=10,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=50,
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.ACTIVE,
+            provider='internal',
+        )
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'chat-title-user', 'password': 'password123'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        session_response = self.client.post(
+            '/api/v1/agent/chats/',
+            {},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        session_id = session_response.data['session_id']
+
+        self.client.post(
+            f'/api/v1/agent/chats/{session_id}/messages/',
+            {'role': 'user', 'content': 'What are guideline updates?'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+
+        self.client.post(
+            f'/api/v1/agent/chats/{session_id}/messages/',
+            {
+                'role': 'assistant',
+                'content': 'Guideline update: prioritize SGLT2 inhibitors in eligible HFrEF patients. Additional notes follow.',
+            },
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+
+        detail = self.client.get(
+            f'/api/v1/agent/chats/{session_id}/',
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(detail.status_code, status.HTTP_200_OK)
+        self.assertTrue(detail.data['title'].startswith('Guideline update: prioritize SGLT2 inhibitors'))
+
+    def test_agent_chat_sessions_search_returns_paginated_shape(self):
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='chat-search-user', password='password123')
+        tenant = Tenant.objects.create(name='Chat Search Tenant', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.CLINICIAN, is_active=True)
+
+        plan = SubscriptionPlan.objects.create(
+            code='chat-search-plan',
+            name='Chat Search Plan',
+            description='Chat search shape test',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=10000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=10,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=50,
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.ACTIVE,
+            provider='internal',
+        )
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'chat-search-user', 'password': 'password123'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        first = self.client.post(
+            '/api/v1/agent/chats/',
+            {'title': 'Cancer biomarkers review'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        second = self.client.post(
+            '/api/v1/agent/chats/',
+            {'title': 'Neurology follow-up'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(second.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.get(
+            '/api/v1/agent/chats/?q=biomarkers&limit=1&offset=0',
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('items', response.data)
+        self.assertIn('pagination', response.data)
+        self.assertEqual(response.data['pagination']['limit'], 1)
+        self.assertGreaterEqual(response.data['pagination']['total'], 1)
+        self.assertGreaterEqual(len(response.data['items']), 1)
+
+    def test_agent_chat_session_detail_supports_tail_pagination_for_older_messages(self):
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
+
+        user_model = get_user_model()
+        user = user_model.objects.create_user(username='chat-tail-user', password='password123')
+        tenant = Tenant.objects.create(name='Chat Tail Tenant', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.CLINICIAN, is_active=True)
+
+        plan = SubscriptionPlan.objects.create(
+            code='chat-tail-plan',
+            name='Chat Tail Plan',
+            description='Chat tail pagination test',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=10000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=10,
+            seat_price_cents=1000,
+            api_overage_per_1000_cents=50,
+        )
+        Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.ACTIVE,
+            provider='internal',
+        )
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'chat-tail-user', 'password': 'password123'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        session_response = self.client.post(
+            '/api/v1/agent/chats/',
+            {'title': 'Tail pagination'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        session_id = session_response.data['session_id']
+
+        for idx in range(6):
+            self.client.post(
+                f'/api/v1/agent/chats/{session_id}/messages/',
+                {'role': 'assistant', 'content': f'Message {idx + 1}'},
+                format='json',
+                HTTP_AUTHORIZATION=f'Bearer {access_token}',
+                HTTP_X_TENANT_ID=str(tenant.tenant_id),
+            )
+
+        latest_slice = self.client.get(
+            f'/api/v1/agent/chats/{session_id}/?message_limit=3&message_offset=0&from_end=1',
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(latest_slice.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(latest_slice.data['messages']), 3)
+        self.assertEqual(latest_slice.data['messages'][0]['content'], 'Message 4')
+        self.assertTrue(latest_slice.data['messages_pagination']['has_more'])
+
+        older_slice = self.client.get(
+            f'/api/v1/agent/chats/{session_id}/?message_limit=3&message_offset=3&from_end=1',
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(older_slice.status_code, status.HTTP_200_OK)
+        self.assertEqual([m['content'] for m in older_slice.data['messages']], ['Message 1', 'Message 2', 'Message 3'])
+        self.assertFalse(older_slice.data['messages_pagination']['has_more'])
+
     def test_tenant_memberships_owner_can_create_list_and_update(self):
         from api.models import Tenant, TenantMembership
 

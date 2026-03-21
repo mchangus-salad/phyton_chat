@@ -25,6 +25,78 @@ class AgentQueryResponseSerializer(serializers.Serializer):
     request_id = serializers.CharField()
 
 
+class AgentChatSessionCreateSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=255, required=False, allow_blank=True, trim_whitespace=True)
+
+
+class AgentChatMessageCreateSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=["user", "assistant"])
+    content = serializers.CharField(max_length=12000, allow_blank=False, trim_whitespace=True)
+    request_id = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=True)
+
+
+class AgentChatHighlightCreateSerializer(serializers.Serializer):
+    message_id = serializers.IntegerField(min_value=1)
+    selected_text = serializers.CharField(max_length=4000, allow_blank=False, trim_whitespace=True)
+    start_offset = serializers.IntegerField(min_value=0)
+    end_offset = serializers.IntegerField(min_value=1)
+    context_snippet = serializers.CharField(max_length=280, required=False, allow_blank=True, trim_whitespace=True)
+
+    def validate(self, attrs):
+        if attrs["end_offset"] <= attrs["start_offset"]:
+            raise serializers.ValidationError("end_offset must be greater than start_offset")
+        return attrs
+
+
+class AgentChatHighlightSerializer(serializers.Serializer):
+    highlight_id = serializers.IntegerField()
+    message_id = serializers.IntegerField()
+    selected_text = serializers.CharField()
+    start_offset = serializers.IntegerField()
+    end_offset = serializers.IntegerField()
+    context_snippet = serializers.CharField(required=False, allow_blank=True)
+    created_at = serializers.DateTimeField()
+
+
+class AgentChatMessageSerializer(serializers.Serializer):
+    message_id = serializers.IntegerField()
+    role = serializers.CharField()
+    content = serializers.CharField()
+    request_id = serializers.CharField(required=False, allow_blank=True)
+    created_at = serializers.DateTimeField()
+
+
+class AgentChatSessionSummarySerializer(serializers.Serializer):
+    session_id = serializers.UUIDField()
+    title = serializers.CharField()
+    updated_at = serializers.DateTimeField()
+    last_activity_at = serializers.DateTimeField()
+    preview = serializers.CharField(required=False, allow_blank=True)
+    highlights_preview = AgentChatHighlightSerializer(many=True, required=False)
+
+
+class AgentChatPaginationSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    limit = serializers.IntegerField()
+    offset = serializers.IntegerField()
+    has_more = serializers.BooleanField()
+
+
+class AgentChatSessionListResponseSerializer(serializers.Serializer):
+    items = AgentChatSessionSummarySerializer(many=True)
+    pagination = AgentChatPaginationSerializer()
+
+
+class AgentChatSessionDetailSerializer(serializers.Serializer):
+    session_id = serializers.UUIDField()
+    title = serializers.CharField()
+    updated_at = serializers.DateTimeField()
+    last_activity_at = serializers.DateTimeField()
+    messages = AgentChatMessageSerializer(many=True)
+    messages_pagination = AgentChatPaginationSerializer(required=False)
+    highlights = AgentChatHighlightSerializer(many=True)
+
+
 class DomainQueryResponseSerializer(AgentQueryResponseSerializer):
     domain = serializers.CharField()
     subdomain = serializers.CharField(required=False, allow_blank=True)

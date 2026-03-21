@@ -1,14 +1,27 @@
 import logging
 
+from django.db.models import Max, Q
+from django.utils import timezone
+
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, OpenApiTypes, extend_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, parser_classes, permission_classes, throttle_classes
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .permissions import HasLlmAccessOrApiKey
+from .permissions import HasActiveEntitlement, HasLlmAccessOrApiKey, IsTenantClinicianOrAbove
 from .agent_ai.oncology_corpus import load_oncology_corpus_content
+from .models import AgentChatHighlight, AgentChatMessage, AgentChatSession
 from .serializers import (
+	AgentChatHighlightCreateSerializer,
+	AgentChatHighlightSerializer,
+	AgentChatSessionDetailSerializer,
+	AgentChatSessionListResponseSerializer,
+	AgentChatSessionSummarySerializer,
+	AgentChatSessionCreateSerializer,
+	AgentChatMessageCreateSerializer,
+	AgentChatMessageSerializer,
 	AgentQueryResponseSerializer,
 	AgentQuerySerializer,
 	DomainQueryResponseSerializer,
@@ -935,3 +948,425 @@ def patient_case_analyze(request):
 		},
 		status=status.HTTP_200_OK,
 	)
+
+
+def _get_chat_session_for_request(request, session_id: str):
+	return AgentChatSession.objects.filter(
+		session_id=session_id,
+		tenant=request.tenant,
+		user=request.user,
+		is_archived=False,
+	).first()
+
+
+def _parse_positive_int(raw_value, default_value, minimum=0, maximum=200):
+	try:
+		value = int(raw_value)
+	except (TypeError, ValueError):
+		return default_value
+	if value < minimum:
+		return minimum
+	if value > maximum:
+		return maximum
+	return value
+
+
+def _make_title_from_content(content: str, max_len: int = 72) -> str:
+	text = (content or '').strip().replace('\n', ' ')
+	while '  ' in text:
+		text = text.replace('  ', ' ')
+	if not text:
+		return 'New chat'
+	for delimiter in ('. ', '? ', '! ', '; '):
+		idx = text.find(delimiter)
+		if idx > 0:
+			text = text[:idx + 1]
+			break
+	title = text[:max_len].strip()
+	return title or 'New chat'
+
+
+def _make_search_snippet(text: str, term: str, max_len: int = 160) -> str:
+	body = (text or '').strip()
+	needle = (term or '').strip().lower()
+	if not body:
+		return ''
+	if not needle:
+		return body[:max_len]
+	idx = body.lower().find(needle)
+	if idx < 0:
+		return body[:max_len]
+	half = max_len // 2
+	start = max(0, idx - half)
+	end = min(len(body), start + max_len)
+	if end - start < max_len:
+		start = max(0, end - max_len)
+	return body[start:end]
+
+
+@extend_schema(
+	operation_id='agent_chat_sessions',
+	description='List or create persistent Agent chat sessions for the authenticated user and tenant.',
+	request=AgentChatSessionCreateSerializer,
+	responses={
+		200: AgentChatSessionListResponseSerializer,
+		201: AgentChatSessionSummarySerializer,
+		400: ErrorResponseSerializer,
+		401: ErrorResponseSerializer,
+		402: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth'],
+)
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated, IsTenantClinicianOrAbove, HasActiveEntitlement])
+def agent_chat_sessions(request):
+	if request.method == 'POST':
+		serializer = AgentChatSessionCreateSerializer(data=request.data or {})
+		if not serializer.is_valid():
+			return _validation_error_response(serializer)
+		title = (serializer.validated_data.get('title') or '').strip() or 'New chat'
+		session = AgentChatSession.objects.create(
+			tenant=request.tenant,
+			user=request.user,
+			title=title,
+		)
+		return Response(
+			{
+				'session_id': session.session_id,
+				'title': session.title,
+				'updated_at': session.updated_at,
+				'last_activity_at': session.last_activity_at,
+				'preview': '',
+				'highlights_preview': [],
+			},
+			status=status.HTTP_201_CREATED,
+		)
+
+	search = (request.query_params.get('q') or '').strip()
+	limit = _parse_positive_int(request.query_params.get('limit'), 30, minimum=1, maximum=100)
+	offset = _parse_positive_int(request.query_params.get('offset'), 0, minimum=0, maximum=5000)
+	sessions_qs = AgentChatSession.objects.filter(
+		tenant=request.tenant,
+		user=request.user,
+		is_archived=False,
+	).annotate(last_message_at=Max('messages__created_at')).order_by('-last_activity_at')
+
+	if search:
+		sessions_qs = sessions_qs.filter(
+			Q(title__icontains=search)
+			| Q(messages__content__icontains=search)
+			| Q(highlights__selected_text__icontains=search)
+			| Q(highlights__context_snippet__icontains=search)
+		).distinct()
+
+	all_sessions = list(sessions_qs[:300])
+	needle = search.lower()
+	now = timezone.now()
+
+	def session_score(session):
+		if not search:
+			return 0
+		title = (session.title or '').lower()
+		highlight_hits = session.highlights.filter(
+			Q(selected_text__icontains=search) | Q(context_snippet__icontains=search)
+		).count()
+		message_hits = session.messages.filter(content__icontains=search).count()
+		age_days = max(0.0, (now - session.last_activity_at).total_seconds() / 86400.0)
+		recency_bonus = max(0.0, 20.0 - age_days)
+
+		if title.startswith(needle):
+			return 100 + (highlight_hits * 2) + message_hits + recency_bonus
+		if needle in title:
+			return 80 + (highlight_hits * 2) + message_hits + recency_bonus
+		if highlight_hits > 0:
+			return 60 + (highlight_hits * 2) + message_hits + recency_bonus
+		if message_hits > 0:
+			return 40 + message_hits + recency_bonus
+		return recency_bonus
+
+	if search:
+		all_sessions.sort(key=lambda s: (session_score(s), s.last_activity_at), reverse=True)
+
+	total_count = len(all_sessions)
+	paged_sessions = all_sessions[offset: offset + limit]
+
+	items = []
+	for session in paged_sessions:
+		last_message = session.messages.order_by('-created_at', '-id').first()
+		highlight_preview_rows = session.highlights.order_by('-created_at', '-id')[:3]
+		preview_source = ''
+		if search:
+			hit = session.highlights.filter(
+				Q(selected_text__icontains=search) | Q(context_snippet__icontains=search)
+			).order_by('-created_at', '-id').first()
+			if hit:
+				preview_source = hit.context_snippet or hit.selected_text
+		if not preview_source and search:
+			message_hit = session.messages.filter(content__icontains=search).order_by('-created_at', '-id').first()
+			if message_hit:
+				preview_source = message_hit.content
+		if not preview_source and last_message:
+			preview_source = last_message.content
+
+		items.append(
+			{
+				'session_id': session.session_id,
+				'title': session.title or 'New chat',
+				'updated_at': session.updated_at,
+				'last_activity_at': session.last_activity_at,
+				'preview': _make_search_snippet(preview_source, search),
+				'highlights_preview': [
+					{
+						'highlight_id': h.id,
+						'message_id': h.message_id,
+						'selected_text': h.selected_text,
+						'start_offset': h.start_offset,
+						'end_offset': h.end_offset,
+						'context_snippet': h.context_snippet,
+						'created_at': h.created_at,
+					}
+					for h in highlight_preview_rows
+				],
+			}
+		)
+
+	return Response(
+		{
+			'items': items,
+			'pagination': {
+				'total': total_count,
+				'limit': limit,
+				'offset': offset,
+				'has_more': (offset + limit) < total_count,
+			},
+		},
+		status=status.HTTP_200_OK,
+	)
+
+
+@extend_schema(
+	operation_id='agent_chat_session_detail',
+	description='Get full message timeline and highlights for one persistent chat session.',
+	responses={
+		200: AgentChatSessionDetailSerializer,
+		401: ErrorResponseSerializer,
+		402: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+		404: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth'],
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsTenantClinicianOrAbove, HasActiveEntitlement])
+def agent_chat_session_detail(request, session_id):
+	session = _get_chat_session_for_request(request, session_id=session_id)
+	if not session:
+		return Response({'error': 'chat session not found'}, status=status.HTTP_404_NOT_FOUND)
+
+	message_limit = _parse_positive_int(request.query_params.get('message_limit'), 80, minimum=1, maximum=500)
+	message_offset = _parse_positive_int(request.query_params.get('message_offset'), 0, minimum=0, maximum=20000)
+	from_end_raw = (request.query_params.get('from_end') or '1').strip().lower()
+	from_end = from_end_raw not in ('0', 'false', 'no')
+	all_messages_qs = session.messages.order_by('created_at', 'id')
+	total_messages = all_messages_qs.count()
+
+	if from_end:
+		# Offset is interpreted from the end when from_end is enabled.
+		end_index = max(total_messages - message_offset, 0)
+		start_index = max(end_index - message_limit, 0)
+		messages = all_messages_qs[start_index:end_index]
+		has_more_messages = start_index > 0
+		effective_offset = message_offset
+	else:
+		messages = all_messages_qs[message_offset:message_offset + message_limit]
+		has_more_messages = (message_offset + message_limit) < total_messages
+		effective_offset = message_offset
+
+	highlights = session.highlights.order_by('-created_at', '-id')
+	return Response(
+		{
+			'session_id': session.session_id,
+			'title': session.title or 'New chat',
+			'updated_at': session.updated_at,
+			'last_activity_at': session.last_activity_at,
+			'messages': [
+				{
+					'message_id': m.id,
+					'role': m.role,
+					'content': m.content,
+					'request_id': m.request_id,
+					'created_at': m.created_at,
+				}
+				for m in messages
+			],
+			'messages_pagination': {
+				'total': total_messages,
+				'limit': message_limit,
+				'offset': effective_offset,
+				'has_more': has_more_messages,
+				'from_end': from_end,
+			},
+			'highlights': [
+				{
+					'highlight_id': h.id,
+					'message_id': h.message_id,
+					'selected_text': h.selected_text,
+					'start_offset': h.start_offset,
+					'end_offset': h.end_offset,
+					'context_snippet': h.context_snippet,
+					'created_at': h.created_at,
+				}
+				for h in highlights
+			],
+		},
+		status=status.HTTP_200_OK,
+	)
+
+
+@extend_schema(
+	operation_id='agent_chat_messages_create',
+	description='Append one message to a persistent chat session.',
+	request=AgentChatMessageCreateSerializer,
+	responses={
+		201: AgentChatMessageSerializer,
+		400: ErrorResponseSerializer,
+		401: ErrorResponseSerializer,
+		402: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+		404: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth'],
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsTenantClinicianOrAbove, HasActiveEntitlement])
+def agent_chat_messages_create(request, session_id):
+	session = _get_chat_session_for_request(request, session_id=session_id)
+	if not session:
+		return Response({'error': 'chat session not found'}, status=status.HTTP_404_NOT_FOUND)
+
+	serializer = AgentChatMessageCreateSerializer(data=request.data or {})
+	if not serializer.is_valid():
+		return _validation_error_response(serializer)
+
+	payload = serializer.validated_data
+	message = AgentChatMessage.objects.create(
+		chat_session=session,
+		role=payload['role'],
+		content=payload['content'],
+		request_id=payload.get('request_id', ''),
+	)
+
+	if message.role == AgentChatMessage.Role.ASSISTANT and session.title.strip() in ('', 'New chat'):
+		session.title = _make_title_from_content(payload['content'])
+
+	session.last_activity_at = timezone.now()
+	session.save(update_fields=['title', 'last_activity_at', 'updated_at'])
+
+	return Response(
+		{
+			'message_id': message.id,
+			'role': message.role,
+			'content': message.content,
+			'request_id': message.request_id,
+			'created_at': message.created_at,
+		},
+		status=status.HTTP_201_CREATED,
+	)
+
+
+@extend_schema(
+	operation_id='agent_chat_highlights_create',
+	description='Create highlight for a message by text offsets.',
+	request=AgentChatHighlightCreateSerializer,
+	responses={
+		201: AgentChatHighlightSerializer,
+		400: ErrorResponseSerializer,
+		401: ErrorResponseSerializer,
+		402: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+		404: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth'],
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsTenantClinicianOrAbove, HasActiveEntitlement])
+def agent_chat_highlights_create(request, session_id):
+	session = _get_chat_session_for_request(request, session_id=session_id)
+	if not session:
+		return Response({'error': 'chat session not found'}, status=status.HTTP_404_NOT_FOUND)
+
+	serializer = AgentChatHighlightCreateSerializer(data=request.data or {})
+	if not serializer.is_valid():
+		return _validation_error_response(serializer)
+
+	payload = serializer.validated_data
+	message = session.messages.filter(id=payload['message_id']).first()
+	if not message:
+		return Response({'error': 'message not found in session'}, status=status.HTTP_404_NOT_FOUND)
+
+	if payload['end_offset'] > len(message.content):
+		return Response({'error': 'highlight offsets out of message bounds'}, status=status.HTTP_400_BAD_REQUEST)
+
+	context_snippet = (payload.get('context_snippet') or '').strip()
+	if not context_snippet:
+		start = max(payload['start_offset'] - 40, 0)
+		end = min(payload['end_offset'] + 40, len(message.content))
+		context_snippet = message.content[start:end]
+
+	highlight = AgentChatHighlight.objects.create(
+		chat_session=session,
+		message=message,
+		selected_text=payload['selected_text'],
+		start_offset=payload['start_offset'],
+		end_offset=payload['end_offset'],
+		context_snippet=context_snippet,
+		created_by=request.user,
+	)
+
+	session.last_activity_at = timezone.now()
+	session.save(update_fields=['last_activity_at', 'updated_at'])
+
+	return Response(
+		{
+			'highlight_id': highlight.id,
+			'message_id': highlight.message_id,
+			'selected_text': highlight.selected_text,
+			'start_offset': highlight.start_offset,
+			'end_offset': highlight.end_offset,
+			'context_snippet': highlight.context_snippet,
+			'created_at': highlight.created_at,
+		},
+		status=status.HTTP_201_CREATED,
+	)
+
+
+@extend_schema(
+	operation_id='agent_chat_highlights_pop',
+	description='Undo latest highlight (LIFO) for the current user in a chat session.',
+	responses={
+		200: OpenApiTypes.OBJECT,
+		401: ErrorResponseSerializer,
+		402: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+		404: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth'],
+)
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated, IsTenantClinicianOrAbove, HasActiveEntitlement])
+def agent_chat_highlights_pop(request, session_id):
+	session = _get_chat_session_for_request(request, session_id=session_id)
+	if not session:
+		return Response({'error': 'chat session not found'}, status=status.HTTP_404_NOT_FOUND)
+
+	highlight = session.highlights.filter(created_by=request.user).order_by('-created_at', '-id').first()
+	if not highlight:
+		return Response({'error': 'no highlights to undo'}, status=status.HTTP_404_NOT_FOUND)
+
+	deleted_id = highlight.id
+	highlight.delete()
+	session.last_activity_at = timezone.now()
+	session.save(update_fields=['last_activity_at', 'updated_at'])
+
+	return Response({'undone_highlight_id': deleted_id}, status=status.HTTP_200_OK)
