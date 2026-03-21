@@ -5,14 +5,17 @@ from .config import settings
 
 class RedisCache:
     def __init__(self):
-        self.client = redis.Redis.from_url(settings.redis_url, decode_responses=True)
+        self.client = None
         self._fallback = {}
-        self._redis_available = True
+        self._redis_available = False
 
         try:
+            self.client = redis.Redis.from_url(settings.redis_url, decode_responses=True)
             self.client.ping()
         except Exception:
             self._redis_available = False
+        else:
+            self._redis_available = True
 
     def get(self, key: str):
         if self._redis_available:

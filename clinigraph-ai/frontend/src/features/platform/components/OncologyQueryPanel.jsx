@@ -2,21 +2,30 @@ import { useState } from 'react';
 import { useOncologyQuery } from '../hooks/useOncologyQuery';
 import { useI18n } from '../../../shared/i18n/I18nProvider';
 import { useRuntimeTranslation, useRuntimeTranslationList } from '../../../shared/i18n/useRuntimeTranslation';
+import { useAppShell } from '../../../app/AppShellContext';
 
-export function OncologyQueryPanel() {
+function sanitizeDisplayText(text) {
+  if (typeof text !== 'string') return '';
+  return text
+    .replace(/^\s*#{1,6}\s*/gm, '')
+    .replace(/\*\*(SUMMARY|EVIDENCE|CLINICAL IMPLICATIONS|UNCERTAINTY\s*&\s*LIMITATIONS|DISCLAIMER)\*\*/gi, '$1');
+}
+
+export function OncologyQueryPanel({ authToken, tenantId }) {
   const { t } = useI18n();
-  const [authToken, setAuthToken] = useState('');
-  const [tenantId, setTenantId] = useState('');
+  const { navigateTo, logout } = useAppShell();
   const [question, setQuestion] = useState('');
   const { status, data, error, errorCode, query } = useOncologyQuery();
   const rawAnswer = data?.answer || data?.message || (data ? JSON.stringify(data) : '');
+  const translationInput = status === 'success' ? rawAnswer : '';
   const { translatedText, translating, rateLimited: answerRateLimited, retryAfterSeconds: answerRetryAfterSeconds } = useRuntimeTranslation({
-    text: rawAnswer,
+    text: translationInput,
     authToken,
     tenantId: tenantId || undefined,
   });
+  const displayAnswer = sanitizeDisplayText(status === 'success' ? translatedText : rawAnswer);
   const { translatedTexts: translatedCitations, translating: translatingCitations, rateLimited: citationsRateLimited, retryAfterSeconds: citationsRetryAfterSeconds } = useRuntimeTranslationList({
-    texts: Array.isArray(data?.citations) ? data.citations : [],
+    texts: status === 'success' && Array.isArray(data?.citations) ? data.citations : [],
     authToken,
     tenantId: tenantId || undefined,
   });
@@ -55,33 +64,7 @@ export function OncologyQueryPanel() {
         {t('genai.oncologyDescription')}
       </p>
 
-      {/* Configuration Section */}
-      <div className="form-section">
-        <h3>{t('genai.configuration')}</h3>
-        <div className="form-group">
-          <label htmlFor="oncology-auth-token">{t('genai.authToken')}</label>
-          <input
-            id="oncology-auth-token"
-            type="password"
-            value={authToken}
-            onChange={(e) => setAuthToken(e.target.value)}
-            placeholder={t('genai.jwtPlaceholder')}
-            disabled={status === 'loading'}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="oncology-tenant-id">{t('genai.tenantIdOptional')}</label>
-          <input
-            id="oncology-tenant-id"
-            type="text"
-            value={tenantId}
-            onChange={(e) => setTenantId(e.target.value)}
-            placeholder={t('genai.tenantPlaceholder')}
-            disabled={status === 'loading'}
-          />
-        </div>
-      </div>
+      <p className="billing-note">{t('genai.authManagedNotice')}</p>
 
       {/* Query Form */}
       <form onSubmit={handleSubmit} className="form-section">
@@ -110,40 +93,45 @@ export function OncologyQueryPanel() {
 
           {isSubscriptionError && (
             <div className="alert-actions">
-              <a href="/billing" className="action-link">
-                {t('genai.upgradeSubscription')}
-              </a>
+              <p className="alert-subtext">{t('shell.billingGuidance')}</p>
+              <button type="button" className="action-link action-link--button" onClick={() => navigateTo('billing')}>
+                {t('shell.openBilling')}
+              </button>
             </div>
           )}
 
           {isAuthError && (
             <div className="alert-actions">
-              <a href="/login" className="action-link">
-                {t('ui.logIn')}
-              </a>
+              <p className="alert-subtext">{t('shell.loginGuidance')}</p>
+              <button type="button" className="action-link action-link--button" onClick={logout}>
+                {t('auth.signOut')}
+              </button>
             </div>
           )}
 
           {isPermissionError && (
-            <p className="alert-subtext">
-              {t('genai.oncologyForbiddenHint')}
-            </p>
+            <div className="alert-actions">
+              <p className="alert-subtext">{t('genai.oncologyForbiddenHint')}</p>
+              <button type="button" className="action-link action-link--button" onClick={() => navigateTo('users')}>
+                {t('nav.users')}
+              </button>
+            </div>
           )}
         </div>
       )}
 
       {/* Success Display */}
-      {status === 'success' && data && (
+      {(status === 'success' || (status === 'loading' && rawAnswer)) && data && (
         <div className="alert alert-success">
           <h4>{t('genai.researchResults')}</h4>
           <div className="response-content">
-            <p>{translatedText}</p>
-            {translating ? <p className="billing-note">{t('genai.translating')}</p> : null}
+            <div className="response-text">{displayAnswer}</div>
+            {status === 'success' && translating ? <p className="billing-note">{t('genai.translating')}</p> : null}
             {translationRateLimited ? (
               <p className="billing-note">{t('genai.translationRateLimited', { seconds: translationRetrySeconds })}</p>
             ) : null}
 
-            {data.citations && (
+            {status === 'success' && data.citations && (
               <div className="citations">
                 <h5>{t('genai.researchSources')}</h5>
                 <ul>

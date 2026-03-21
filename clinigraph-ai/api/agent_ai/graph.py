@@ -1,4 +1,5 @@
 import re
+import logging
 from typing import TypedDict
 
 from langgraph.graph import StateGraph, END
@@ -9,6 +10,10 @@ from .llm_factory import build_llm
 from .prompts import build_context_block, build_history_block, build_system_prompt
 from .queue import KafkaEventQueue
 from .vector_store import build_retriever
+from .mock_llm import MockLLM
+
+
+logger = logging.getLogger(__name__)
 
 
 class AgentState(TypedDict, total=False):
@@ -82,7 +87,12 @@ def build_agent_graph(domain: str | None = None, subdomain: str | None = None):
             f"QUESTION:\n{question}"
         )
 
-        answer = llm.invoke(prompt).content
+        try:
+            answer = llm.invoke(prompt).content
+        except Exception:
+            # Keep clinical workflows responsive in local/dev when the configured LLM backend is unstable.
+            logger.exception("primary llm invoke failed; using mock fallback")
+            answer = MockLLM().invoke(prompt).content
         return {**state, "answer": answer}
 
     # ------------------------------------------------------------------

@@ -3,14 +3,10 @@ import { useI18n } from '../../../shared/i18n/I18nProvider';
 
 const roleOptions = ['owner', 'admin', 'billing', 'clinician', 'auditor'];
 
-export function UserAccessAdmin() {
+export function UserAccessAdmin({ authToken, tenantId }) {
   const { t } = useI18n();
 
   const {
-    authToken,
-    setAuthToken,
-    tenantId,
-    setTenantId,
     createInput,
     setCreateInput,
     members,
@@ -20,7 +16,7 @@ export function UserAccessAdmin() {
     loadMembers,
     createMember,
     updateMember,
-  } = useUserAccessAdmin();
+  } = useUserAccessAdmin({ authToken, tenantId });
 
   return (
     <section className="billing-panel">
@@ -32,25 +28,8 @@ export function UserAccessAdmin() {
       <div className="access-grid">
         <article className="billing-card">
           <h3>{t('access.authContext')}</h3>
-          <label>
-            {t('access.jwtToken')}
-            <input
-              type="password"
-              placeholder={t('access.pasteBearer')}
-              value={authToken}
-              onChange={(event) => setAuthToken(event.target.value)}
-            />
-          </label>
-
-          <label>
-            {t('access.tenantId')}
-            <input
-              type="text"
-              placeholder={t('access.tenantUuid')}
-              value={tenantId}
-              onChange={(event) => setTenantId(event.target.value)}
-            />
-          </label>
+          <p className="billing-note">{t('access.authManagedNotice')}</p>
+          <p className="billing-note">{t('access.activeTenantLabel')}: {tenantId || t('access.noTenantSelected')}</p>
 
           <button type="button" onClick={loadMembers} disabled={loading}>
             {loading ? t('ui.loading') : t('access.loadMembers')}

@@ -113,14 +113,12 @@ function deriveEntitlementState(summary) {
   };
 }
 
-export function useBillingDashboard() {
+export function useBillingDashboard({ authToken = '', tenantId = '' } = {}) {
   const [plans, setPlans] = useState([]);
   const [selectedPlanCode, setSelectedPlanCode] = useState('');
   const [estimateInput, setEstimateInput] = useState(defaultEstimateInput);
   const [estimateResult, setEstimateResult] = useState(null);
   const [usageSummary, setUsageSummary] = useState(null);
-  const [authToken, setAuthToken] = useState('');
-  const [tenantId, setTenantId] = useState('');
   const [exportFilters, setExportFilters] = useState(defaultExportFilters);
   const [checkoutInput, setCheckoutInput] = useState(defaultCheckoutInput);
   const [checkoutState, setCheckoutState] = useState({ success: false, canceled: false, sessionId: '' });
@@ -372,10 +370,6 @@ export function useBillingDashboard() {
     simulatedEstimate,
     estimateResult,
     usageSummary,
-    authToken,
-    setAuthToken,
-    tenantId,
-    setTenantId,
     exportFilters,
     setExportFilters,
     checkoutInput,

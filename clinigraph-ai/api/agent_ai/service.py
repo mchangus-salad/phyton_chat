@@ -3,6 +3,10 @@ import re
 
 from .embeddings_factory import build_embeddings
 from .graph import build_agent_graph
+from .llm_factory import build_llm
+from .mock_llm import MockLLM
+from .prompts import build_context_block, build_history_block, build_system_prompt
+from .queue import KafkaEventQueue
 from .vector_store import build_ingestor, build_retriever
 
 
@@ -40,6 +44,7 @@ class AgentAIService:
         self.graph = None
         self.cache = None
         self.retriever = None
+        self.queue = KafkaEventQueue()
 
         if initialize_graph:
             self.graph, self.cache = build_agent_graph(domain=domain, subdomain=subdomain)
@@ -105,6 +110,146 @@ class AgentAIService:
             cache_hit=False,
             citations=final_state.get("citations") or [],
         )
+
+    def ask_stream(
+        self,
+        question: str,
+        user_id: str = "anonymous",
+        conversation_history: list[dict] | None = None,
+    ):
+        """Yield streaming events for progressive answer rendering.
+
+        Event payloads:
+        - {"event": "delta", "delta": "..."}
+        - {"event": "done", "answer": "...", "cache_hit": bool, "citations": list[str]}
+        """
+        if self.cache is None or self.retriever is None:
+            raise RuntimeError("AgentAIService was initialized without query capabilities")
+
+        history = conversation_history or []
+        cache_hit = False
+        key = self._cache_key(user_id=user_id, question=question)
+
+        if not history:
+            cached = self.cache.get(key)
+            if cached:
+                cache_hit = True
+                yield {"event": "delta", "delta": cached}
+                yield {"event": "done", "answer": cached, "cache_hit": True, "citations": []}
+                return
+
+        docs = self.retriever.invoke(question)
+        context, citation_labels = build_context_block(docs or [])
+        system_prompt = build_system_prompt(self.domain)
+        history_block = build_history_block(history)
+
+        subdomain_line = ""
+        if self.subdomain:
+            subdomain_line = f"Focus on the subdomain: {self.subdomain}.\n"
+
+        ref_index = ""
+        if citation_labels:
+            entries = "\n".join(f"  [{i+1}] {lbl}" for i, lbl in enumerate(citation_labels))
+            ref_index = f"\nREFERENCE INDEX:\n{entries}\n"
+
+        context_section = f"\nREVIEWED EVIDENCE:\n{context}" if context else (
+            "\nREVIEWED EVIDENCE: (none retrieved - answer from model knowledge only, note this limitation)"
+        )
+
+        prompt = (
+            f"{system_prompt}\n\n"
+            f"{subdomain_line}"
+            f"{ref_index}"
+            f"{history_block}"
+            f"{context_section}\n\n"
+            f"QUESTION:\n{question}"
+        )
+
+        llm = build_llm()
+        buffer: list[str] = []
+
+        try:
+            if hasattr(llm, "stream"):
+                for chunk in llm.stream(prompt):
+                    text = self._extract_stream_text(chunk)
+                    if not text:
+                        continue
+                    buffer.append(text)
+                    yield {"event": "delta", "delta": text}
+            else:
+                answer = (llm.invoke(prompt).content or "")
+                if answer:
+                    buffer.append(answer)
+                    yield {"event": "delta", "delta": answer}
+        except Exception:
+            # Keep local/dev flows responsive when provider streaming fails.
+            answer = (MockLLM().invoke(prompt).content or "")
+            if answer:
+                buffer.append(answer)
+                yield {"event": "delta", "delta": answer}
+
+        answer = "".join(buffer).strip()
+        citations = self._extract_citations_from_answer(answer=answer, citation_labels=citation_labels)
+
+        if not history and answer:
+            self.cache.set(key, answer)
+
+        self.queue.publish(
+            {
+                "type": "agent_answer_created",
+                "user_id": user_id,
+                "question": question,
+                "answer": answer,
+                "domain": self.domain or "general",
+                "subdomain": self.subdomain,
+                "citations": citations,
+            }
+        )
+
+        yield {
+            "event": "done",
+            "answer": answer,
+            "cache_hit": cache_hit,
+            "citations": citations,
+        }
+
+    @staticmethod
+    def _extract_stream_text(chunk) -> str:
+        """Normalize stream chunk objects from different LangChain providers."""
+        if chunk is None:
+            return ""
+        if isinstance(chunk, str):
+            return chunk
+
+        content = getattr(chunk, "content", None)
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts = []
+            for item in content:
+                if isinstance(item, str):
+                    parts.append(item)
+                elif isinstance(item, dict) and isinstance(item.get("text"), str):
+                    parts.append(item["text"])
+            return "".join(parts)
+
+        text_attr = getattr(chunk, "text", None)
+        if isinstance(text_attr, str):
+            return text_attr
+        return ""
+
+    @staticmethod
+    def _extract_citations_from_answer(answer: str, citation_labels: list[str]) -> list[str]:
+        cited: list[str] = []
+        seen: set[int] = set()
+
+        for match in re.finditer(r"\[(\d+)\]", answer or ""):
+            idx = int(match.group(1)) - 1
+            if 0 <= idx < len(citation_labels) and idx not in seen:
+                cited.append(citation_labels[idx])
+                seen.add(idx)
+
+        return cited
 
     def ingest_documents(
         self,

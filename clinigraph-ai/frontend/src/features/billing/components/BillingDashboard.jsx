@@ -23,7 +23,7 @@ function entitlementClassName(tone) {
   return 'billing-entitlement';
 }
 
-export function BillingDashboard() {
+export function BillingDashboard({ authToken, tenantId }) {
   const { t, locale } = useI18n();
 
   const {
@@ -36,10 +36,6 @@ export function BillingDashboard() {
     simulatedEstimate,
     estimateResult,
     usageSummary,
-    authToken,
-    setAuthToken,
-    tenantId,
-    setTenantId,
     exportFilters,
     setExportFilters,
     checkoutInput,
@@ -52,7 +48,7 @@ export function BillingDashboard() {
     entitlementState,
     loading,
     error,
-  } = useBillingDashboard();
+  } = useBillingDashboard({ authToken, tenantId });
 
   return (
     <section className="billing-panel">
@@ -127,25 +123,8 @@ export function BillingDashboard() {
             ) : null}
           </div>
 
-          <label>
-            {t('billing.jwtToken')}
-            <input
-              type="password"
-              placeholder={t('billing.pasteBearer')}
-              value={authToken}
-              onChange={(event) => setAuthToken(event.target.value)}
-            />
-          </label>
-
-          <label>
-            {t('billing.tenantId')}
-            <input
-              type="text"
-              placeholder={t('billing.tenantUuid')}
-              value={tenantId}
-              onChange={(event) => setTenantId(event.target.value)}
-            />
-          </label>
+          <p className="billing-note">{t('billing.authManagedNotice')}</p>
+          <p className="billing-note">{t('billing.activeTenantLabel')}: {tenantId || t('billing.noTenantSelected')}</p>
 
           <label>
             {t('billing.checkoutTenantName')}

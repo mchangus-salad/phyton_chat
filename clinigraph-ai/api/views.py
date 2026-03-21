@@ -1,6 +1,8 @@
 import logging
+import json
 
 from django.db.models import Max, Q
+from django.http import StreamingHttpResponse
 from django.utils import timezone
 
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, OpenApiTypes, extend_schema
@@ -95,6 +97,18 @@ def _agent_failure_response(request_id: str, user_id: str):
 	)
 
 
+def _stream_ndjson_event(payload: dict) -> str:
+	return json.dumps(payload, ensure_ascii=False) + '\n'
+
+
+def _chunk_text(text: str, chunk_size: int = 180):
+	if not text:
+		yield ''
+		return
+	for i in range(0, len(text), chunk_size):
+		yield text[i:i + chunk_size]
+
+
 @extend_schema(
 	operation_id='health',
 	description='Health check endpoint used by local automation and uptime checks.',
@@ -168,6 +182,81 @@ def agent_query(request):
 		)
 	except Exception:
 		return _agent_failure_response(request_id=request_id, user_id=user_id)
+
+
+@extend_schema(
+	operation_id='agent_query_stream',
+	description='Execute AgentAI and stream events as NDJSON (start, delta, done). Authenticate with JWT bearer token or X-API-Key.',
+	request=AgentQuerySerializer,
+	parameters=[
+		OpenApiParameter(
+			name='X-API-Key',
+			type=OpenApiTypes.STR,
+			location=OpenApiParameter.HEADER,
+			required=False,
+			description='API key alternative to JWT bearer authentication.',
+		),
+	],
+	responses={
+		200: OpenApiTypes.STR,
+		400: ErrorResponseSerializer,
+		401: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+		429: ErrorResponseSerializer,
+		500: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth', 'ApiKeyAuth'],
+)
+@api_view(['POST'])
+@permission_classes([HasLlmAccessOrApiKey])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+def agent_query_stream(request):
+	"""Run AgentAI and stream NDJSON events for progressive UI rendering."""
+	serializer = AgentQuerySerializer(data=request.data or {})
+	if not serializer.is_valid():
+		return _validation_error_response(serializer)
+
+	payload = serializer.validated_data
+	question = payload['question']
+	user_id = payload.get('user_id', 'anonymous')
+	history = payload.get('conversation_history') or []
+	request_id = getattr(request, 'request_id', 'n/a')
+
+	def stream_generator():
+		yield _stream_ndjson_event({'event': 'start', 'request_id': request_id})
+		try:
+			service = _get_service()
+			if hasattr(service, 'ask_stream'):
+				for event in service.ask_stream(question=question, user_id=user_id, conversation_history=history):
+					if event.get('event') == 'done':
+						event = {**event, 'request_id': request_id}
+					yield _stream_ndjson_event(event)
+			else:
+				if history:
+					result = service.ask_with_history(question=question, conversation_history=history, user_id=user_id)
+				else:
+					result = service.ask(question=question, user_id=user_id)
+
+				answer = result.answer or ''
+				for chunk in _chunk_text(answer):
+					yield _stream_ndjson_event({'event': 'delta', 'delta': chunk})
+
+				yield _stream_ndjson_event(
+					{
+						'event': 'done',
+						'answer': answer,
+						'cache_hit': bool(result.cache_hit),
+						'request_id': request_id,
+					}
+				)
+		except Exception:
+			logger.exception('agent stream execution failed request_id=%s user_id=%s', request_id, user_id)
+			yield _stream_ndjson_event({'event': 'error', 'error': 'agent execution failed', 'request_id': request_id})
+
+	response = StreamingHttpResponse(stream_generator(), content_type='application/x-ndjson; charset=utf-8')
+	response['Cache-Control'] = 'no-cache'
+	response['X-Accel-Buffering'] = 'no'
+	return response
 
 
 @extend_schema(
@@ -312,6 +401,68 @@ def oncology_query(request):
 		)
 	except Exception:
 		return _agent_failure_response(request_id=request_id, user_id=user_id)
+
+
+@extend_schema(
+	operation_id='oncology_query_stream',
+	description='Run oncology retrieval and stream events as NDJSON (start, delta, done).',
+	request=OncologyQuerySerializer,
+	parameters=[
+		OpenApiParameter(
+			name='X-API-Key',
+			type=OpenApiTypes.STR,
+			location=OpenApiParameter.HEADER,
+			required=False,
+			description='API key alternative to JWT bearer authentication.',
+		),
+	],
+	responses={
+		200: OpenApiTypes.STR,
+		400: ErrorResponseSerializer,
+		401: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+		429: ErrorResponseSerializer,
+		500: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth', 'ApiKeyAuth'],
+)
+@api_view(['POST'])
+@permission_classes([HasLlmAccessOrApiKey])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+def oncology_query_stream(request):
+	serializer = OncologyQuerySerializer(data=request.data or {})
+	if not serializer.is_valid():
+		return _validation_error_response(serializer)
+
+	payload = serializer.validated_data
+	question = payload['question']
+	user_id = payload.get('user_id', 'anonymous')
+	subdomain = payload.get('subdomain') or None
+	history = payload.get('conversation_history') or []
+	request_id = getattr(request, 'request_id', 'n/a')
+
+	def stream_generator():
+		yield _stream_ndjson_event({'event': 'start', 'request_id': request_id})
+		try:
+			service = _get_service(domain='oncology', subdomain=subdomain)
+			for event in service.ask_stream(question=question, user_id=user_id, conversation_history=history):
+				if event.get('event') == 'done':
+					event = {
+						**event,
+						'request_id': request_id,
+						'domain': 'oncology',
+						'subdomain': subdomain or '',
+						'safety_notice': ONCOLOGY_SAFETY_NOTICE,
+					}
+				yield _stream_ndjson_event(event)
+		except Exception:
+			logger.exception('oncology stream execution failed request_id=%s user_id=%s', request_id, user_id)
+			yield _stream_ndjson_event({'event': 'error', 'error': 'agent execution failed', 'request_id': request_id})
+
+	response = StreamingHttpResponse(stream_generator(), content_type='application/x-ndjson; charset=utf-8')
+	response['Cache-Control'] = 'no-cache'
+	response['X-Accel-Buffering'] = 'no'
+	return response
 
 
 @extend_schema(
@@ -603,6 +754,69 @@ def medical_query(request):
 		)
 	except Exception:
 		return _agent_failure_response(request_id=request_id, user_id=user_id)
+
+
+@extend_schema(
+	operation_id='medical_query_stream_v2',
+	description='Run domain-scoped medical retrieval and stream events as NDJSON (start, delta, done).',
+	request=MedicalQuerySerializer,
+	parameters=[
+		OpenApiParameter(
+			name='X-API-Key',
+			type=OpenApiTypes.STR,
+			location=OpenApiParameter.HEADER,
+			required=False,
+			description='API key alternative to JWT bearer authentication.',
+		),
+	],
+	responses={
+		200: OpenApiTypes.STR,
+		400: ErrorResponseSerializer,
+		401: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+		429: ErrorResponseSerializer,
+		500: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth', 'ApiKeyAuth'],
+)
+@api_view(['POST'])
+@permission_classes([HasLlmAccessOrApiKey])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+def medical_query_stream(request):
+	serializer = MedicalQuerySerializer(data=request.data or {})
+	if not serializer.is_valid():
+		return _validation_error_response(serializer)
+
+	payload = serializer.validated_data
+	question = payload['question']
+	user_id = payload.get('user_id', 'anonymous')
+	domain = (payload.get('domain') or 'medical').strip() or 'medical'
+	subdomain = payload.get('subdomain') or None
+	history = payload.get('conversation_history') or []
+	request_id = getattr(request, 'request_id', 'n/a')
+
+	def stream_generator():
+		yield _stream_ndjson_event({'event': 'start', 'request_id': request_id})
+		try:
+			service = _get_service(domain=domain, subdomain=subdomain)
+			for event in service.ask_stream(question=question, user_id=user_id, conversation_history=history):
+				if event.get('event') == 'done':
+					event = {
+						**event,
+						'request_id': request_id,
+						'domain': domain,
+						'subdomain': subdomain or '',
+						'safety_notice': MEDICAL_SAFETY_NOTICE,
+					}
+				yield _stream_ndjson_event(event)
+		except Exception:
+			logger.exception('medical stream execution failed request_id=%s user_id=%s', request_id, user_id)
+			yield _stream_ndjson_event({'event': 'error', 'error': 'agent execution failed', 'request_id': request_id})
+
+	response = StreamingHttpResponse(stream_generator(), content_type='application/x-ndjson; charset=utf-8')
+	response['Cache-Control'] = 'no-cache'
+	response['X-Accel-Buffering'] = 'no'
+	return response
 
 
 @extend_schema(

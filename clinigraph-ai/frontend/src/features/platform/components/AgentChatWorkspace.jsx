@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useI18n } from '../../../shared/i18n/I18nProvider';
 import { usePersistentAgentChat } from '../hooks/usePersistentAgentChat';
 
@@ -30,13 +30,10 @@ function renderMessageWithHighlights(message, highlights) {
   return chunks;
 }
 
-export function AgentChatWorkspace() {
+export function AgentChatWorkspace({ authToken, tenantId }) {
   const { t } = useI18n();
+  const [chatMainPercent, setChatMainPercent] = useState(76);
   const {
-    authToken,
-    setAuthToken,
-    tenantId,
-    setTenantId,
     searchTerm,
     setSearchTerm,
     sessions,
@@ -59,7 +56,7 @@ export function AgentChatWorkspace() {
     submitQuestion,
     addHighlight,
     popHighlight,
-  } = usePersistentAgentChat();
+  } = usePersistentAgentChat({ authToken, tenantId });
 
   useEffect(() => {
     if (!pendingHighlightId) return;
@@ -115,6 +112,8 @@ export function AgentChatWorkspace() {
     selection.removeAllRanges();
   };
 
+  const sidebarPercent = 100 - chatMainPercent;
+
   return (
     <section className="agent-chat-workspace card">
       <div className="agent-chat-workspace__header">
@@ -122,32 +121,40 @@ export function AgentChatWorkspace() {
           <h2>{t('genai.chatTitle')}</h2>
           <p className="description">{t('genai.chatDescription')}</p>
         </div>
+        <div className="agent-chat-size-controls" aria-label={t('genai.chatWidthLabel')}>
+          <span>{t('genai.chatWidthLabel')}</span>
+          <button
+            type="button"
+            className="secondary-action"
+            onClick={() => setChatMainPercent((current) => Math.max(62, current - 4))}
+          >
+            {t('genai.chatWidthNarrow')}
+          </button>
+          <input
+            type="range"
+            min="62"
+            max="88"
+            value={chatMainPercent}
+            onChange={(event) => setChatMainPercent(Number(event.target.value))}
+          />
+          <button
+            type="button"
+            className="secondary-action"
+            onClick={() => setChatMainPercent((current) => Math.min(88, current + 4))}
+          >
+            {t('genai.chatWidthWide')}
+          </button>
+          <button
+            type="button"
+            className="secondary-action"
+            onClick={() => setChatMainPercent(76)}
+          >
+            {t('genai.chatWidthReset')}
+          </button>
+        </div>
       </div>
 
-      <div className="form-section agent-chat-auth">
-        <div className="form-group">
-          <label htmlFor="chat-auth-token">{t('genai.authToken')}</label>
-          <input
-            id="chat-auth-token"
-            type="password"
-            value={authToken}
-            onChange={(e) => setAuthToken(e.target.value)}
-            placeholder={t('genai.jwtPlaceholder')}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="chat-tenant-id">{t('genai.tenantIdOptional')}</label>
-          <input
-            id="chat-tenant-id"
-            type="text"
-            value={tenantId}
-            onChange={(e) => setTenantId(e.target.value)}
-            placeholder={t('genai.tenantPlaceholder')}
-          />
-        </div>
-      </div>
-
-      <div className="agent-chat-layout">
+      <div className="agent-chat-layout" style={{ gridTemplateColumns: `minmax(190px, ${sidebarPercent}%) minmax(520px, ${chatMainPercent}%)` }}>
         <aside className="agent-chat-sidebar">
           <div className="agent-chat-sidebar__actions">
             <button type="button" className="primary-action" onClick={() => createSession()}>

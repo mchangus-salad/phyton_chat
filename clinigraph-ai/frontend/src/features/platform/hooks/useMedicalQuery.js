@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { apiPost } from '../../../shared/api/http';
+import { apiPost, apiPostNdjson } from '../../../shared/api/http';
 import { useI18n } from '../../../shared/i18n/I18nProvider';
 
 const initialState = {
@@ -17,25 +17,56 @@ export function useMedicalQuery() {
     setState({ status: 'loading', data: null, error: null, errorCode: null });
 
     try {
-      const response = await apiPost(
-        '/agent/medical/query/',
-        { question, domain },
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            ...(tenantId && { 'X-Tenant-ID': tenantId }),
-          },
+      const headers = {
+        Authorization: `Bearer ${authToken}`,
+        ...(tenantId && { 'X-Tenant-ID': tenantId }),
+      };
+
+      let streamedAnswer = '';
+      const response = await apiPostNdjson('/agent/medical/query/stream/', { question, domain }, {
+        headers,
+        onEvent: (event) => {
+          if (event?.event === 'delta') {
+            streamedAnswer += event.delta || '';
+            setState((prev) => ({
+              status: 'loading',
+              data: {
+                ...(prev.data || {}),
+                answer: streamedAnswer,
+                domain,
+              },
+              error: null,
+              errorCode: null,
+            }));
+          }
+        },
+      }).catch(async (streamErr) => {
+        if (streamErr?.status === 404 || streamErr?.status === 405) {
+          return apiPost('/agent/medical/query/', { question, domain }, { headers });
         }
-      );
+        throw streamErr;
+      });
+
+      const normalized = response?.event === 'done'
+        ? {
+            answer: response.answer || streamedAnswer,
+            cache_hit: response.cache_hit,
+            request_id: response.request_id,
+            citations: response.citations || [],
+            domain: response.domain || domain,
+            subdomain: response.subdomain || '',
+            safety_notice: response.safety_notice,
+          }
+        : response;
 
       setState({
         status: 'success',
-        data: response,
+        data: normalized,
         error: null,
         errorCode: null,
       });
 
-      return response;
+      return normalized;
     } catch (err) {
       const errorCode = err.status || 500;
       let errorMessage = t('errors.generic');

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { usePatientCaseAnalyze } from '../hooks/usePatientCaseAnalyze';
 import { useI18n } from '../../../shared/i18n/I18nProvider';
 import { useRuntimeTranslation, useRuntimeTranslationList } from '../../../shared/i18n/useRuntimeTranslation';
+import { useAppShell } from '../../../app/AppShellContext';
 
 const DOMAINS = [
   { value: 'cardiology', label: 'domainCardiology' },
@@ -11,10 +12,35 @@ const DOMAINS = [
   { value: 'pulmonology', label: 'domainPulmonology' },
 ];
 
-export function PatientCaseAnalyzePanel() {
+function formatRedactionSummary(summary) {
+  if (!summary) return '';
+  if (typeof summary === 'string') return summary;
+
+  const total = Number(summary.total_redactions || 0);
+  const categories = summary.categories && typeof summary.categories === 'object'
+    ? Object.entries(summary.categories)
+      .map(([key, count]) => `${key}: ${count}`)
+      .join(', ')
+    : '';
+
+  if (!categories) {
+    return `Total redactions: ${total}`;
+  }
+  return `Total redactions: ${total}. ${categories}`;
+}
+
+function sanitizeDisplayText(text) {
+  if (typeof text !== 'string') return '';
+  return text
+    .replace(/^\s*#{1,6}\s*/gm, '')             // Remove markdown headings
+    .replace(/^\s*[-*+]\s+/gm, '')              // Remove bullet points at start of line
+    .replace(/^\s*\d+\.\s+/gm, '')              // Remove numbered lists at start of line
+    .replace(/\*\*(.*?)\*\*/g, '$1');           // Remove bold markers but keep content
+}
+
+export function PatientCaseAnalyzePanel({ authToken, tenantId }) {
   const { t } = useI18n();
-  const [authToken, setAuthToken] = useState('');
-  const [tenantId, setTenantId] = useState('');
+  const { navigateTo, logout } = useAppShell();
   const [inputMode, setInputMode] = useState('text'); // 'text' or 'file'
   const [caseText, setCaseText] = useState('');
   const [caseFile, setCaseFile] = useState(null);
@@ -22,12 +48,14 @@ export function PatientCaseAnalyzePanel() {
   const [question, setQuestion] = useState('');
   const { status, data, error, errorCode, analyze } = usePatientCaseAnalyze();
   const rawAnswer =
-    data?.recommendations || data?.answer || data?.message || (data ? JSON.stringify(data) : '');
+    data?.analysis || data?.recommendations || data?.answer || data?.message || '';
+  const redactionSummaryText = formatRedactionSummary(data?.redaction_summary || data?.phi_summary);
   const { translatedText, translating, rateLimited: answerRateLimited, retryAfterSeconds: answerRetryAfterSeconds } = useRuntimeTranslation({
     text: rawAnswer,
     authToken,
     tenantId: tenantId || undefined,
   });
+  const displayAnswer = sanitizeDisplayText(translatedText);
   const { translatedTexts: translatedCitations, translating: translatingCitations, rateLimited: citationsRateLimited, retryAfterSeconds: citationsRetryAfterSeconds } = useRuntimeTranslationList({
     texts: Array.isArray(data?.citations) ? data.citations : [],
     authToken,
@@ -92,33 +120,7 @@ export function PatientCaseAnalyzePanel() {
         {t('genai.patientDescription')}
       </p>
 
-      {/* Configuration Section */}
-      <div className="form-section">
-        <h3>{t('genai.configuration')}</h3>
-        <div className="form-group">
-          <label htmlFor="patient-auth-token">{t('genai.authToken')}</label>
-          <input
-            id="patient-auth-token"
-            type="password"
-            value={authToken}
-            onChange={(e) => setAuthToken(e.target.value)}
-            placeholder={t('genai.jwtPlaceholder')}
-            disabled={status === 'loading'}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="patient-tenant-id">{t('genai.tenantIdOptional')}</label>
-          <input
-            id="patient-tenant-id"
-            type="text"
-            value={tenantId}
-            onChange={(e) => setTenantId(e.target.value)}
-            placeholder={t('genai.tenantPlaceholder')}
-            disabled={status === 'loading'}
-          />
-        </div>
-      </div>
+      <p className="billing-note">{t('genai.authManagedNotice')}</p>
 
       {/* Analysis Form */}
       <form onSubmit={handleSubmit} className="form-section">
@@ -227,24 +229,29 @@ export function PatientCaseAnalyzePanel() {
 
           {isSubscriptionError && (
             <div className="alert-actions">
-              <a href="/billing" className="action-link">
-                {t('genai.checkSubscriptionStatus')}
-              </a>
+              <p className="alert-subtext">{t('shell.billingGuidance')}</p>
+              <button type="button" className="action-link action-link--button" onClick={() => navigateTo('billing')}>
+                {t('shell.openBilling')}
+              </button>
             </div>
           )}
 
           {isAuthError && (
             <div className="alert-actions">
-              <a href="/login" className="action-link">
-                {t('ui.logIn')}
-              </a>
+              <p className="alert-subtext">{t('shell.loginGuidance')}</p>
+              <button type="button" className="action-link action-link--button" onClick={logout}>
+                {t('auth.signOut')}
+              </button>
             </div>
           )}
 
           {isPermissionError && (
-            <p className="alert-subtext">
-              {t('genai.patientForbiddenHint')}
-            </p>
+            <div className="alert-actions">
+              <p className="alert-subtext">{t('genai.patientForbiddenHint')}</p>
+              <button type="button" className="action-link action-link--button" onClick={() => navigateTo('users')}>
+                {t('nav.users')}
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -254,7 +261,7 @@ export function PatientCaseAnalyzePanel() {
         <div className="alert alert-success">
           <h4>{t('genai.clinicalRecommendations')}</h4>
           <div className="response-content">
-            <p>{translatedText}</p>
+            <div className="response-text">{displayAnswer}</div>
             {translating ? <p className="billing-note">{t('genai.translating')}</p> : null}
             {translationRateLimited ? (
               <p className="billing-note">{t('genai.translationRateLimited', { seconds: translationRetrySeconds })}</p>
@@ -272,12 +279,12 @@ export function PatientCaseAnalyzePanel() {
               </div>
             )}
 
-            {data.phi_summary && (
+            {redactionSummaryText ? (
               <div className="phi-notice">
                 <h5>{t('genai.phiSummary')}</h5>
-                <p>{data.phi_summary}</p>
+                <p>{redactionSummaryText}</p>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}

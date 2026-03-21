@@ -9,9 +9,7 @@ const defaultCreateInput = {
   role: 'clinician',
 };
 
-export function useUserAccessAdmin() {
-  const [authToken, setAuthToken] = useState('');
-  const [tenantId, setTenantId] = useState('');
+export function useUserAccessAdmin({ authToken = '', tenantId = '' } = {}) {
   const [createInput, setCreateInput] = useState(defaultCreateInput);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -103,10 +101,6 @@ export function useUserAccessAdmin() {
   }
 
   return {
-    authToken,
-    setAuthToken,
-    tenantId,
-    setTenantId,
     createInput,
     setCreateInput,
     members,

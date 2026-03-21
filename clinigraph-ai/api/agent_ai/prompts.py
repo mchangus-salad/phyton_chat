@@ -34,6 +34,11 @@ When answering, follow this structure:
 4. UNCERTAINTY & LIMITATIONS: Explicitly state gaps, conflicting data, or what is unknown.
 5. DISCLAIMER: Remind the reader this is research support, not personalised medical advice.
 
+Formatting rules:
+- Return plain text only.
+- Do not use markdown styling (no **bold**, no headings with #, no code fences).
+- Use the section labels exactly as uppercase words followed by a colon.
+
 Always cite at least one source using the [N] label from the context block.
 If the retrieved context does not address the question, clearly say so and note that the answer comes from model pre-training knowledge only, which may be outdated.
 """

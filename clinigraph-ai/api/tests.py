@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 from unittest.mock import patch
 from datetime import timedelta
+import json
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -84,6 +85,29 @@ class AgentApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data.get('answer'), 'ok')
         self.assertIn('request_id', response.data)
+
+    @override_settings(AGENT_API_KEY='test-key')
+    def test_agent_query_stream_accepts_api_key(self):
+        fake_service = SimpleNamespace(
+            ask=lambda question, user_id='anonymous': SimpleNamespace(answer='stream-ok', cache_hit=False)
+        )
+        with patch('api.views._get_service', return_value=fake_service):
+            response = self.client.post(
+                '/api/v1/agent/query/stream/',
+                {'question': 'What is new?', 'user_id': 'u-1'},
+                format='json',
+                HTTP_X_API_KEY='test-key',
+            )
+
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertTrue(response.streaming)
+            payload = b''.join(response.streaming_content).decode('utf-8')
+            events = [json.loads(line) for line in payload.splitlines() if line.strip()]
+
+        self.assertGreaterEqual(len(events), 2)
+        self.assertEqual(events[0].get('event'), 'start')
+        self.assertEqual(events[-1].get('event'), 'done')
+        self.assertEqual(events[-1].get('answer'), 'stream-ok')
 
     @override_settings(AGENT_API_KEY='test-key')
     def test_oncology_train_accepts_api_key(self):
@@ -216,6 +240,30 @@ class AgentApiTests(APITestCase):
         self.assertIn('safety_notice', response.data)
 
     @override_settings(AGENT_API_KEY='test-key')
+    def test_oncology_query_stream_returns_done_event(self):
+        fake_service = SimpleNamespace(
+            ask_stream=lambda **kwargs: iter([
+                {'event': 'delta', 'delta': 'oncology-'},
+                {'event': 'done', 'answer': 'oncology-ok', 'cache_hit': False, 'citations': []},
+            ])
+        )
+        with patch('api.views._get_service', return_value=fake_service):
+            response = self.client.post(
+                '/api/v1/agent/oncology/query/stream/',
+                {'question': 'Summarize oncology pathways', 'subdomain': 'lung-cancer'},
+                format='json',
+                HTTP_X_API_KEY='test-key',
+            )
+
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            payload = b''.join(response.streaming_content).decode('utf-8')
+            events = [json.loads(line) for line in payload.splitlines() if line.strip()]
+
+        self.assertEqual(events[-1].get('event'), 'done')
+        self.assertEqual(events[-1].get('answer'), 'oncology-ok')
+        self.assertEqual(events[-1].get('domain'), 'oncology')
+
+    @override_settings(AGENT_API_KEY='test-key')
     def test_medical_train_accepts_generic_domain(self):
         def fake_ingest_documents(documents, domain='medical', subdomain=None, **kwargs):
             return SimpleNamespace(
@@ -265,6 +313,30 @@ class AgentApiTests(APITestCase):
         self.assertEqual(response.data.get('domain'), 'cardiology')
         self.assertEqual(response.data.get('subdomain'), 'heart-failure')
         self.assertIn('safety_notice', response.data)
+
+    @override_settings(AGENT_API_KEY='test-key')
+    def test_medical_query_stream_returns_done_event(self):
+        fake_service = SimpleNamespace(
+            ask_stream=lambda **kwargs: iter([
+                {'event': 'delta', 'delta': 'medical-'},
+                {'event': 'done', 'answer': 'medical-ok', 'cache_hit': False, 'citations': []},
+            ])
+        )
+        with patch('api.views._get_service', return_value=fake_service):
+            response = self.client.post(
+                '/api/v1/agent/medical/query/stream/',
+                {'question': 'Summarize heart failure markers.', 'domain': 'cardiology', 'subdomain': 'heart-failure'},
+                format='json',
+                HTTP_X_API_KEY='test-key',
+            )
+
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            payload = b''.join(response.streaming_content).decode('utf-8')
+            events = [json.loads(line) for line in payload.splitlines() if line.strip()]
+
+        self.assertEqual(events[-1].get('event'), 'done')
+        self.assertEqual(events[-1].get('answer'), 'medical-ok')
+        self.assertEqual(events[-1].get('domain'), 'cardiology')
 
     @override_settings(AGENT_API_KEY='test-key')
     def test_medical_evidence_supports_condition_and_marker_filters(self):

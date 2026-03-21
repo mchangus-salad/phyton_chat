@@ -1,5 +1,16 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { apiDelete, apiGet, apiPost } from '../../../shared/api/http';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { apiDelete, apiGet, apiPost, apiPostNdjson } from '../../../shared/api/http';
+
+function normalizeAssistantContent(content) {
+  if (typeof content !== 'string') return '';
+  return content
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\r/g, '')
+    .replace(/^\s*#{1,6}\s*/gm, '')
+    .replace(/\*\*(SUMMARY|EVIDENCE|CLINICAL IMPLICATIONS|UNCERTAINTY\s*&\s*LIMITATIONS|DISCLAIMER)\*\*/gi, '$1')
+    .trim();
+}
 
 function getErrorMessage(err) {
   if (err?.status === 401) return 'Authentication failed. Please log in again.';
@@ -9,9 +20,7 @@ function getErrorMessage(err) {
   return err?.payload?.error || 'Request failed. Please try again.';
 }
 
-export function usePersistentAgentChat() {
-  const [authToken, setAuthToken] = useState('');
-  const [tenantId, setTenantId] = useState('');
+export function usePersistentAgentChat({ authToken = '', tenantId = '' } = {}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sessions, setSessions] = useState([]);
   const [sessionsPagination, setSessionsPagination] = useState({ total: 0, limit: 30, offset: 0, has_more: false });
@@ -36,11 +45,25 @@ export function usePersistentAgentChat() {
 
   const requireAuth = useCallback(() => {
     if (!authToken.trim()) {
-      setError('Please provide an authentication token.');
+      setError('Sign in to use the chat workspace.');
       return false;
     }
     return true;
   }, [authToken]);
+
+  useEffect(() => {
+    setSessions([]);
+    setSessionsPagination({ total: 0, limit: 30, offset: 0, has_more: false });
+    setMessagesPagination({ total: 0, limit: 80, offset: 0, has_more: false, from_end: true });
+    setActiveSession(null);
+    setActiveSessionId(null);
+    setPendingHighlightId(null);
+    setRecentlyLoadedMessageIds([]);
+    setError('');
+    if (authToken.trim()) {
+      loadSessions('', 0, false);
+    }
+  }, [authToken, tenantId]);
 
   const loadSessions = useCallback(
     async (q = '', offset = 0, append = false) => {
@@ -230,21 +253,58 @@ export function usePersistentAgentChat() {
       );
 
       const history = existingMessages.map((msg) => ({ role: msg.role, content: msg.content }));
-      const response = await apiPost(
-        '/agent/query/',
+      let streamedAnswer = '';
+      const response = await apiPostNdjson(
+        '/agent/query/stream/',
         {
           question: prompt,
           conversation_history: history,
         },
-        { headers },
-      );
+        {
+          headers,
+          onEvent: (event) => {
+            if (event?.event !== 'delta') return;
+            streamedAnswer += event.delta || '';
+            const liveContent = normalizeAssistantContent(streamedAnswer || '...');
+
+            setActiveSession((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                messages: (prev.messages || []).map((msg) => {
+                  if (msg.message_id !== tempAssistantId) return msg;
+                  return {
+                    ...msg,
+                    content: liveContent,
+                  };
+                }),
+              };
+            });
+          },
+        },
+      ).catch(async (streamErr) => {
+        if (streamErr?.status === 404 || streamErr?.status === 405) {
+          return apiPost(
+            '/agent/query/',
+            {
+              question: prompt,
+              conversation_history: history,
+            },
+            { headers },
+          );
+        }
+        throw streamErr;
+      });
+
+      const assistantContent = normalizeAssistantContent(response?.answer || streamedAnswer || '');
+      const requestId = response?.request_id || '';
 
       const newAssistantMessage = await apiPost(
         `/agent/chats/${currentSessionId}/messages/`,
         {
           role: 'assistant',
-          content: response?.answer || '',
-          request_id: response?.request_id || '',
+          content: assistantContent,
+          request_id: requestId,
         },
         { headers },
       );
@@ -380,10 +440,6 @@ export function usePersistentAgentChat() {
   }, [activeSession, activeSessionId, headers, loadSessions, refreshActiveSession, searchTerm]);
 
   return {
-    authToken,
-    setAuthToken,
-    tenantId,
-    setTenantId,
     searchTerm,
     setSearchTerm,
     sessions,
