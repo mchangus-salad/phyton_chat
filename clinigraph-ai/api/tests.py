@@ -5,7 +5,7 @@ import json
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -2637,3 +2637,290 @@ class ExpireGracePeriodsCommandTests(APITestCase):
             HTTP_X_API_KEY='ingest-test-key',
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # -------------------------------------------------------------------------
+    # Trial expiration workflows
+    # -------------------------------------------------------------------------
+
+    def _make_trialing_sub(self, username: str, price_cents: int, days_ago: int = 2):
+        """Helper: create a TRIALING internal subscription with trial already expired."""
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
+
+        User = get_user_model()
+        user = User.objects.create_user(username=username, password='pw_trial')
+        tenant = Tenant.objects.create(name=f'{username}-clinic', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(
+            tenant=tenant, user=user, role=TenantMembership.Role.CLINICIAN, is_active=True
+        )
+        plan = SubscriptionPlan.objects.create(
+            code=f'trial-plan-{username}',
+            name=f'Trial Plan {username}',
+            description='Trial workflow test plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=price_cents,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=200,
+            max_users=3,
+            seat_price_cents=300,
+            api_overage_per_1000_cents=30,
+        )
+        sub = Subscription.objects.create(
+            tenant=tenant,
+            plan=plan,
+            status=Subscription.Status.TRIALING,
+            provider='internal',
+            trial_ends_at=timezone.now() - timedelta(days=days_ago),
+        )
+        return sub, tenant
+
+    def test_expire_trials_free_plan_sets_active(self):
+        """expire_trials converts a free-plan TRIALING sub with elapsed trial to ACTIVE."""
+        from io import StringIO
+        from django.core.management import call_command
+        from api.models import Subscription
+
+        sub, _ = self._make_trialing_sub('trial-free-user', price_cents=0)
+
+        out = StringIO()
+        call_command('expire_trials', stdout=out)
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.ACTIVE)
+        self.assertIsNone(sub.trial_ends_at)
+        self.assertIn('ACTIVE', out.getvalue())
+
+    def test_expire_trials_paid_plan_sets_past_due(self):
+        """expire_trials converts a paid-plan TRIALING sub with elapsed trial to PAST_DUE."""
+        from io import StringIO
+        from django.core.management import call_command
+        from api.models import Subscription
+
+        sub, _ = self._make_trialing_sub('trial-paid-user', price_cents=4900)
+
+        out = StringIO()
+        call_command('expire_trials', stdout=out)
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.PAST_DUE)
+        self.assertIsNotNone(sub.grace_period_ends_at)
+
+    def test_expire_trials_dry_run_does_not_mutate(self):
+        """expire_trials --dry-run prints results without changing the database."""
+        from io import StringIO
+        from django.core.management import call_command
+        from api.models import Subscription
+
+        sub, _ = self._make_trialing_sub('trial-dry-user', price_cents=0)
+
+        out = StringIO()
+        call_command('expire_trials', '--dry-run', stdout=out)
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.TRIALING)  # unchanged
+        self.assertIn('dry-run', out.getvalue())
+
+    def test_expire_trials_skips_stripe_provider(self):
+        """expire_trials must not touch Stripe-provider subscriptions."""
+        from io import StringIO
+        from django.core.management import call_command
+        from api.models import SubscriptionPlan, Tenant, Subscription
+
+        User = get_user_model()
+        user = User.objects.create_user(username='trial-stripe-user', password='pw_t')
+        tenant = Tenant.objects.create(name='Stripe Test Tenant', tenant_type='clinic', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='stripe-trial-plan', name='Stripe Trial Plan', description='',
+            billing_cycle='monthly', price_cents=9900, billing_model='hybrid',
+            currency='USD', max_monthly_requests=300, max_users=5,
+            seat_price_cents=500, api_overage_per_1000_cents=50,
+        )
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan,
+            status=Subscription.Status.TRIALING,
+            provider='stripe',
+            trial_ends_at=timezone.now() - timedelta(days=1),
+        )
+
+        out = StringIO()
+        call_command('expire_trials', stdout=out)
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.TRIALING)  # Stripe subs unchanged
+
+    @patch('api.platform_views.StripeBillingProvider')
+    def test_stripe_webhook_trial_will_end_event_is_accepted(self, mock_provider_cls):
+        """customer.subscription.trial_will_end webhook is processed and returns 200."""
+        from api.models import SubscriptionPlan, Tenant, Subscription
+
+        class FakeStripeEvent(dict):
+            def __init__(self, *, event_id, event_type, data_object):
+                super().__init__({"data": {"object": data_object}})
+                self.id = event_id
+                self.type = event_type
+
+        User = get_user_model()
+        user = User.objects.create_user(username='trial-wh-user', password='pw_wh')
+        tenant = Tenant.objects.create(name='Trial WH Tenant', tenant_type='clinic', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='wh-trial-plan', name='WH Trial Plan', description='',
+            billing_cycle='monthly', price_cents=4900, billing_model='hybrid',
+            currency='USD', max_monthly_requests=200, max_users=3,
+            seat_price_cents=300, api_overage_per_1000_cents=30,
+        )
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan,
+            status=Subscription.Status.TRIALING,
+            provider='stripe',
+            provider_subscription_id='sub_trial_wh_test',
+        )
+
+        event_payload = FakeStripeEvent(
+            event_id='evt_trial_will_end_001',
+            event_type='customer.subscription.trial_will_end',
+            data_object={
+                'id': 'sub_trial_wh_test',
+                'status': 'trialing',
+                'metadata': {'tenant_id': str(tenant.tenant_id)},
+            },
+        )
+        mock_provider = mock_provider_cls.return_value
+        mock_provider.construct_event.return_value = event_payload
+
+        response = self.client.post(
+            '/api/v1/billing/webhook/',
+            data='{}',
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='sig_test',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch('api.platform_views.StripeBillingProvider')
+    def test_stripe_webhook_subscription_updated_maps_trialing_status(self, mock_provider_cls):
+        """customer.subscription.updated with stripe status 'trialing' keeps TRIALING in DB."""
+        from api.models import SubscriptionPlan, Tenant, Subscription
+
+        class FakeStripeEvent(dict):
+            def __init__(self, *, event_id, event_type, data_object):
+                super().__init__({"data": {"object": data_object}})
+                self.id = event_id
+                self.type = event_type
+
+        User = get_user_model()
+        user = User.objects.create_user(username='trial-map-user', password='pw_map')
+        tenant = Tenant.objects.create(name='Trial Map Tenant', tenant_type='clinic', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='map-trial-plan', name='Map Trial Plan', description='',
+            billing_cycle='monthly', price_cents=4900, billing_model='hybrid',
+            currency='USD', max_monthly_requests=200, max_users=3,
+            seat_price_cents=300, api_overage_per_1000_cents=30,
+        )
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan,
+            status=Subscription.Status.INCOMPLETE,
+            provider='stripe',
+            provider_subscription_id='sub_map_trialing_test',
+        )
+
+        event_payload = FakeStripeEvent(
+            event_id='evt_sub_updated_trialing_001',
+            event_type='customer.subscription.updated',
+            data_object={
+                'id': 'sub_map_trialing_test',
+                'status': 'trialing',
+                'customer': 'cus_trial_map_001',
+                'metadata': {'tenant_id': str(tenant.tenant_id)},
+            },
+        )
+        mock_provider = mock_provider_cls.return_value
+        mock_provider.construct_event.return_value = event_payload
+
+        response = self.client.post(
+            '/api/v1/billing/webhook/',
+            data='{}',
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='sig_test',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.TRIALING)
+
+
+# ---------------------------------------------------------------------------
+# OpenTelemetry tracing tests
+# ---------------------------------------------------------------------------
+
+class TracingSetupTests(TestCase):
+    """Unit tests for api.tracing.setup_tracing().
+
+    These tests verify the tracing module's public contract without spawning
+    a real OTLP exporter or collector — the TracerProvider is reset between
+    tests to keep them isolated.
+    """
+
+    def setUp(self):
+        # Reset the singleton guard so each test starts fresh
+        import api.tracing as tracing_mod
+        tracing_mod._SETUP_DONE = False
+        # Reset the global tracer provider to a fresh no-op state
+        from opentelemetry import trace
+        from opentelemetry.sdk.trace import TracerProvider
+        trace.set_tracer_provider(TracerProvider())
+
+    def test_setup_tracing_noop_by_default(self):
+        """setup_tracing() with OTEL_EXPORTER=none should complete without error."""
+        import os
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"OTEL_EXPORTER": "none"}):
+            from api.tracing import setup_tracing
+            setup_tracing()  # must not raise
+        from api.tracing import _SETUP_DONE
+        self.assertTrue(_SETUP_DONE)
+
+    def test_setup_tracing_is_idempotent(self):
+        """Calling setup_tracing() twice must not raise or reset the provider."""
+        import os
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"OTEL_EXPORTER": "none"}):
+            from api.tracing import setup_tracing
+            setup_tracing()
+            setup_tracing()  # second call — must be a no-op
+        from api.tracing import _SETUP_DONE
+        self.assertTrue(_SETUP_DONE)
+
+    def test_setup_tracing_console_exporter(self):
+        """OTEL_EXPORTER=console should register a ConsoleSpanExporter without error."""
+        import os
+        from unittest.mock import patch
+        import api.tracing as tracing_mod
+        with patch.dict(os.environ, {"OTEL_EXPORTER": "console", "OTEL_SERVICE_NAME": "test-svc"}):
+            tracing_mod.setup_tracing()
+        self.assertTrue(tracing_mod._SETUP_DONE)
+
+    def test_get_tracer_returns_tracer(self):
+        """get_tracer() should return a valid Tracer instance."""
+        from api.tracing import setup_tracing, get_tracer
+        from opentelemetry.trace import Tracer
+        import os
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"OTEL_EXPORTER": "none"}):
+            setup_tracing()
+        tracer = get_tracer("test")
+        self.assertIsNotNone(tracer)
+        # Tracer should support start_as_current_span context manager
+        with tracer.start_as_current_span("test-span") as span:
+            self.assertIsNotNone(span)
+
+    def test_rag_graph_imports_without_error(self):
+        """graph.py must import cleanly after tracing is initialised."""
+        from api.tracing import setup_tracing
+        import os
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"OTEL_EXPORTER": "none"}):
+            setup_tracing()
+        # Re-importing should not raise even with OTel already initialised
+        import importlib
+        import api.agent_ai.graph as graph_mod
+        importlib.reload(graph_mod)
+        self.assertTrue(hasattr(graph_mod, "build_agent_graph"))
+

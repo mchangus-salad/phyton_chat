@@ -1,3 +1,4 @@
+import datetime
 import secrets
 import csv
 import io
@@ -1196,10 +1197,37 @@ def billing_webhook(request):
                 subscription = Subscription.objects.filter(tenant=tenant, provider_subscription_id=provider_subscription_id).first()
             if subscription:
                 stripe_status = (data_object.get("status", "") or "").lower()
+                _stripe_status_map = {
+                    "active": Subscription.Status.ACTIVE,
+                    "trialing": Subscription.Status.TRIALING,
+                    "past_due": Subscription.Status.PAST_DUE,
+                    "canceled": Subscription.Status.CANCELED,
+                    "incomplete": Subscription.Status.INCOMPLETE,
+                }
+                subscription.status = _stripe_status_map.get(stripe_status, Subscription.Status.PAST_DUE)
                 subscription.provider_subscription_id = provider_subscription_id or subscription.provider_subscription_id
                 subscription.provider_customer_id = data_object.get("customer", "") or subscription.provider_customer_id
-                subscription.status = Subscription.Status.ACTIVE if stripe_status in {"active", "trialing"} else Subscription.Status.PAST_DUE
-                subscription.save(update_fields=["provider_subscription_id", "provider_customer_id", "status", "updated_at"])
+                # Sync trial and billing period timestamps from Stripe.
+                trial_end_ts = data_object.get("trial_end")
+                if trial_end_ts:
+                    subscription.trial_ends_at = datetime.datetime.fromtimestamp(trial_end_ts, tz=datetime.timezone.utc)
+                period_start_ts = data_object.get("current_period_start")
+                if period_start_ts:
+                    subscription.current_period_start = datetime.datetime.fromtimestamp(period_start_ts, tz=datetime.timezone.utc)
+                period_end_ts = data_object.get("current_period_end")
+                if period_end_ts:
+                    subscription.current_period_end = datetime.datetime.fromtimestamp(period_end_ts, tz=datetime.timezone.utc)
+                subscription.save(update_fields=[
+                    "provider_subscription_id", "provider_customer_id", "status",
+                    "trial_ends_at", "current_period_start", "current_period_end", "updated_at",
+                ])
+        elif event_type == "customer.subscription.trial_will_end":
+            # Stripe fires this ~3 days before a trial ends. Notify owner.
+            provider_subscription_id = data_object.get("id", "")
+            if not subscription and provider_subscription_id:
+                subscription = Subscription.objects.filter(provider_subscription_id=provider_subscription_id).first()
+            if subscription:
+                notify_subscription_event(tenant or subscription.tenant, "trial_will_end", subscription)
         elif event_type in {"customer.subscription.deleted"}:
             provider_subscription_id = data_object.get("id", "")
             if provider_subscription_id:
