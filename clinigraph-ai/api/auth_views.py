@@ -2,7 +2,9 @@ from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from drf_spectacular.utils import extend_schema
 
@@ -64,3 +66,33 @@ def my_tenants(request):
         for item in memberships
     ]
     return Response(payload, status=status.HTTP_200_OK)
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(help_text="Refresh token to blacklist.")
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@extend_schema(
+    operation_id="auth_logout",
+    description="Logout the current user by blacklisting the supplied refresh token.",
+    request=LogoutSerializer,
+    responses={200: {"type": "object", "properties": {"detail": {"type": "string"}}}},
+)
+def logout(request):
+    serializer = LogoutSerializer(data=request.data or {})
+    if not serializer.is_valid():
+        return Response(
+            {"error": "invalid payload", "detail": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    try:
+        token = RefreshToken(serializer.validated_data["refresh"])
+        token.blacklist()
+    except TokenError as exc:
+        return Response(
+            {"error": "token error", "detail": str(exc)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)

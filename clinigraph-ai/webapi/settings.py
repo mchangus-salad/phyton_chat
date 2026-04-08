@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
     'api',
 ]
@@ -179,6 +180,7 @@ REST_FRAMEWORK = {
         'agent_anon': os.getenv('DRF_THROTTLE_AGENT_ANON', '30/min'),
         'agent_user': os.getenv('DRF_THROTTLE_AGENT_USER', '120/min'),
     },
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
 }
 
 SPECTACULAR_SETTINGS = {
@@ -215,8 +217,9 @@ SPECTACULAR_SETTINGS = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('JWT_ACCESS_MINUTES', '30'))),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('JWT_REFRESH_DAYS', '7'))),
-    'ROTATE_REFRESH_TOKENS': os.getenv('JWT_ROTATE_REFRESH_TOKENS', 'false').lower() == 'true',
-    'BLACKLIST_AFTER_ROTATION': os.getenv('JWT_BLACKLIST_AFTER_ROTATION', 'false').lower() == 'true',
+    'ROTATE_REFRESH_TOKENS': os.getenv('JWT_ROTATE_REFRESH_TOKENS', 'true').lower() == 'true',
+    'BLACKLIST_AFTER_ROTATION': os.getenv('JWT_BLACKLIST_AFTER_ROTATION', 'true').lower() == 'true',
+    'UPDATE_LAST_LOGIN': True,
 }
 
 LOG_LEVEL = os.getenv('DJANGO_LOG_LEVEL', 'INFO')

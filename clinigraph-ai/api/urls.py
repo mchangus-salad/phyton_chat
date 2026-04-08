@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .auth_views import CliniGraphTokenObtainPairView, my_tenants
+from .auth_views import CliniGraphTokenObtainPairView, logout, my_tenants
 from .views import (
     agent_chat_highlights_create,
     agent_chat_highlights_pop,
@@ -33,6 +33,7 @@ from .platform_views import (
     billing_invoice_receipt_pdf,
     billing_invoice_receipt,
     billing_portal_session_create,
+    billing_subscription_cancel,
     billing_subscription_change_plan,
     billing_usage_summary,
     billing_webhook,
@@ -52,6 +53,7 @@ urlpatterns = [
     path('health/', health, name='health'),
     path('auth/token/', CliniGraphTokenObtainPairView.as_view(), name='token-obtain-pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
+    path('auth/logout/', logout, name='auth-logout'),
     path('auth/my-tenants/', my_tenants, name='auth-my-tenants'),
     path('agent/query/', agent_query, name='agent-query'),
     path('agent/query/stream/', agent_query_stream, name='agent-query-stream'),
@@ -88,6 +90,7 @@ urlpatterns += [
     path('billing/usage/summary/', billing_usage_summary, name='billing-usage-summary'),
     path('billing/portal/session/', billing_portal_session_create, name='billing-portal-session-create'),
     path('billing/subscriptions/change-plan/', billing_subscription_change_plan, name='billing-subscription-change-plan'),
+    path('billing/subscriptions/cancel/', billing_subscription_cancel, name='billing-subscription-cancel'),
     path('billing/subscriptions/create/', subscription_create, name='subscription-create'),
     path('billing/checkout/session/', billing_checkout_session_create, name='billing-checkout-session-create'),
     path('tenants/memberships/', tenant_memberships_list, name='tenant-memberships-list'),
