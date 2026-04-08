@@ -46,7 +46,7 @@ from .serializers import (  # patient-case additions
 	PatientCaseAnalysisResponseSerializer,
 	PatientCaseUploadSerializer,
 )
-from .throttles import AgentAnonRateThrottle, AgentUserRateThrottle
+from .throttles import AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle
 
 
 logger = logging.getLogger(__name__)
@@ -153,7 +153,7 @@ def health(request):
 )
 @api_view(['POST'])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def agent_query(request):
 	"""Run the default AgentAI graph and return answer + cache metadata."""
 	serializer = AgentQuerySerializer(data=request.data or {})
@@ -209,7 +209,7 @@ def agent_query(request):
 )
 @api_view(['POST'])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def agent_query_stream(request):
 	"""Run AgentAI and stream NDJSON events for progressive UI rendering."""
 	serializer = AgentQuerySerializer(data=request.data or {})
@@ -284,7 +284,7 @@ def agent_query_stream(request):
 )
 @api_view(['POST'])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def oncology_train(request):
 	"""Ingest oncology documents into the knowledge base for domain-scoped retrieval.
 
@@ -367,7 +367,7 @@ def oncology_train(request):
 )
 @api_view(['POST'])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def oncology_query(request):
 	"""Run the oncology-specific AgentAI graph and include a medical safety notice."""
 	serializer = OncologyQuerySerializer(data=request.data or {})
@@ -428,7 +428,7 @@ def oncology_query(request):
 )
 @api_view(['POST'])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def oncology_query_stream(request):
 	serializer = OncologyQuerySerializer(data=request.data or {})
 	if not serializer.is_valid():
@@ -497,7 +497,7 @@ def oncology_query_stream(request):
 )
 @api_view(['POST'])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def oncology_evidence_search(request):
 	"""Return structured oncology evidence snippets with optional metadata filters.
 
@@ -578,7 +578,7 @@ def oncology_evidence_search(request):
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def oncology_upload(request):
 	"""Upload and ingest an oncology corpus file directly through the API."""
 	serializer = OncologyFileUploadSerializer(data=request.data)
@@ -651,7 +651,7 @@ def oncology_upload(request):
 )
 @api_view(['POST'])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def medical_train(request):
 	"""V2 generic medical ingestion endpoint that supports any disease domain."""
 	serializer = MedicalTrainingSerializer(data=request.data or {})
@@ -719,7 +719,7 @@ def medical_train(request):
 )
 @api_view(['POST'])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def medical_query(request):
 	"""V2 generic medical query endpoint for any configured domain and subdomain."""
 	serializer = MedicalQuerySerializer(data=request.data or {})
@@ -781,7 +781,7 @@ def medical_query(request):
 )
 @api_view(['POST'])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def medical_query_stream(request):
 	serializer = MedicalQuerySerializer(data=request.data or {})
 	if not serializer.is_valid():
@@ -844,7 +844,7 @@ def medical_query_stream(request):
 )
 @api_view(['POST'])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def medical_evidence_search(request):
 	"""V2 generic evidence search endpoint with condition/marker filters."""
 	serializer = MedicalEvidenceSearchSerializer(data=request.data or {})
@@ -916,7 +916,7 @@ def medical_evidence_search(request):
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def medical_upload(request):
 	"""V2 generic upload endpoint for non-oncology disease corpora."""
 	serializer = MedicalFileUploadSerializer(data=request.data)
@@ -1054,7 +1054,7 @@ def _build_case_prompt(clean_text: str, question: str, domain: str) -> str:
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
 @permission_classes([HasLlmAccessOrApiKey])
-@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle])
+@throttle_classes([AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle])
 def patient_case_analyze(request):
 	"""
 	Analyze a patient case with HIPAA-compliant PHI de-identification.
