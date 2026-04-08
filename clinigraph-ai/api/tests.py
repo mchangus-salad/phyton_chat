@@ -3859,3 +3859,82 @@ class PrometheusMetricsViewTests(TestCase):
         if resp.status_code == 200:
             self.assertIn("text/plain", resp.get("Content-Type", ""))
 
+
+# =============================================================================
+# Registration endpoint tests
+# =============================================================================
+
+class RegistrationEndpointTests(APITestCase):
+    """Tests for POST /api/v1/auth/register/."""
+
+    def test_register_creates_user_and_returns_tokens(self):
+        payload = {
+            "username": "newclinician",
+            "email": "newclinician@test.example",
+            "password": "S3cur3P@ss!",
+        }
+        resp = self.client.post("/api/v1/auth/register/", payload, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertIn("access", resp.data)
+        self.assertIn("refresh", resp.data)
+        self.assertEqual(resp.data["username"], "newclinician")
+        self.assertEqual(resp.data["email"], "newclinician@test.example")
+
+    def test_register_tokens_are_usable(self):
+        """The returned access token should authenticate subsequent requests."""
+        payload = {"username": "tokenuser", "email": "tokenuser@test.example", "password": "S3cur3P@ss!"}
+        resp = self.client.post("/api/v1/auth/register/", payload, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        access = resp.data["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        resp2 = self.client.get("/api/v1/auth/my-tenants/")
+        # 200 — authenticated; user has no tenant memberships yet, so reply is []
+        self.assertEqual(resp2.status_code, status.HTTP_200_OK)
+
+    def test_register_duplicate_username_returns_409(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        User.objects.create_user(username="dupeuser", email="dupe@test.example", password="pw")
+
+        payload = {"username": "dupeuser", "email": "other@test.example", "password": "S3cur3P@ss!"}
+        resp = self.client.post("/api/v1/auth/register/", payload, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn("username taken", resp.data.get("error", ""))
+
+    def test_register_duplicate_email_returns_409(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        User.objects.create_user(username="emailuser1", email="shared@test.example", password="pw")
+
+        payload = {"username": "emailuser2", "email": "shared@test.example", "password": "S3cur3P@ss!"}
+        resp = self.client.post("/api/v1/auth/register/", payload, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn("email taken", resp.data.get("error", ""))
+
+    def test_register_missing_fields_returns_400(self):
+        resp = self.client.post("/api/v1/auth/register/", {"username": "incomplete"}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_register_weak_password_returns_400(self):
+        payload = {"username": "weakpassuser", "email": "weak@test.example", "password": "123"}
+        resp = self.client.post("/api/v1/auth/register/", payload, format="json")
+        # 400 from Django's validate_password (too short / numeric only)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_register_stores_first_and_last_name(self):
+        payload = {
+            "username": "nameuser",
+            "email": "nameuser@test.example",
+            "password": "S3cur3P@ss!",
+            "first_name": "Jane",
+            "last_name": "Doe",
+        }
+        resp = self.client.post("/api/v1/auth/register/", payload, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        from django.contrib.auth import get_user_model
+        user = get_user_model().objects.get(username="nameuser")
+        self.assertEqual(user.first_name, "Jane")
+        self.assertEqual(user.last_name, "Doe")
+
+

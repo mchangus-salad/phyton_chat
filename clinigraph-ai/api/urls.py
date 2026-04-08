@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .auth_views import CliniGraphTokenObtainPairView, logout, my_tenants
+from .auth_views import CliniGraphTokenObtainPairView, logout, my_tenants, register
 from .views import (
     agent_chat_highlights_create,
     agent_chat_highlights_pop,
@@ -55,6 +55,7 @@ urlpatterns = [
     path('auth/token/', CliniGraphTokenObtainPairView.as_view(), name='token-obtain-pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
     path('auth/logout/', logout, name='auth-logout'),
+    path('auth/register/', register, name='auth-register'),
     path('auth/my-tenants/', my_tenants, name='auth-my-tenants'),
     path('agent/query/', agent_query, name='agent-query'),
     path('agent/query/stream/', agent_query_stream, name='agent-query-stream'),
