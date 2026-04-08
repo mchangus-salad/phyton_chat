@@ -289,7 +289,10 @@ if (-not $SkipDocker) {
         throw "Docker no esta disponible. Instala Docker Desktop o usa -SkipDocker."
     }
 
-    Invoke-CheckedCommand -Command @("docker", "compose", "-f", $composeFile, "up", "-d") -Description "Levantando Redis, Kafka, Weaviate y Ollama"
+    # Only start infrastructure services. The web/frontend/prometheus/grafana services
+    # in docker-compose.local.yml are for full containerized mode (use saas-up.ps1 for that).
+    # dev-up.ps1 runs Django directly on the host after this block.
+    Invoke-CheckedCommand -Command @("docker", "compose", "-f", $composeFile, "up", "-d", "redis", "kafka", "kafka-ui", "weaviate", "ollama") -Description "Levantando Redis, Kafka, Weaviate y Ollama"
 
     Write-Step "Esperando Redis, Kafka, Weaviate y Ollama"
     Wait-ForTcpPort -Address "127.0.0.1" -Port 6379 -TimeoutSeconds 60
