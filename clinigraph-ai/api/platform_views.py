@@ -59,6 +59,8 @@ from .serializers import (
     ErrorResponseSerializer,
     MetricsResponseSerializer,
     SecurityEventSerializer,
+    TaxInfoUpdateSerializer,
+    TaxInfoResponseSerializer,
     TenantMemberSerializer,
     TenantMembershipCreateSerializer,
     TenantMembershipUpdateSerializer,
@@ -92,6 +94,8 @@ def _serialize_invoice(invoice: BillingInvoice | None) -> dict | None:
         "platform_fee_cents": invoice.platform_fee_cents,
         "users_overage_cents": invoice.users_overage_cents,
         "api_overage_cents": invoice.api_overage_cents,
+        "tax_cents": invoice.tax_cents,
+        "tax_rate_bps": invoice.tax_rate_bps,
         "total_cents": invoice.total_cents,
         "active_users": invoice.active_users,
         "api_requests": invoice.api_requests,
@@ -638,6 +642,8 @@ def billing_invoice_export_csv(request):
         "platform_fee_cents",
         "users_overage_cents",
         "api_overage_cents",
+        "tax_cents",
+        "tax_rate_bps",
         "total_cents",
         "active_users",
         "api_requests",
@@ -655,6 +661,8 @@ def billing_invoice_export_csv(request):
             invoice.platform_fee_cents,
             invoice.users_overage_cents,
             invoice.api_overage_cents,
+            invoice.tax_cents,
+            invoice.tax_rate_bps,
             invoice.total_cents,
             invoice.active_users,
             invoice.api_requests,
@@ -667,6 +675,69 @@ def billing_invoice_export_csv(request):
     response = HttpResponse(content, content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="billing-export-{tenant.tenant_id}.csv"'
     return response
+
+
+@extend_schema(
+    operation_id="billing_tax_info_update",
+    description="Update tenant tax / VAT information (tax ID, billing country, exempt status).",
+    request=TaxInfoUpdateSerializer,
+    responses={
+        200: TaxInfoResponseSerializer,
+        400: ErrorResponseSerializer,
+        401: ErrorResponseSerializer,
+        403: ErrorResponseSerializer,
+    },
+    parameters=[
+        OpenApiParameter(
+            name="X-Tenant-ID",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.HEADER,
+            required=True,
+            description="Tenant UUID.",
+        )
+    ],
+)
+@api_view(["PATCH"])
+@permission_classes([IsTenantBillingAdminOrOwner])
+def billing_tax_info_update(request):
+    """Store or update VAT/EIN and exemption data for the requesting tenant."""
+    tenant = getattr(request, "tenant", None)
+    if tenant is None:
+        return Response({"error": "tenant not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+
+    serializer = TaxInfoUpdateSerializer(data=request.data or {})
+    if not serializer.is_valid():
+        return Response({"error": "invalid payload", "detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    payload = serializer.validated_data
+    update_fields = []
+    if "tax_id" in payload:
+        tenant.tax_id = payload["tax_id"]
+        update_fields.append("tax_id")
+    if "tax_country_code" in payload:
+        tenant.tax_country_code = payload["tax_country_code"]
+        update_fields.append("tax_country_code")
+    if "tax_region_code" in payload:
+        tenant.tax_region_code = payload["tax_region_code"]
+        update_fields.append("tax_region_code")
+    if "tax_exempt" in payload:
+        tenant.tax_exempt = payload["tax_exempt"]
+        update_fields.append("tax_exempt")
+
+    if update_fields:
+        update_fields.append("updated_at")
+        tenant.save(update_fields=update_fields)
+
+    return Response(
+        {
+            "tenant_id": tenant.tenant_id,
+            "tax_id": tenant.tax_id,
+            "tax_country_code": tenant.tax_country_code,
+            "tax_region_code": tenant.tax_region_code,
+            "tax_exempt": tenant.tax_exempt,
+        },
+        status=status.HTTP_200_OK,
+    )
 
 
 @extend_schema(
@@ -1269,10 +1340,22 @@ def billing_webhook(request):
                         .first()
                     )
                 if invoice:
+                    stripe_tax_cents = int(data_object.get("tax") or 0)
+                    update_fields = ["external_invoice_id", "status", "paid_at"]
                     invoice.external_invoice_id = stripe_invoice_id or invoice.external_invoice_id
                     invoice.status = BillingInvoice.Status.PAID
                     invoice.paid_at = timezone.now()
-                    invoice.save(update_fields=["external_invoice_id", "status", "paid_at"])
+                    if stripe_tax_cents > 0 and invoice.tax_cents == 0:
+                        # Sync tax captured by Stripe Tax (overrides local estimate of 0).
+                        invoice.tax_cents = stripe_tax_cents
+                        invoice.total_cents = (
+                            invoice.platform_fee_cents
+                            + invoice.users_overage_cents
+                            + invoice.api_overage_cents
+                            + stripe_tax_cents
+                        )
+                        update_fields += ["tax_cents", "total_cents"]
+                    invoice.save(update_fields=update_fields)
 
         try:
             safe_payload = json.loads(json.dumps(data_object, default=str))

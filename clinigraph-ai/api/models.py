@@ -147,6 +147,53 @@ class SecurityEvent(models.Model):
 		return f"SecurityEvent({self.event_type}, {self.severity}, {self.created_at:%Y-%m-%d %H:%M:%S})"
 
 
+class TaxPolicy(models.Model):
+	"""Jurisdiction-level tax/VAT rate for internal billing.
+
+	Lookup order: region-specific policy beats country-wide (region_code='').
+	rate_bps is in basis points — 2000 = 20 %.
+	When is_inclusive is True, the declared price already contains the tax;
+	no extra charge is applied but the rate is stored for reporting.
+	"""
+
+	country_code = models.CharField(
+		max_length=2,
+		help_text="ISO 3166-1 alpha-2 code, e.g. 'DE'.",
+	)
+	region_code = models.CharField(
+		max_length=16,
+		blank=True,
+		default="",
+		help_text="Sub-national code (US state, CA province). Empty = country-wide.",
+	)
+	rate_bps = models.PositiveIntegerField(
+		help_text="Tax rate in basis points (10000 = 100%, 2000 = 20%).",
+	)
+	is_inclusive = models.BooleanField(
+		default=False,
+		help_text="True when the price already includes tax (e.g. EU VAT inclusive pricing).",
+	)
+	description = models.CharField(max_length=128, blank=True, default="")
+	is_active = models.BooleanField(default=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		constraints = [
+			models.UniqueConstraint(
+				fields=["country_code", "region_code"],
+				name="unique_tax_policy_jurisdiction",
+			),
+		]
+		ordering = ["country_code", "region_code"]
+		indexes = [
+			models.Index(fields=["country_code", "is_active"]),
+		]
+
+	def __str__(self) -> str:
+		region = f"/{self.region_code}" if self.region_code else ""
+		return f"TaxPolicy({self.country_code}{region}, {self.rate_bps} bps, inclusive={self.is_inclusive})"
+
+
 class Tenant(models.Model):
 	"""SaaS tenant entity representing an organization or individual account."""
 
@@ -163,6 +210,23 @@ class Tenant(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 	is_active = models.BooleanField(default=True)
+	# Tax / VAT fields
+	tax_id = models.CharField(
+		max_length=64, blank=True, default="",
+		help_text="VAT registration number or EIN supplied by the tenant.",
+	)
+	tax_country_code = models.CharField(
+		max_length=2, blank=True, default="",
+		help_text="ISO 3166-1 alpha-2 billing country for tax jurisdiction lookup.",
+	)
+	tax_region_code = models.CharField(
+		max_length=16, blank=True, default="",
+		help_text="Sub-national region code (US state, CA province) for finer-grained rates.",
+	)
+	tax_exempt = models.BooleanField(
+		default=False,
+		help_text="When True, no tax is calculated regardless of jurisdiction.",
+	)
 
 	class Meta:
 		ordering = ["-created_at"]
@@ -342,6 +406,14 @@ class BillingInvoice(models.Model):
 	api_requests = models.PositiveIntegerField(default=0)
 	overage_users = models.PositiveIntegerField(default=0)
 	overage_api_requests = models.PositiveIntegerField(default=0)
+	tax_cents = models.PositiveIntegerField(
+		default=0,
+		help_text="Tax / VAT applied on top of the subtotal (platform_fee + overages).",
+	)
+	tax_rate_bps = models.PositiveIntegerField(
+		default=0,
+		help_text="Effective tax rate in basis points (2000 = 20%). 0 when no tax applies.",
+	)
 	external_invoice_id = models.CharField(max_length=128, blank=True, default="")
 	meta = models.JSONField(default=dict)
 	generated_at = models.DateTimeField(auto_now_add=True)

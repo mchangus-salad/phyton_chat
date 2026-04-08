@@ -387,6 +387,50 @@ class BillingEstimateResponseSerializer(serializers.Serializer):
     total_cents = serializers.IntegerField()
 
 
+class TaxInfoUpdateSerializer(serializers.Serializer):
+    """Request body for PATCH /billing/tax-info/."""
+
+    tax_id = serializers.CharField(
+        max_length=64,
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+        help_text="VAT registration number or EIN.",
+    )
+    tax_country_code = serializers.CharField(
+        max_length=2,
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+        help_text="ISO 3166-1 alpha-2 billing country (e.g. 'DE', 'US').",
+    )
+    tax_region_code = serializers.CharField(
+        max_length=16,
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+        help_text="Sub-national region code for finer-grained tax lookup (e.g. 'TX', 'CA').",
+    )
+    tax_exempt = serializers.BooleanField(
+        required=False,
+        help_text="Set to true to mark this tenant as tax-exempt.",
+    )
+
+    def validate_tax_country_code(self, value: str) -> str:
+        return value.upper()
+
+    def validate_tax_region_code(self, value: str) -> str:
+        return value.upper()
+
+
+class TaxInfoResponseSerializer(serializers.Serializer):
+    tenant_id = serializers.UUIDField()
+    tax_id = serializers.CharField()
+    tax_country_code = serializers.CharField()
+    tax_region_code = serializers.CharField()
+    tax_exempt = serializers.BooleanField()
+
+
 class BillingInvoiceCloseSerializer(serializers.Serializer):
     active_users = serializers.IntegerField(required=False, min_value=0)
     api_requests = serializers.IntegerField(required=False, min_value=0)
@@ -403,6 +447,8 @@ class BillingInvoiceSerializer(serializers.Serializer):
     platform_fee_cents = serializers.IntegerField()
     users_overage_cents = serializers.IntegerField()
     api_overage_cents = serializers.IntegerField()
+    tax_cents = serializers.IntegerField()
+    tax_rate_bps = serializers.IntegerField()
     total_cents = serializers.IntegerField()
     active_users = serializers.IntegerField()
     api_requests = serializers.IntegerField()

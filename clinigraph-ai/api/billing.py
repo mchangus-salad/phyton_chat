@@ -77,6 +77,11 @@ class StripeBillingProvider:
             "client_reference_id": str(tenant.tenant_id),
             "subscription_data": {"trial_period_days": int(plan.trial_days_default), "metadata": metadata},
             "metadata": metadata,
+            # Enable Stripe Tax for automatic jurisdiction-based tax calculation.
+            "automatic_tax": {"enabled": True},
+            # Collect customer address and tax ID (VAT/EIN) during checkout.
+            "tax_id_collection": {"enabled": True},
+            "customer_update": {"address": "auto", "shipping": "never"},
         }
         if existing_customer_id:
             payload["customer"] = existing_customer_id

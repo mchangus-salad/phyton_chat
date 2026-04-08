@@ -69,7 +69,7 @@ Rule:
 - [x] Subscription cancellation UI/API
 - [x] Trial expiration workflows
 - [x] Failed payment recovery flows
-- [ ] Tax/VAT strategy
+- [x] Tax/VAT strategy
 
 ## 5. Containerization
 

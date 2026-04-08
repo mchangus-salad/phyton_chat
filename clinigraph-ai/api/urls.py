@@ -35,6 +35,7 @@ from .platform_views import (
     billing_portal_session_create,
     billing_subscription_cancel,
     billing_subscription_change_plan,
+    billing_tax_info_update,
     billing_usage_summary,
     billing_webhook,
     billing_checkout_session_create,
@@ -97,5 +98,6 @@ urlpatterns += [
     path('tenants/memberships/create/', tenant_memberships_create, name='tenant-memberships-create'),
     path('tenants/memberships/<int:membership_id>/', tenant_memberships_update, name='tenant-memberships-update'),
     path('billing/usage/ingest/', usage_ingest, name='usage-ingest'),
+    path('billing/tax-info/', billing_tax_info_update, name='billing-tax-info-update'),
     path('billing/webhook/', billing_webhook, name='billing-webhook'),
 ]

@@ -3124,3 +3124,275 @@ class TracingSetupTests(TestCase):
         importlib.reload(graph_mod)
         self.assertTrue(hasattr(graph_mod, "build_agent_graph"))
 
+
+# ---------------------------------------------------------------------------
+# Tax / VAT strategy tests
+# ---------------------------------------------------------------------------
+
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tests-tax-cache',
+        }
+    },
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+)
+class TaxServiceTests(TestCase):
+    """Unit tests for calculate_tax_for_subtotal() in tax_service.py."""
+
+    def _make_tenant(self, username: str, **kwargs) -> 'Tenant':
+        from api.models import Tenant
+        User = get_user_model()
+        user = User.objects.create_user(username=username, password='pw')
+        return Tenant.objects.create(name=f'Tax Tenant {username}', tenant_type='individual', owner=user, **kwargs)
+
+    def test_no_country_code_returns_zero(self):
+        """Tenants without tax_country_code never owe tax."""
+        from api.services.tax_service import calculate_tax_for_subtotal
+        tenant = self._make_tenant('tax-no-country')
+        tax_cents, rate_bps = calculate_tax_for_subtotal(10_000, tenant)
+        self.assertEqual(tax_cents, 0)
+        self.assertEqual(rate_bps, 0)
+
+    def test_exempt_tenant_returns_zero(self):
+        """tax_exempt=True always produces (0, 0) regardless of policy."""
+        from api.models import TaxPolicy
+        from api.services.tax_service import calculate_tax_for_subtotal
+        TaxPolicy.objects.create(country_code='DE', rate_bps=1900, description='German VAT', is_active=True)
+        tenant = self._make_tenant('tax-exempt', tax_country_code='DE', tax_exempt=True)
+        tax_cents, rate_bps = calculate_tax_for_subtotal(10_000, tenant)
+        self.assertEqual(tax_cents, 0)
+        self.assertEqual(rate_bps, 0)
+
+    def test_standard_exclusive_tax_calculated_correctly(self):
+        """20 % exclusive VAT on 10 000 cents → 2 000 cents tax."""
+        from api.models import TaxPolicy
+        from api.services.tax_service import calculate_tax_for_subtotal
+        TaxPolicy.objects.create(country_code='GB', rate_bps=2000, description='UK VAT', is_active=True)
+        tenant = self._make_tenant('tax-gb', tax_country_code='GB')
+        tax_cents, rate_bps = calculate_tax_for_subtotal(10_000, tenant)
+        self.assertEqual(tax_cents, 2_000)
+        self.assertEqual(rate_bps, 2_000)
+
+    def test_inclusive_tax_returns_zero_extra_charge(self):
+        """Inclusive tax: rate is recorded but no extra cents are added."""
+        from api.models import TaxPolicy
+        from api.services.tax_service import calculate_tax_for_subtotal
+        TaxPolicy.objects.create(country_code='AU', rate_bps=1000, is_inclusive=True, description='Australian GST (inclusive)', is_active=True)
+        tenant = self._make_tenant('tax-au', tax_country_code='AU')
+        tax_cents, rate_bps = calculate_tax_for_subtotal(10_000, tenant)
+        self.assertEqual(tax_cents, 0)
+        self.assertEqual(rate_bps, 1_000)
+
+    def test_region_specific_policy_overrides_country_wide(self):
+        """Texas-specific rate (8.25 %) beats the US country-wide rate (0 %)."""
+        from api.models import TaxPolicy
+        from api.services.tax_service import calculate_tax_for_subtotal
+        # Country-wide: US SaaS often exempt at federal level
+        TaxPolicy.objects.create(country_code='US', region_code='', rate_bps=0, description='US federal (no SaaS tax)', is_active=True)
+        # Texas state rate
+        TaxPolicy.objects.create(country_code='US', region_code='TX', rate_bps=825, description='Texas SaaS', is_active=True)
+        tenant = self._make_tenant('tax-tx', tax_country_code='US', tax_region_code='TX')
+        tax_cents, rate_bps = calculate_tax_for_subtotal(10_000, tenant)
+        self.assertEqual(rate_bps, 825)
+        self.assertEqual(tax_cents, 825)  # floor(10000 * 825 / 10000)
+
+    def test_no_matching_policy_returns_zero(self):
+        """Unknown jurisdiction → (0, 0) without error."""
+        from api.services.tax_service import calculate_tax_for_subtotal
+        tenant = self._make_tenant('tax-unknown', tax_country_code='ZZ')
+        tax_cents, rate_bps = calculate_tax_for_subtotal(5_000, tenant)
+        self.assertEqual(tax_cents, 0)
+        self.assertEqual(rate_bps, 0)
+
+
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tests-tax-invoice-cache',
+        }
+    },
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+)
+class TaxInvoiceIntegrationTests(APITestCase):
+    """Integration tests: closing a billing period stores tax in BillingInvoice."""
+
+    def _setup(self, username: str, rate_bps: int = 2000):
+        from api.models import SubscriptionPlan, Subscription, Tenant, TaxPolicy
+
+        TaxPolicy.objects.create(country_code='FR', rate_bps=rate_bps, description='French TVA', is_active=True)
+
+        User = get_user_model()
+        user = User.objects.create_user(username=username, password='pw', email=f'{username}@example.com')
+        tenant = Tenant.objects.create(
+            name=f'Tax Invoice Tenant {username}',
+            tenant_type='individual',
+            owner=user,
+            tax_country_code='FR',
+        )
+        plan = SubscriptionPlan.objects.create(
+            code=f'plan-{username}',
+            name='Tax Plan',
+            billing_cycle='monthly',
+            price_cents=10_000,
+            billing_model='hybrid',
+            currency='EUR',
+            max_monthly_requests=1000,
+            max_users=3,
+            seat_price_cents=0,
+            api_overage_per_1000_cents=0,
+        )
+        sub = Subscription.objects.create(tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE)
+        return tenant, plan, sub, user
+
+    def test_invoice_close_stores_tax_cents(self):
+        """tax_cents on BillingInvoice equals floor(platform_fee * rate_bps / 10_000)."""
+        from api.services.platform_service import close_current_billing_period
+
+        tenant, plan, sub, _ = self._setup('tax-inv-close')
+        invoice = close_current_billing_period(tenant=tenant, subscription=sub)
+        expected_tax = (invoice.platform_fee_cents * 2_000) // 10_000
+        self.assertEqual(invoice.tax_cents, expected_tax)
+        self.assertEqual(invoice.tax_rate_bps, 2_000)
+        self.assertEqual(invoice.total_cents, invoice.platform_fee_cents + expected_tax)
+
+    def test_invoice_close_adds_tax_line_item(self):
+        """When tax_cents > 0 a 'tax' BillingInvoiceLineItem is created."""
+        from api.models import BillingInvoiceLineItem
+        from api.services.platform_service import close_current_billing_period
+
+        tenant, plan, sub, _ = self._setup('tax-inv-line')
+        invoice = close_current_billing_period(tenant=tenant, subscription=sub)
+        tax_line = BillingInvoiceLineItem.objects.filter(invoice=invoice, code='tax').first()
+        self.assertIsNotNone(tax_line)
+        self.assertEqual(tax_line.total_price_cents, invoice.tax_cents)
+
+    def test_invoice_close_no_tax_for_exempt_tenant(self):
+        """tax_exempt=True → tax_cents=0 and no 'tax' line item."""
+        from api.models import BillingInvoiceLineItem, TaxPolicy
+        from api.services.platform_service import close_current_billing_period
+
+        TaxPolicy.objects.create(country_code='ES', rate_bps=2100, description='Spain IVA', is_active=True)
+        User = get_user_model()
+        user = User.objects.create_user(username='tax-exempt-inv', password='pw')
+        from api.models import Tenant, SubscriptionPlan, Subscription
+        tenant = Tenant.objects.create(
+            name='Exempt Invoice Tenant',
+            owner=user,
+            tax_country_code='ES',
+            tax_exempt=True,
+        )
+        plan = SubscriptionPlan.objects.create(
+            code='plan-exempt-inv',
+            name='Exempt Plan',
+            billing_cycle='monthly',
+            price_cents=8_000,
+            billing_model='hybrid',
+            currency='EUR',
+            max_monthly_requests=1000,
+            max_users=3,
+            seat_price_cents=0,
+            api_overage_per_1000_cents=0,
+        )
+        sub = Subscription.objects.create(tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE)
+        invoice = close_current_billing_period(tenant=tenant, subscription=sub)
+        self.assertEqual(invoice.tax_cents, 0)
+        self.assertFalse(BillingInvoiceLineItem.objects.filter(invoice=invoice, code='tax').exists())
+
+
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tests-tax-api-cache',
+        }
+    },
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+)
+class TaxInfoEndpointTests(APITestCase):
+    """API tests for PATCH /api/v1/billing/tax-info/."""
+
+    def _setup(self, username: str):
+        from api.models import SubscriptionPlan, Subscription, Tenant, TenantMembership
+
+        User = get_user_model()
+        user = User.objects.create_user(username=username, password='pw', email=f'{username}@tax.example.com')
+        tenant = Tenant.objects.create(name=f'TaxAPI Tenant {username}', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.BILLING, is_active=True)
+        plan = SubscriptionPlan.objects.create(
+            code=f'plan-taxapi-{username}',
+            name='Tax API Plan',
+            billing_cycle='monthly',
+            price_cents=5_000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=3,
+            seat_price_cents=0,
+            api_overage_per_1000_cents=0,
+        )
+        Subscription.objects.create(tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE)
+
+        token_resp = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': username, 'password': 'pw'},
+            format='json',
+        )
+        access = token_resp.data['access']
+        return tenant, access
+
+    def test_patch_tax_info_updates_tenant(self):
+        """PATCH /billing/tax-info/ stores tax_id, country, region, exempt."""
+        tenant, access = self._setup('tax-api-patch')
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+
+        resp = self.client.patch(
+            '/api/v1/billing/tax-info/',
+            {
+                'tax_id': 'DE123456789',
+                'tax_country_code': 'de',    # lowercase — should be normalised to 'DE'
+                'tax_region_code': '',
+                'tax_exempt': False,
+            },
+            format='json',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['tax_id'], 'DE123456789')
+        self.assertEqual(resp.data['tax_country_code'], 'DE')
+
+        tenant.refresh_from_db()
+        self.assertEqual(tenant.tax_id, 'DE123456789')
+        self.assertEqual(tenant.tax_country_code, 'DE')
+
+    def test_patch_tax_exempt_sets_flag(self):
+        """PATCH with tax_exempt=true marks tenant as exempt."""
+        tenant, access = self._setup('tax-api-exempt')
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access}')
+
+        resp = self.client.patch(
+            '/api/v1/billing/tax-info/',
+            {'tax_exempt': True},
+            format='json',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue(resp.data['tax_exempt'])
+
+        tenant.refresh_from_db()
+        self.assertTrue(tenant.tax_exempt)
+
+    def test_patch_tax_info_requires_auth(self):
+        """Unauthenticated request → 401."""
+        tenant, _ = self._setup('tax-api-unauth')
+        resp = self.client.patch(
+            '/api/v1/billing/tax-info/',
+            {'tax_country_code': 'US'},
+            format='json',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+

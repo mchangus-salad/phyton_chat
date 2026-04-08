@@ -19,6 +19,7 @@ from django.utils import timezone
 
 from api.billing import BillingConfigurationError, StripeBillingProvider
 from api.models import BillingEvent, BillingInvoice, BillingInvoiceLineItem, Subscription, SubscriptionPlan, Tenant, TenantMembership, UsageRecord
+from api.services.tax_service import calculate_tax_for_subtotal
 from api.telemetry import incr
 
 
@@ -52,6 +53,8 @@ class HybridBillingEstimate:
     platform_fee_cents: int
     users_overage_cents: int
     api_overage_cents: int
+    tax_cents: int
+    tax_rate_bps: int
     total_cents: int
 
 
@@ -254,7 +257,9 @@ def estimate_hybrid_monthly_bill(
     api_blocks_1k = (overage_api_requests + 999) // 1000
     api_overage_cents = api_blocks_1k * int(plan.api_overage_per_1000_cents or 0)
     platform_fee_cents = int(plan.price_cents or 0)
-    total_cents = platform_fee_cents + users_overage_cents + api_overage_cents
+    subtotal_cents = platform_fee_cents + users_overage_cents + api_overage_cents
+    tax_cents, tax_rate_bps = calculate_tax_for_subtotal(subtotal_cents, tenant)
+    total_cents = subtotal_cents + tax_cents
 
     return HybridBillingEstimate(
         tenant_id=str(tenant.tenant_id),
@@ -272,6 +277,8 @@ def estimate_hybrid_monthly_bill(
         platform_fee_cents=platform_fee_cents,
         users_overage_cents=users_overage_cents,
         api_overage_cents=api_overage_cents,
+        tax_cents=tax_cents,
+        tax_rate_bps=tax_rate_bps,
         total_cents=total_cents,
     )
 
@@ -303,6 +310,8 @@ def close_current_billing_period(*, tenant: Tenant, subscription: Subscription, 
             "platform_fee_cents": estimate.platform_fee_cents,
             "users_overage_cents": estimate.users_overage_cents,
             "api_overage_cents": estimate.api_overage_cents,
+            "tax_cents": estimate.tax_cents,
+            "tax_rate_bps": estimate.tax_rate_bps,
             "total_cents": estimate.total_cents,
             "active_users": estimate.active_users,
             "api_requests": estimate.api_requests,
@@ -362,6 +371,19 @@ def _replace_invoice_line_items(*, invoice: BillingInvoice, subscription: Subscr
             meta={"included_requests": int(plan.max_monthly_requests or 0), "api_requests": invoice.api_requests},
         ),
     ]
+    if invoice.tax_cents > 0:
+        rate_pct = invoice.tax_rate_bps / 100
+        lines.append(
+            BillingInvoiceLineItem(
+                invoice=invoice,
+                code="tax",
+                description=f"Tax / VAT ({rate_pct:.2f}%)",
+                quantity=1,
+                unit_price_cents=invoice.tax_cents,
+                total_price_cents=invoice.tax_cents,
+                meta={"rate_bps": invoice.tax_rate_bps},
+            )
+        )
     BillingInvoiceLineItem.objects.bulk_create(lines)
 
 
