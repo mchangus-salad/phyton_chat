@@ -57,6 +57,26 @@ export function BillingDashboard({ authToken, tenantId }) {
         <h2>{t('billing.title')}</h2>
       </div>
 
+      {entitlementState.status === 'past_due' ? (
+        <div className="billing-dunning-banner" role="alert">
+          <div className="billing-dunning-banner__content">
+            <span className="billing-dunning-banner__icon" aria-hidden="true">⚠</span>
+            <div className="billing-dunning-banner__text">
+              <strong>{t('billing.dunning.title')}</strong>
+              <p>{entitlementState.message}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="billing-dunning-banner__cta"
+            onClick={openStripePortal}
+            disabled={loading || !authToken || !tenantId}
+          >
+            {t('billing.dunning.cta')}
+          </button>
+        </div>
+      ) : null}
+
       <div className="billing-grid">
         <article className="billing-card">
           <h3>{t('billing.planSimulator')}</h3>

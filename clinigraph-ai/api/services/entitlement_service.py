@@ -75,37 +75,74 @@ def check_tenant_entitlement(tenant: Tenant) -> EntitlementResult:
 # ---------------------------------------------------------------------------
 
 def begin_grace_period(subscription: Subscription) -> Subscription:
-    """Mark subscription PAST_DUE and open a grace window."""
+    """Mark subscription PAST_DUE and open a grace window.
+
+    Idempotent: if a grace window is already set and still in the future, it
+    is *not* reset.  This prevents payment retries from extending the grace
+    period each time Stripe fires another ``invoice.payment_failed`` event.
+    """
     grace_days = _GRACE_DAYS()
+    update_fields = ["status", "updated_at"]
+
     subscription.status = Subscription.Status.PAST_DUE
-    subscription.grace_period_ends_at = timezone.now() + timezone.timedelta(days=grace_days)
-    subscription.save(update_fields=["status", "grace_period_ends_at", "updated_at"])
-    logger.info(
-        "grace_period_started tenant=%s sub=%s ends_at=%s",
-        subscription.tenant_id,
-        subscription.pk,
-        subscription.grace_period_ends_at.isoformat(),
-    )
+
+    if not subscription.grace_period_ends_at:
+        subscription.grace_period_ends_at = timezone.now() + timezone.timedelta(days=grace_days)
+        update_fields.append("grace_period_ends_at")
+        logger.info(
+            "grace_period_started tenant=%s sub=%s ends_at=%s",
+            subscription.tenant_id,
+            subscription.pk,
+            subscription.grace_period_ends_at.isoformat(),
+        )
+    else:
+        logger.info(
+            "grace_period_retained tenant=%s sub=%s ends_at=%s",
+            subscription.tenant_id,
+            subscription.pk,
+            subscription.grace_period_ends_at.isoformat(),
+        )
+
+    subscription.save(update_fields=update_fields)
     return subscription
 
 
 def restore_entitlement(subscription: Subscription) -> Subscription:
-    """Mark subscription ACTIVE and clear any grace window."""
+    """Mark subscription ACTIVE and clear any grace window and failure counter."""
     subscription.status = Subscription.Status.ACTIVE
     subscription.grace_period_ends_at = None
-    subscription.save(update_fields=["status", "grace_period_ends_at", "updated_at"])
+    subscription.failed_payment_count = 0
+    subscription.save(update_fields=["status", "grace_period_ends_at", "failed_payment_count", "updated_at"])
     logger.info("entitlement_restored tenant=%s sub=%s", subscription.tenant_id, subscription.pk)
     return subscription
 
 
 def revoke_entitlement(subscription: Subscription) -> Subscription:
-    """Cancel subscription immediately."""
+    """Cancel subscription immediately and clear failure counter."""
     subscription.status = Subscription.Status.CANCELED
     subscription.canceled_at = timezone.now()
     subscription.grace_period_ends_at = None
-    subscription.save(update_fields=["status", "canceled_at", "grace_period_ends_at", "updated_at"])
+    subscription.failed_payment_count = 0
+    subscription.save(update_fields=["status", "canceled_at", "grace_period_ends_at", "failed_payment_count", "updated_at"])
     logger.info("entitlement_revoked tenant=%s sub=%s", subscription.tenant_id, subscription.pk)
     return subscription
+
+
+def increment_failed_payment_count(subscription: Subscription) -> int:
+    """Atomically increment ``failed_payment_count`` and return the new value."""
+    from django.db.models import F  # local import to avoid circular at module level
+
+    Subscription.objects.filter(pk=subscription.pk).update(
+        failed_payment_count=F("failed_payment_count") + 1
+    )
+    subscription.refresh_from_db(fields=["failed_payment_count"])
+    logger.info(
+        "failed_payment_count_incremented tenant=%s sub=%s count=%s",
+        subscription.tenant_id,
+        subscription.pk,
+        subscription.failed_payment_count,
+    )
+    return subscription.failed_payment_count
 
 
 # ---------------------------------------------------------------------------
@@ -119,6 +156,14 @@ _NOTIFICATION_TEMPLATES: dict[str, tuple[str, str]] = {
             "Your recent payment failed.\n\n"
             "Your account has a {grace_days}-day grace period — the service remains available "
             "until {grace_ends_at}. Please update your billing information to avoid interruption.\n\n"
+            "Visit your billing portal: {portal_url}"
+        ),
+    ),
+    "payment_action_required": (
+        "Action required: authentication needed to complete your CliniGraph payment",
+        (
+            "Your recent payment requires additional authentication (e.g. 3D Secure).\n\n"
+            "Please visit your billing portal to complete the payment and avoid service interruption.\n\n"
             "Visit your billing portal: {portal_url}"
         ),
     ),
@@ -143,6 +188,31 @@ _NOTIFICATION_TEMPLATES: dict[str, tuple[str, str]] = {
         (
             "Your subscription has been canceled. Access to the service has been removed.\n\n"
             "If you have questions or would like to reactivate, please contact support."
+        ),
+    ),
+    "trial_expired": (
+        "Your CliniGraph trial has expired",
+        (
+            "Your free trial has ended.\n\n"
+            "Your account has a {grace_days}-day grace period — the service remains available "
+            "until {grace_ends_at}. Add a payment method to continue using CliniGraph.\n\n"
+            "Visit your billing portal: {portal_url}"
+        ),
+    ),
+    "trial_converted_active": (
+        "Your CliniGraph trial has converted to an active subscription",
+        (
+            "Great news — your free trial has automatically converted to an active subscription "
+            "at no charge.\n\n"
+            "You now have full access to all CliniGraph features."
+        ),
+    ),
+    "trial_will_end": (
+        "Your CliniGraph trial is ending soon",
+        (
+            "Your free trial is ending soon.\n\n"
+            "Add a payment method before your trial expires to continue using CliniGraph without interruption.\n\n"
+            "Visit your billing portal: {portal_url}"
         ),
     ),
 }

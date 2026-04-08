@@ -2132,6 +2132,70 @@ class EntitlementServiceTests(APITestCase):
         self.assertIsNotNone(sub.canceled_at)
         self.assertIsNone(sub.grace_period_ends_at)
 
+    def test_begin_grace_period_is_idempotent_on_retries(self):
+        """Calling begin_grace_period twice must NOT extend the grace window."""
+        from api.models import Subscription
+        from api.services.entitlement_service import begin_grace_period
+        tenant, plan, _ = self._make_tenant_and_plan('ent-grace-idempotent')
+        sub = Subscription.objects.create(tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE)
+        begin_grace_period(sub)
+        sub.refresh_from_db()
+        first_deadline = sub.grace_period_ends_at
+
+        # Second call (simulating a Stripe payment retry event)
+        begin_grace_period(sub)
+        sub.refresh_from_db()
+        second_deadline = sub.grace_period_ends_at
+
+        # Grace window must remain unchanged
+        self.assertEqual(first_deadline, second_deadline)
+        self.assertEqual(sub.status, Subscription.Status.PAST_DUE)
+
+    def test_increment_failed_payment_count_increases_atomically(self):
+        """increment_failed_payment_count must increment and return the new value."""
+        from api.models import Subscription
+        from api.services.entitlement_service import increment_failed_payment_count
+        tenant, plan, _ = self._make_tenant_and_plan('ent-failcount')
+        sub = Subscription.objects.create(tenant=tenant, plan=plan, status=Subscription.Status.PAST_DUE)
+        self.assertEqual(sub.failed_payment_count, 0)
+
+        count = increment_failed_payment_count(sub)
+        self.assertEqual(count, 1)
+
+        count = increment_failed_payment_count(sub)
+        self.assertEqual(count, 2)
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.failed_payment_count, 2)
+
+    def test_restore_entitlement_resets_failed_payment_count(self):
+        """restore_entitlement must reset failed_payment_count to 0."""
+        from api.models import Subscription
+        from api.services.entitlement_service import restore_entitlement
+        tenant, plan, _ = self._make_tenant_and_plan('ent-restore-count')
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.PAST_DUE,
+            grace_period_ends_at=timezone.now() + timedelta(days=2),
+            failed_payment_count=3,
+        )
+        restore_entitlement(sub)
+        sub.refresh_from_db()
+        self.assertEqual(sub.failed_payment_count, 0)
+
+    def test_revoke_entitlement_resets_failed_payment_count(self):
+        """revoke_entitlement must reset failed_payment_count to 0."""
+        from api.models import Subscription
+        from api.services.entitlement_service import revoke_entitlement
+        tenant, plan, _ = self._make_tenant_and_plan('ent-revoke-count')
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.PAST_DUE,
+            grace_period_ends_at=timezone.now() - timedelta(hours=1),
+            failed_payment_count=2,
+        )
+        revoke_entitlement(sub)
+        sub.refresh_from_db()
+        self.assertEqual(sub.failed_payment_count, 0)
+
 
 @override_settings(
     CACHES={
@@ -2229,6 +2293,86 @@ class WebhookGracePeriodTests(APITestCase):
         self.assertEqual(sub.status, Subscription.Status.CANCELED)
         self.assertIsNotNone(sub.canceled_at)
 
+    @patch('api.platform_views.StripeBillingProvider')
+    def test_payment_failed_webhook_increments_failed_payment_count(self, mock_provider_cls):
+        """Each invoice.payment_failed event increments failed_payment_count."""
+        from api.models import SubscriptionPlan, Tenant, Subscription
+
+        class FakeStripeEvent(dict):
+            def __init__(self, *, event_id, event_type, data_object):
+                super().__init__({"data": {"object": data_object}})
+                self.id = event_id
+                self.type = event_type
+
+        User = get_user_model()
+        user = User.objects.create_user(username='wh-cnt-user', password='pw', email='cnt@example.com')
+        tenant = Tenant.objects.create(name='Counter Webhook Tenant', tenant_type='clinic', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='wh-cnt-plan', name='WH Counter Plan', description='',
+            billing_cycle='monthly', price_cents=9000, billing_model='hybrid',
+            currency='USD', max_monthly_requests=1000, max_users=3,
+            seat_price_cents=500, api_overage_per_1000_cents=50,
+            provider_price_id='price_wh_cnt',
+        )
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE,
+            provider='stripe', provider_subscription_id='sub_wh_cnt',
+        )
+        event_payload = FakeStripeEvent(
+            event_id='evt_wh_cnt_001',
+            event_type='invoice.payment_failed',
+            data_object={'subscription': sub.provider_subscription_id},
+        )
+        mock_provider_cls.return_value.construct_event.return_value = event_payload
+
+        self.client.post(
+            '/api/v1/billing/webhook/', data='{}',
+            content_type='application/json', HTTP_STRIPE_SIGNATURE='sig_test',
+        )
+        sub.refresh_from_db()
+        self.assertEqual(sub.failed_payment_count, 1)
+
+    @patch('api.platform_views.StripeBillingProvider')
+    def test_payment_action_required_webhook_is_accepted(self, mock_provider_cls):
+        """invoice.payment_action_required must return 200 without crashing."""
+        from api.models import SubscriptionPlan, Tenant, Subscription
+
+        class FakeStripeEvent(dict):
+            def __init__(self, *, event_id, event_type, data_object):
+                super().__init__({"data": {"object": data_object}})
+                self.id = event_id
+                self.type = event_type
+
+        User = get_user_model()
+        user = User.objects.create_user(username='wh-sca-user', password='pw', email='sca@example.com')
+        tenant = Tenant.objects.create(name='SCA Webhook Tenant', tenant_type='clinic', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='wh-sca-plan', name='WH SCA Plan', description='',
+            billing_cycle='monthly', price_cents=9000, billing_model='hybrid',
+            currency='USD', max_monthly_requests=1000, max_users=3,
+            seat_price_cents=500, api_overage_per_1000_cents=50,
+            provider_price_id='price_wh_sca',
+        )
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE,
+            provider='stripe', provider_subscription_id='sub_wh_sca',
+        )
+        event_payload = FakeStripeEvent(
+            event_id='evt_wh_sca_001',
+            event_type='invoice.payment_action_required',
+            data_object={'subscription': sub.provider_subscription_id},
+        )
+        mock_provider_cls.return_value.construct_event.return_value = event_payload
+
+        response = self.client.post(
+            '/api/v1/billing/webhook/', data='{}',
+            content_type='application/json', HTTP_STRIPE_SIGNATURE='sig_test',
+        )
+        self.assertEqual(response.status_code, 200)
+        # Subscription remains ACTIVE (no state change for SCA events)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.ACTIVE)
+
 
 @override_settings(
     CACHES={
@@ -2295,6 +2439,62 @@ class ExpireGracePeriodsCommandTests(APITestCase):
         # Status must NOT have changed
         self.assertEqual(sub.status, Subscription.Status.PAST_DUE)
         self.assertIn('dry-run', out.getvalue())
+
+    def test_command_skips_stripe_managed_subscriptions(self):
+        """Stripe-provider PAST_DUE subs must NOT be canceled by this command."""
+        from io import StringIO
+        from api.models import SubscriptionPlan, Tenant, Subscription
+        from django.core.management import call_command
+
+        User = get_user_model()
+        user = User.objects.create_user(username='cmd-stripe-user', password='pw', email='stripesgrace@example.com')
+        tenant = Tenant.objects.create(name='Stripe Grace Tenant', tenant_type='individual', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='cmd-stripe-grace-plan', name='Stripe Grace Plan', description='',
+            billing_cycle='monthly', price_cents=4000, billing_model='hybrid',
+            currency='USD', max_monthly_requests=500, max_users=2,
+            seat_price_cents=400, api_overage_per_1000_cents=40,
+        )
+        # Stripe-managed subscription with expired grace — command must skip it
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.PAST_DUE,
+            provider='stripe', provider_subscription_id='sub_stripe_grace_skip',
+            grace_period_ends_at=timezone.now() - timedelta(hours=3),
+        )
+
+        out = StringIO()
+        call_command('expire_grace_periods', stdout=out)
+
+        sub.refresh_from_db()
+        # Must still be PAST_DUE — Stripe drives the cancelation via webhook
+        self.assertEqual(sub.status, Subscription.Status.PAST_DUE)
+
+    def test_command_skips_subscriptions_still_within_grace(self):
+        """Subscriptions with grace_period_ends_at in the future must not be canceled."""
+        from io import StringIO
+        from api.models import SubscriptionPlan, Tenant, Subscription
+        from django.core.management import call_command
+
+        User = get_user_model()
+        user = User.objects.create_user(username='cmd-within-user', password='pw', email='within@example.com')
+        tenant = Tenant.objects.create(name='Within Grace Tenant', tenant_type='individual', owner=user)
+        plan = SubscriptionPlan.objects.create(
+            code='cmd-within-grace-plan', name='Within Grace Plan', description='',
+            billing_cycle='monthly', price_cents=4000, billing_model='hybrid',
+            currency='USD', max_monthly_requests=500, max_users=2,
+            seat_price_cents=400, api_overage_per_1000_cents=40,
+        )
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.PAST_DUE,
+            provider='internal',
+            grace_period_ends_at=timezone.now() + timedelta(days=3),  # still valid
+        )
+
+        out = StringIO()
+        call_command('expire_grace_periods', stdout=out)
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.PAST_DUE)
 
     # -------------------------------------------------------------------------
     # Auth / Security: logout + token rotation

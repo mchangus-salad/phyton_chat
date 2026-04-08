@@ -68,7 +68,7 @@ Rule:
 - [x] Proration / upgrade / downgrade support
 - [x] Subscription cancellation UI/API
 - [x] Trial expiration workflows
-- [ ] Failed payment recovery flows
+- [x] Failed payment recovery flows
 - [ ] Tax/VAT strategy
 
 ## 5. Containerization

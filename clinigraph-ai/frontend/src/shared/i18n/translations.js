@@ -148,6 +148,10 @@ export const translations = {
       tenantLiveMetrics: 'Tenant live metrics',
       entitlementStatus: 'Entitlement status',
       resolveInPortal: 'Resolve in Billing Portal',
+      dunning: {
+        title: 'Payment failed — action required',
+        cta: 'Update Payment Method',
+      },
       jwtToken: 'JWT token',
       pasteBearer: 'Paste bearer token',
       tenantId: 'Tenant id',
@@ -456,6 +460,10 @@ export const translations = {
       tenantLiveMetrics: 'Metricas live del tenant',
       entitlementStatus: 'Estado de entitlement',
       resolveInPortal: 'Resolver en Billing Portal',
+      dunning: {
+        title: 'Pago fallido — accion requerida',
+        cta: 'Actualizar metodo de pago',
+      },
       jwtToken: 'Token JWT',
       pasteBearer: 'Pega bearer token',
       tenantId: 'Tenant id',

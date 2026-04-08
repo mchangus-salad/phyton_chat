@@ -256,6 +256,7 @@ class Subscription(models.Model):
 	current_period_end = models.DateTimeField(null=True, blank=True)
 	canceled_at = models.DateTimeField(null=True, blank=True)
 	grace_period_ends_at = models.DateTimeField(null=True, blank=True, help_text="Deadline until service is accessible despite PAST_DUE status.")
+	failed_payment_count = models.PositiveSmallIntegerField(default=0, help_text="Consecutive failed payment attempts since last successful payment.")
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 

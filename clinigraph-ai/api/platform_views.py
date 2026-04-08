@@ -26,6 +26,7 @@ from .permissions import IsTenantBillingAdminOrOwner
 from .permissions import IsTenantAdminOrOwner
 from .services.entitlement_service import (
     begin_grace_period,
+    increment_failed_payment_count,
     notify_subscription_event,
     restore_entitlement,
     revoke_entitlement,
@@ -1241,7 +1242,15 @@ def billing_webhook(request):
                 subscription = Subscription.objects.filter(provider_subscription_id=provider_subscription_id).first()
             if subscription:
                 begin_grace_period(subscription)
+                increment_failed_payment_count(subscription)
                 notify_subscription_event(tenant or subscription.tenant, "payment_failed", subscription)
+        elif event_type == "invoice.payment_action_required":
+            # 3D Secure / SCA: customer must authenticate the payment in the portal.
+            provider_subscription_id = data_object.get("subscription", "")
+            if provider_subscription_id:
+                subscription = Subscription.objects.filter(provider_subscription_id=provider_subscription_id).first()
+            if subscription:
+                notify_subscription_event(tenant or subscription.tenant, "payment_action_required", subscription)
         elif event_type == "invoice.paid":
             provider_subscription_id = data_object.get("subscription", "")
             stripe_invoice_id = data_object.get("id", "")

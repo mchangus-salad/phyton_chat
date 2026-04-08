@@ -33,6 +33,7 @@ class Command(BaseCommand):
         expired_qs = Subscription.objects.filter(
             status=Subscription.Status.PAST_DUE,
             grace_period_ends_at__lte=now,
+            provider="internal",
         ).select_related("tenant", "tenant__owner")
 
         count = 0
