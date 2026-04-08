@@ -2295,3 +2295,345 @@ class ExpireGracePeriodsCommandTests(APITestCase):
         # Status must NOT have changed
         self.assertEqual(sub.status, Subscription.Status.PAST_DUE)
         self.assertIn('dry-run', out.getvalue())
+
+    # -------------------------------------------------------------------------
+    # Auth / Security: logout + token rotation
+    # -------------------------------------------------------------------------
+
+    def test_auth_logout_invalidates_refresh_token(self):
+        """POST /auth/logout/ with a valid refresh token returns 200 and blacklists it."""
+        User = get_user_model()
+        User.objects.create_user(username='logout-user', password='pw_logout')
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'logout-user', 'password': 'pw_logout'},
+            format='json',
+        )
+        self.assertEqual(token_response.status_code, status.HTTP_200_OK)
+        access_token = token_response.data['access']
+        refresh_token = token_response.data['refresh']
+
+        logout_response = self.client.post(
+            '/api/v1/auth/logout/',
+            {'refresh': refresh_token},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+        )
+        self.assertEqual(logout_response.status_code, status.HTTP_200_OK)
+        self.assertIn('detail', logout_response.data)
+
+        # Re-using the same refresh token must now fail (blacklisted).
+        reuse_response = self.client.post(
+            '/api/v1/auth/token/refresh/',
+            {'refresh': refresh_token},
+            format='json',
+        )
+        self.assertIn(reuse_response.status_code, [
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_400_BAD_REQUEST,
+        ])
+
+    def test_auth_logout_rejects_invalid_token(self):
+        """POST /auth/logout/ with a malformed token body returns 400."""
+        User = get_user_model()
+        User.objects.create_user(username='logout-invalid-user', password='pw_logout2')
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'logout-invalid-user', 'password': 'pw_logout2'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        response = self.client.post(
+            '/api/v1/auth/logout/',
+            {'refresh': 'this.is.not.a.valid.jwt.token'},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_auth_logout_requires_refresh_field(self):
+        """POST /auth/logout/ with missing refresh field returns 400 (serializer validation)."""
+        User = get_user_model()
+        User.objects.create_user(username='logout-nofield-user', password='pw_logout3')
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'logout-nofield-user', 'password': 'pw_logout3'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        response = self.client.post(
+            '/api/v1/auth/logout/',
+            {},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(SIMPLE_JWT={
+        'ROTATE_REFRESH_TOKENS': True,
+        'BLACKLIST_AFTER_ROTATION': True,
+        'UPDATE_LAST_LOGIN': True,
+    })
+    def test_auth_token_refresh_rotation_issues_new_pair(self):
+        """POST /auth/token/refresh/ returns a new refresh token; the original is blacklisted."""
+        User = get_user_model()
+        User.objects.create_user(username='rotation-user', password='pw_rotate')
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'rotation-user', 'password': 'pw_rotate'},
+            format='json',
+        )
+        self.assertEqual(token_response.status_code, status.HTTP_200_OK)
+        original_refresh = token_response.data['refresh']
+
+        rotate_response = self.client.post(
+            '/api/v1/auth/token/refresh/',
+            {'refresh': original_refresh},
+            format='json',
+        )
+        self.assertEqual(rotate_response.status_code, status.HTTP_200_OK)
+        # Rotation must return both a new access and a new refresh token.
+        self.assertIn('access', rotate_response.data)
+        self.assertIn('refresh', rotate_response.data)
+        new_refresh = rotate_response.data['refresh']
+        self.assertNotEqual(original_refresh, new_refresh)
+
+        # The original refresh token must now be blacklisted.
+        second_rotate = self.client.post(
+            '/api/v1/auth/token/refresh/',
+            {'refresh': original_refresh},
+            format='json',
+        )
+        self.assertIn(second_rotate.status_code, [
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_400_BAD_REQUEST,
+        ])
+
+    # -------------------------------------------------------------------------
+    # TenantPlanQuotaThrottle
+    # -------------------------------------------------------------------------
+
+    def _make_quota_tenant(self, username: str, max_monthly_requests: int):
+        """Helper: create user + tenant + plan + active subscription."""
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
+
+        User = get_user_model()
+        user = User.objects.create_user(username=username, password='pw_quota')
+        tenant = Tenant.objects.create(name=f'{username}-clinic', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(
+            tenant=tenant, user=user, role=TenantMembership.Role.CLINICIAN, is_active=True
+        )
+        plan = SubscriptionPlan.objects.create(
+            code=f'quota-plan-{username}',
+            name=f'Quota Plan {username}',
+            description='Throttle integration test plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=5000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=max_monthly_requests,
+            max_users=5,
+            seat_price_cents=500,
+            api_overage_per_1000_cents=50,
+        )
+        Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE, provider='internal',
+        )
+        return user, tenant
+
+    @override_settings(AGENT_API_KEY='quota-test-key')
+    def test_tenant_quota_throttle_blocks_requests_over_2x_limit(self):
+        """TenantPlanQuotaThrottle returns 429 when usage exceeds 2x plan.max_monthly_requests."""
+        from api.models import UsageRecord
+
+        user, tenant = self._make_quota_tenant('quota-blocked', max_monthly_requests=100)
+        # Seed usage at 201 — strictly above the 2x hard limit (200).
+        UsageRecord.objects.create(tenant=tenant, metric='api_requests', quantity=201)
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'quota-blocked', 'password': 'pw_quota'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        fake_svc = SimpleNamespace(
+            ask=lambda question, user_id='anonymous': SimpleNamespace(answer='ok', cache_hit=False)
+        )
+        with patch('api.views._get_service', return_value=fake_svc):
+            response = self.client.post(
+                '/api/v1/agent/query/',
+                {'question': 'over-quota test'},
+                format='json',
+                HTTP_AUTHORIZATION=f'Bearer {access_token}',
+                HTTP_X_TENANT_ID=str(tenant.tenant_id),
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+    @override_settings(AGENT_API_KEY='quota-test-key')
+    def test_tenant_quota_throttle_allows_requests_under_limit(self):
+        """TenantPlanQuotaThrottle allows requests when usage is well below 2x limit."""
+        from api.models import UsageRecord
+
+        user, tenant = self._make_quota_tenant('quota-allowed', max_monthly_requests=500)
+        # Seed usage at 50 — far below the 2x hard limit (1000).
+        UsageRecord.objects.create(tenant=tenant, metric='api_requests', quantity=50)
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'quota-allowed', 'password': 'pw_quota'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        fake_svc = SimpleNamespace(
+            ask=lambda question, user_id='anonymous': SimpleNamespace(answer='ok', cache_hit=False)
+        )
+        with patch('api.views._get_service', return_value=fake_svc):
+            response = self.client.post(
+                '/api/v1/agent/query/',
+                {'question': 'under-quota test'},
+                format='json',
+                HTTP_AUTHORIZATION=f'Bearer {access_token}',
+                HTTP_X_TENANT_ID=str(tenant.tenant_id),
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    # -------------------------------------------------------------------------
+    # Subscription cancellation
+    # -------------------------------------------------------------------------
+
+    def _make_billing_owner(self, username: str, plan_code: str):
+        """Helper: create owner user + tenant + plan + active subscription."""
+        from api.models import SubscriptionPlan, Tenant, TenantMembership, Subscription
+
+        User = get_user_model()
+        user = User.objects.create_user(username=username, password='pw_billing')
+        tenant = Tenant.objects.create(name=f'{username}-tenant', tenant_type='clinic', owner=user)
+        TenantMembership.objects.create(
+            tenant=tenant, user=user, role=TenantMembership.Role.OWNER, is_active=True
+        )
+        plan = SubscriptionPlan.objects.create(
+            code=plan_code,
+            name=f'Plan {plan_code}',
+            description='Billing integration test plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=5000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=5,
+            seat_price_cents=500,
+            api_overage_per_1000_cents=50,
+        )
+        sub = Subscription.objects.create(
+            tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE, provider='internal',
+        )
+        return user, tenant, sub
+
+    def test_billing_subscription_cancel_at_period_end(self):
+        """POST /billing/subscriptions/cancel/ with immediately=false defers cancellation."""
+        user, tenant, sub = self._make_billing_owner('cancel-period-user', 'cancel-period-plan')
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'cancel-period-user', 'password': 'pw_billing'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        response = self.client.post(
+            '/api/v1/billing/subscriptions/cancel/',
+            {'immediately': False},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['cancel_at_period_end'])
+        self.assertIsNotNone(response.data['canceled_at'])
+
+        # Subscription must still be ACTIVE (only deferred).
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'active')
+        self.assertIsNotNone(sub.canceled_at)
+
+    def test_billing_subscription_cancel_immediately(self):
+        """POST /billing/subscriptions/cancel/ with immediately=true sets status to CANCELED."""
+        user, tenant, sub = self._make_billing_owner('cancel-imm-user', 'cancel-imm-plan')
+
+        token_response = self.client.post(
+            '/api/v1/auth/token/',
+            {'username': 'cancel-imm-user', 'password': 'pw_billing'},
+            format='json',
+        )
+        access_token = token_response.data['access']
+
+        response = self.client.post(
+            '/api/v1/billing/subscriptions/cancel/',
+            {'immediately': True},
+            format='json',
+            HTTP_AUTHORIZATION=f'Bearer {access_token}',
+            HTTP_X_TENANT_ID=str(tenant.tenant_id),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['cancel_at_period_end'])
+        self.assertEqual(response.data['status'], 'canceled')
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'canceled')
+
+    # -------------------------------------------------------------------------
+    # Usage ingest
+    # -------------------------------------------------------------------------
+
+    @override_settings(AGENT_API_KEY='ingest-test-key')
+    def test_billing_usage_ingest_records_usage_record(self):
+        """POST /billing/usage/ingest/ creates a UsageRecord for the given tenant."""
+        from api.models import Tenant, UsageRecord
+
+        User = get_user_model()
+        user = User.objects.create_user(username='ingest-user', password='pw_ingest')
+        tenant = Tenant.objects.create(name='Ingest Clinic', tenant_type='clinic', owner=user)
+
+        before_count = UsageRecord.objects.filter(tenant=tenant, metric='api_requests').count()
+
+        response = self.client.post(
+            '/api/v1/billing/usage/ingest/',
+            {
+                'tenant_id': str(tenant.tenant_id),
+                'metric': 'api_requests',
+                'quantity': 5,
+                'meta': {'source': 'test'},
+            },
+            format='json',
+            HTTP_X_API_KEY='ingest-test-key',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get('status'), 'ok')
+        after_count = UsageRecord.objects.filter(tenant=tenant, metric='api_requests').count()
+        self.assertEqual(after_count, before_count + 1)
+
+    @override_settings(AGENT_API_KEY='ingest-test-key')
+    def test_billing_usage_ingest_rejects_unknown_tenant(self):
+        """POST /billing/usage/ingest/ returns 400 when the tenant_id does not exist."""
+        response = self.client.post(
+            '/api/v1/billing/usage/ingest/',
+            {
+                'tenant_id': '00000000-0000-0000-0000-000000000000',
+                'metric': 'api_requests',
+                'quantity': 1,
+            },
+            format='json',
+            HTTP_X_API_KEY='ingest-test-key',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
