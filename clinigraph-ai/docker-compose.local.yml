@@ -79,7 +79,7 @@ services:
       - "9090:9090"
     environment:
       AGENT_API_KEY: ${AGENT_API_KEY:-changeme}
-    command:
+    entrypoint:
       - /bin/sh
       - -c
       - sed "s/PROMETHEUS_API_KEY_PLACEHOLDER/$${AGENT_API_KEY}/g" /etc/prometheus/prometheus.template.yml > /tmp/prometheus.yml && /bin/prometheus --config.file=/tmp/prometheus.yml --storage.tsdb.path=/prometheus
@@ -117,6 +117,11 @@ services:
       WEAVIATE_HTTP_PORT: 8080
       WEAVIATE_GRPC_HOST: weaviate
       WEAVIATE_GRPC_PORT: 50051
+      # Override Windows path from .env.agentai.local with a valid container path
+      DJANGO_DB_ENGINE: django.db.backends.sqlite3
+      DJANGO_DB_NAME: /app/db.sqlite3
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
     ports:
       - "8000:8000"
     depends_on:
@@ -131,15 +136,24 @@ services:
       dockerfile: Dockerfile
     container_name: agentai-frontend
     restart: unless-stopped
-    depends_on:
-      - web
     environment:
-      VITE_API_BASE_URL: http://web:8000/api/v1
+      # Relative path: browser sends /api/... to Vite dev server, which proxies to Django on host.
+      VITE_API_BASE_URL: /api/v1
+      # Vite proxy target: host.docker.internal resolves to the host machine from inside Docker Desktop.
+      VITE_DEV_API_PROXY_TARGET: http://host.docker.internal:8000
+    volumes:
+      # Bind mount source files so Vite HMR picks up host edits without a rebuild.
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.js:/app/vite.config.js
+      # Keep node_modules from the build image — do NOT mount the host's node_modules.
+      - frontend_node_modules:/app/node_modules
     ports:
       - "5173:5173"
 
 volumes:
   redis_data:
+  frontend_node_modules:
   kafka_data:
   weaviate_data:
   ollama_data:

@@ -127,7 +127,7 @@ services:
       - "${PROMETHEUS_EXTERNAL_PORT:-9090}:9090"
     environment:
       AGENT_API_KEY: ${AGENT_API_KEY:-changeme}
-    command:
+    entrypoint:
       - /bin/sh
       - -c
       - sed "s/PROMETHEUS_API_KEY_PLACEHOLDER/$${AGENT_API_KEY}/g" /etc/prometheus/prometheus.template.yml > /tmp/prometheus.yml && /bin/prometheus --config.file=/tmp/prometheus.yml --storage.tsdb.path=/prometheus
