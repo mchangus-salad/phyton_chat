@@ -6,10 +6,16 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    // Polling required for HMR to work on Windows host with Docker bind mounts.
+    watch: {
+      usePolling: true,
+      interval: 300,
+    },
     proxy: {
       '/api': {
-        target: process.env.VITE_DEV_API_PROXY_TARGET || 'http://127.0.0.1:8010',
+        target: process.env.VITE_DEV_API_PROXY_TARGET || 'http://127.0.0.1:8000',
         changeOrigin: true,
+        headers: { Host: 'localhost' },
       },
     },
   },

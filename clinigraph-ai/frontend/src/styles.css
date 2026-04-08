@@ -37,6 +37,7 @@ body {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
   padding: 32px 0 56px;
+  padding-top: 76px;
 }
 
 .page-toolbar {
@@ -891,8 +892,9 @@ button.primary-action:disabled {
 .workspace-sidebar {
   padding: 24px;
   position: sticky;
-  top: 16px;
-  height: calc(100vh - 32px);
+  top: 52px;
+  height: calc(100vh - 52px);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -1446,6 +1448,26 @@ button.primary-action:disabled {
   }
 }
 
+/* In-progress streaming message: accent border + blinking block cursor */
+.agent-chat-message--streaming {
+  border-color: rgba(10, 108, 116, 0.35);
+  background: #f0f8ff;
+}
+
+.agent-chat-message--streaming p::after {
+  content: '▋';
+  display: inline-block;
+  color: var(--accent);
+  animation: streaming-cursor 0.7s step-end infinite;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+}
+
+@keyframes streaming-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 .chat-highlight {
   background: #ffe082;
   border-radius: 4px;
@@ -1512,4 +1534,110 @@ button.primary-action:disabled {
   .agent-chat-list__hover-preview {
     display: none !important;
   }
+}
+
+/* =============================================================================
+   Session Topbar
+   ============================================================================ */
+
+.session-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 10px 24px;
+  background: rgba(255, 252, 246, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.session-topbar__username {
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.session-topbar__tenant {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.session-topbar__logout {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  background: var(--panel-strong);
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.session-topbar__logout:hover {
+  background: rgba(10, 108, 116, 0.08);
+  transform: translateY(-1px);
+}
+
+.session-topbar--login {
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 24px;
+}
+
+.session-topbar__form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.session-topbar__input {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  background: #fff;
+  color: var(--text);
+  outline: none;
+  width: 160px;
+  transition: border-color 160ms ease;
+}
+
+.session-topbar__input:focus {
+  border-color: var(--accent);
+}
+
+.session-topbar__login-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 7px 20px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: inherit;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.session-topbar__login-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.session-topbar__login-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.session-topbar__error {
+  font-size: 0.82rem;
+  color: #8a1f2a;
+  padding: 4px 0;
 }

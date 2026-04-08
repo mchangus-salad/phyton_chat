@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '../../../shared/i18n/I18nProvider';
 import { usePersistentAgentChat } from '../hooks/usePersistentAgentChat';
 
@@ -70,6 +70,14 @@ export function AgentChatWorkspace({ authToken, tenantId }) {
     }, 1200);
     return () => clearTimeout(timer);
   }, [activeSession, pendingHighlightId, setPendingHighlightId]);
+
+  // Scroll the message feed to the bottom on every streaming delta update.
+  const messagesEndRef = useRef(null);
+  useEffect(() => {
+    if (submitting && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [activeSession?.messages, submitting]);
 
   const highlightByMessage = useMemo(() => {
     const map = new Map();
@@ -234,10 +242,11 @@ export function AgentChatWorkspace({ authToken, tenantId }) {
               const highlights = highlightByMessage.get(message.message_id) || [];
               const parts = renderMessageWithHighlights(message, highlights);
               const isRecentLoaded = recentlyLoadedMessageIds.includes(message.message_id);
+              const isStreaming = submitting && String(message.message_id).startsWith('temp-assistant-');
               return (
                 <article
                   key={message.message_id}
-                  className={`agent-chat-message agent-chat-message--${message.role} ${isRecentLoaded ? 'agent-chat-message--recent' : ''}`}
+                  className={`agent-chat-message agent-chat-message--${message.role} ${isRecentLoaded ? 'agent-chat-message--recent' : ''} ${isStreaming ? 'agent-chat-message--streaming' : ''}`}
                 >
                   <header>{message.role === 'assistant' ? t('genai.assistant') : t('genai.user')}</header>
                   <p onMouseUp={(e) => onMessageMouseUp(message, e)}>
@@ -260,6 +269,7 @@ export function AgentChatWorkspace({ authToken, tenantId }) {
                 </article>
               );
             })}
+            <div ref={messagesEndRef} aria-hidden="true" />
           </div>
           {messagesPagination?.has_more ? (
             <button type="button" className="secondary-action agent-chat-load-older" onClick={loadOlderMessages}>
