@@ -3,6 +3,15 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    // jsdom environment lets us render React components in Node with full DOM APIs.
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+    // Glob that vitest uses to discover test files.
+    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+    // Expose Jest-compatible expect globals so @testing-library/jest-dom matchers work.
+    globals: true,
+  },
   server: {
     host: '0.0.0.0',
     port: 5173,
