@@ -16,10 +16,10 @@ Rule:
 - [x] Oversized payload blocking
 - [x] Failed API-key auth security events
 - [x] Secure HTTP settings baseline
-- [ ] JWT refresh rotation enabled by default in production
-- [ ] Token blacklist / revocation support
+- [x] JWT refresh rotation enabled by default in production
+- [x] Token blacklist / revocation support
 - [x] RBAC by tenant role (owner/admin/clinician/auditor)
-- [ ] Per-tenant API quotas and enforcement
+- [x] Per-tenant API quotas and enforcement
 - [ ] SIEM export pipeline
 - [ ] Geo/IP reputation controls
 - [ ] WAF / reverse proxy hardening profile
@@ -64,9 +64,9 @@ Rule:
 - [x] Stripe checkout session endpoint
 - [x] Stripe webhook verification and sync foundation
 - [x] Stripe customer portal integration
-- [ ] Invoice and receipt views
+- [x] Invoice and receipt views
 - [x] Proration / upgrade / downgrade support
-- [ ] Subscription cancellation UI/API
+- [x] Subscription cancellation UI/API
 - [ ] Trial expiration workflows
 - [ ] Failed payment recovery flows
 - [ ] Tax/VAT strategy
