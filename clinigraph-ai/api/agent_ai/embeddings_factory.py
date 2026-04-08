@@ -15,6 +15,11 @@ def build_embeddings():
 
         return HuggingFaceEmbeddings(model_name=settings.embeddings_model)
 
+    if provider == "ollama":
+        from langchain_ollama import OllamaEmbeddings
+
+        return OllamaEmbeddings(model=settings.embeddings_model, base_url=settings.ollama_base_url)
+
     if provider == "local":
         # Offline deterministic embeddings for local dev and smoke tests.
         return LocalDeterministicEmbeddings(dimension=256)

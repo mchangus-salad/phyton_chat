@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 
 
@@ -10,8 +11,12 @@ class MockLLM:
     """Simple local sandbox LLM for development without external APIs."""
 
     def invoke(self, prompt: str) -> MockLLMResponse:
-        question = self._extract(prompt, "Question:")
-        context = self._extract(prompt, "Context:")
+        question = self._extract(prompt, "QUESTION:\n") or self._extract(prompt, "Question:")
+        context = self._extract(prompt, "REVIEWED EVIDENCE:\n") or self._extract(prompt, "Context:")
+
+        # Strip the "none retrieved" placeholder so it counts as empty context
+        if context and "none retrieved" in context:
+            context = ""
 
         if context:
             summary = context.split("\n")[0][:300]
@@ -29,6 +34,19 @@ class MockLLM:
             )
 
         return MockLLMResponse(content=answer)
+
+    def stream(self, prompt: str):
+        """Yield response word-by-word to simulate LLM token streaming in local/dev mode.
+
+        This ensures the streaming pipeline is exercised end-to-end without requiring
+        a real API key. Yields ~25 tokens/sec — comparable to a fast real LLM.
+        """
+        response = self.invoke(prompt)
+        words = response.content.split(" ")
+        for i, word in enumerate(words):
+            token = word if i == 0 else f" {word}"
+            yield MockLLMResponse(content=token)
+            time.sleep(0.04)
 
     @staticmethod
     def _extract(prompt: str, marker: str) -> str:
