@@ -1,0 +1,145 @@
+groups:
+  # ---------------------------------------------------------------------------
+  # Auth Failures
+  # ---------------------------------------------------------------------------
+  - name: auth_failures
+    interval: 60s
+    rules:
+      - alert: HighAuthFailureRate
+        expr: increase(clinigraph_auth_failures_total[5m]) > 20
+        for: 2m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "High authentication failure rate"
+          description: >
+            More than 20 authentication failures in the last 5 minutes.
+            This may indicate a credential-stuffing or brute-force attack.
+            Current count: {{ $value }}.
+
+      - alert: CriticalAuthFailureBurst
+        expr: increase(clinigraph_auth_failures_total[1m]) > 30
+        for: 0m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "Critical authentication failure burst (possible brute-force)"
+          description: >
+            More than 30 authentication failures in 1 minute — immediate
+            investigation required. Current count: {{ $value }}.
+
+  # ---------------------------------------------------------------------------
+  # Abuse / Security Blocks
+  # ---------------------------------------------------------------------------
+  - name: abuse_spikes
+    interval: 60s
+    rules:
+      - alert: AbuseBlockSpike
+        expr: increase(clinigraph_security_blocks_total[5m]) > 15
+        for: 2m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "Spike in blocked abusive requests"
+          description: >
+            More than 15 requests blocked by security middleware in 5 minutes.
+            Check for oversized-payload attacks or suspicious pattern scans.
+            Current count: {{ $value }}.
+
+      - alert: SecurityEventBurst
+        expr: increase(clinigraph_security_events_total[5m]) > 50
+        for: 1m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "High volume of security events — possible active attack"
+          description: >
+            More than 50 security events recorded in 5 minutes.
+            API may be under active attack. Escalate immediately.
+            Current count: {{ $value }}.
+
+  # ---------------------------------------------------------------------------
+  # 5xx Server Errors
+  # ---------------------------------------------------------------------------
+  - name: server_errors
+    interval: 30s
+    rules:
+      - alert: High5xxRate
+        expr: increase(clinigraph_http_responses_5xx[5m]) > 10
+        for: 3m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Elevated server error (5xx) rate"
+          description: >
+            More than 10 5xx responses in the last 5 minutes.
+            A dependency (LLM, vector DB, Redis, Kafka) may be degraded.
+            Current count: {{ $value }}.
+
+      - alert: Critical5xxBurst
+        expr: increase(clinigraph_http_responses_5xx[2m]) > 20
+        for: 1m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "Critical server error burst — service may be down"
+          description: >
+            More than 20 5xx responses in 2 minutes.
+            Possible service outage. Check web / LLM / vector-DB containers.
+            Current count: {{ $value }}.
+
+      - alert: ErrorRatioHigh
+        # Fire when error share exceeds 10 % of total traffic
+        expr: >
+          (increase(clinigraph_http_responses_5xx[5m]) + increase(clinigraph_http_responses_4xx[5m]))
+          /
+          clamp_min(increase(clinigraph_http_requests_total[5m]), 1)
+          > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Error ratio above 10% of traffic"
+          description: >
+            Combined 4xx+5xx rate has exceeded 10% of total requests over 5 minutes.
+            Investigate API health and dependency availability.
+            Ratio: {{ $value | humanizePercentage }}.
+
+  # ---------------------------------------------------------------------------
+  # High Latency
+  # ---------------------------------------------------------------------------
+  - name: latency
+    interval: 60s
+    rules:
+      - alert: HighAverageLatency
+        expr: clinigraph_http_latency_avg_ms > 3000
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Average HTTP latency above 3 s"
+          description: >
+            The application's average latency has been above 3000 ms for 5 minutes.
+            This may indicate an LLM timeout, vector-store degradation, or DB bottleneck.
+            Current avg: {{ $value | humanizeDuration }}.
+
+      - alert: CriticalAverageLatency
+        expr: clinigraph_http_latency_avg_ms > 10000
+        for: 2m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "Average HTTP latency above 10 s — service effectively unavailable"
+          description: >
+            Average latency has exceeded 10 000 ms for 2 minutes. Users are
+            experiencing timeouts. Escalate immediately.
+            Current avg: {{ $value | humanizeDuration }}.

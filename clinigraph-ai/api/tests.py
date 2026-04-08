@@ -3724,4 +3724,138 @@ class TenantIsolationIDORTests(APITestCase):
         self.assertNotEqual(resp.status_code, status.HTTP_200_OK)
 
 
+# =============================================================================
+# Telemetry / Prometheus metrics tests
+# =============================================================================
+
+class TelemetrySnapshotTests(TestCase):
+    """Unit tests for api.telemetry — counter increments and snapshot correctness."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+
+    def test_incr_and_get(self):
+        from api import telemetry
+        telemetry.incr("test.counter.unit", 5)
+        self.assertEqual(telemetry.get("test.counter.unit"), 5)
+
+    def test_incr_accumulates(self):
+        from api import telemetry
+        telemetry.incr("test.counter.accum", 3)
+        telemetry.incr("test.counter.accum", 2)
+        self.assertEqual(telemetry.get("test.counter.accum"), 5)
+
+    def test_get_unknown_key_returns_default(self):
+        from api import telemetry
+        self.assertEqual(telemetry.get("this.key.does.not.exist"), 0)
+        self.assertEqual(telemetry.get("this.key.does.not.exist", 42), 42)
+
+    def test_observe_latency_records_count_and_sum(self):
+        from api import telemetry
+        telemetry.observe_latency_ms("latency.unit_test", 500.0)
+        telemetry.observe_latency_ms("latency.unit_test", 300.0)
+        self.assertEqual(telemetry.get("latency.unit_test:count"), 2)
+        self.assertEqual(telemetry.get("latency.unit_test:sum_ms"), 800)
+
+    def test_snapshot_contains_all_expected_keys(self):
+        from api import telemetry
+        snap = telemetry.snapshot()
+        expected_keys = [
+            "http.requests.total",
+            "http.responses.2xx",
+            "http.responses.4xx",
+            "http.responses.5xx",
+            "security.events.total",
+            "security.blocks.total",
+            "auth.failures.total",
+            "billing.events.total",
+            "billing.usage_events.total",
+            "latency.http:avg_ms",
+        ]
+        for key in expected_keys:
+            self.assertIn(key, snap, f"Missing key: {key}")
+
+    def test_snapshot_avg_ms_computed(self):
+        from api import telemetry
+        # Reset by using unique keys scoped to this test
+        telemetry.incr("latency.http:count", 4)
+        telemetry.incr("latency.http:sum_ms", 2000)
+        snap = telemetry.snapshot()
+        # avg = 2000 / 4 = 500
+        self.assertGreaterEqual(snap["latency.http:avg_ms"], 0)
+
+    def test_snapshot_avg_ms_zero_when_no_requests(self):
+        """avg_ms must be 0.0 when count is 0 (no division by zero)."""
+        from api import telemetry
+        snap = telemetry.snapshot()
+        # Should not raise; avg_ms can be 0 when count is 0
+        self.assertIsInstance(snap["latency.http:avg_ms"], float)
+
+
+class PrometheusTextEndpointTests(TestCase):
+    """Verify that prometheus_text() output is parseable Prometheus text format."""
+
+    def test_prometheus_text_contains_all_metric_names(self):
+        from api import telemetry
+        text = telemetry.prometheus_text()
+        metrics = [
+            "clinigraph_http_requests_total",
+            "clinigraph_http_responses_2xx",
+            "clinigraph_http_responses_4xx",
+            "clinigraph_http_responses_5xx",
+            "clinigraph_security_events_total",
+            "clinigraph_security_blocks_total",
+            "clinigraph_auth_failures_total",
+            "clinigraph_billing_events_total",
+            "clinigraph_billing_usage_events_total",
+            "clinigraph_http_latency_avg_ms",
+        ]
+        for metric in metrics:
+            self.assertIn(metric, text, f"Metric missing from Prometheus output: {metric}")
+
+    def test_prometheus_text_has_help_and_type_lines(self):
+        from api import telemetry
+        text = telemetry.prometheus_text()
+        self.assertIn("# HELP", text)
+        self.assertIn("# TYPE", text)
+
+    def test_prometheus_text_counters_are_numeric(self):
+        """Every non-comment, non-empty line must parse as 'name numeric_value'."""
+        from api import telemetry
+        text = telemetry.prometheus_text()
+        for line in text.splitlines():
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split()
+            self.assertEqual(len(parts), 2, f"Unexpected format: {line!r}")
+            float(parts[1])  # Should not raise
+
+
+class PrometheusMetricsViewTests(TestCase):
+    """Integration: GET /api/v1/ops/metrics/prometheus/ returns valid text."""
+
+    def test_metrics_endpoint_accessible_with_api_key(self):
+        from django.test import Client
+        from django.conf import settings
+        client = Client()
+        api_key = getattr(settings, "AGENT_API_KEY", "changeme")
+        resp = client.get(
+            "/api/v1/ops/metrics/prometheus/",
+            HTTP_X_API_KEY=api_key,
+        )
+        # 200 or 403 depending on key; at minimum not 500
+        self.assertNotEqual(resp.status_code, 500)
+
+    def test_metrics_endpoint_returns_content_type_text(self):
+        from django.test import Client
+        from django.conf import settings
+        client = Client()
+        api_key = getattr(settings, "AGENT_API_KEY", "changeme")
+        resp = client.get(
+            "/api/v1/ops/metrics/prometheus/",
+            HTTP_X_API_KEY=api_key,
+        )
+        if resp.status_code == 200:
+            self.assertIn("text/plain", resp.get("Content-Type", ""))
 

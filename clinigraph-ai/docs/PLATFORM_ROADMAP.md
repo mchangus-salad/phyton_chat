@@ -36,7 +36,7 @@ Rule:
 - [x] Prometheus-compatible metrics endpoint
 - [x] Structured JSON logs
 - [x] OpenTelemetry tracing
-- [ ] Alert rules for auth failures / abuse spikes / 5xx spikes
+- [x] Alert rules for auth failures / abuse spikes / 5xx spikes
 - [ ] SLO dashboard (latency, availability, failure rate)
 - [ ] Audit dashboards for patient-case flows
 
