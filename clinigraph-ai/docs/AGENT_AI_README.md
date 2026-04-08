@@ -258,6 +258,73 @@ Notes:
 - Use `AGENT_LLM_PROVIDER=mock` for local sandbox without paid APIs.
 - Pinecone is not self-hosted locally, so the local environment is configured to use Weaviate instead.
 
+## Ollama Model Pull — Troubleshooting
+
+### Error: DNS resolution failure during `dev-up`
+
+**Symptom:**
+
+```
+Error: max retries exceeded: Get "https://...r2.cloudflarestorage.com/...": dial tcp: lookup ...: no such host
+Fallo al descargar modelo Ollama 'llama3.1:8b' en agentai-ollama
+```
+
+**Cause:**
+
+The Ollama container could not resolve external DNS (Cloudflare R2 storage) at pull time. This typically happens when:
+
+- The host machine has a temporary network outage.
+- Docker's internal DNS (`127.0.0.11`) cannot forward external lookups (common with VPNs, corporate proxies, or restricted Wi-Fi).
+- The download was interrupted mid-transfer and Docker retried until it exhausted attempts.
+
+**Quick fix — switch to mock LLM:**
+
+Edit `.env.agentai.local` and set:
+
+```env
+AGENT_LLM_PROVIDER=mock
+AGENT_LLM_MODEL=mock-local-v1
+```
+
+Then re-run `.\scripts\dev-up.ps1`. The `ensure-ollama-model.ps1` script checks `AGENT_LLM_PROVIDER` first and skips the pull entirely when the value is not `ollama`.
+
+Mock mode is fully functional for development: it uses `MockLLM` (word-by-word streaming with a 40 ms delay) and requires no external network access.
+
+**To retry Ollama when the network is stable:**
+
+Restore the values in `.env.agentai.local`:
+
+```env
+AGENT_LLM_PROVIDER=ollama
+AGENT_LLM_MODEL=llama3.1:8b
+```
+
+Then run `.\scripts\dev-up.ps1` again. The pull will be attempted automatically.
+
+**Alternative: use a smaller model to reduce download size:**
+
+| Model | Size | Good for |
+|---|---|---|
+| `llama3.1:8b` | ~4.9 GB | Default, best quality |
+| `qwen2.5:3b` | ~2.0 GB | Faster download, lighter |
+| `phi3:mini` | ~2.3 GB | Faster download, good reasoning |
+
+Change `AGENT_LLM_MODEL` in `.env.agentai.local` and re-run `dev-up`.
+
+**Suppress auto-pull entirely (manual control):**
+
+Set in `.env.agentai.local`:
+
+```env
+OLLAMA_MODEL_AUTO_PULL=false
+```
+
+Then pull the model manually when ready:
+
+```powershell
+docker exec agentai-ollama ollama pull llama3.1:8b
+```
+
 ## API endpoint
 
 Primary endpoint:
