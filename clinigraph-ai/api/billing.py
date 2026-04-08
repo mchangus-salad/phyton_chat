@@ -110,3 +110,14 @@ class StripeBillingProvider:
             items=[{"id": first_item.id, "price": new_price_id}],
             proration_behavior="create_prorations",
         )
+
+    def cancel_subscription(self, *, provider_subscription_id: str, cancel_at_period_end: bool = True) -> object:
+        """Cancel a Stripe subscription immediately or at the end of the current billing period."""
+        if not provider_subscription_id:
+            raise BillingConfigurationError("provider subscription id is required")
+        if cancel_at_period_end:
+            return self.stripe.Subscription.modify(
+                provider_subscription_id,
+                cancel_at_period_end=True,
+            )
+        return self.stripe.Subscription.delete(provider_subscription_id)

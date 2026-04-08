@@ -30,6 +30,7 @@ from .services.entitlement_service import (
     revoke_entitlement,
 )
 from .services.platform_service import (
+    cancel_subscription,
     change_subscription_plan,
     close_current_billing_period,
     create_portal_session,
@@ -61,6 +62,8 @@ from .serializers import (
     TenantMembershipUpdateSerializer,
     SubscriptionCreateResponseSerializer,
     SubscriptionCreateSerializer,
+    SubscriptionCancelSerializer,
+    SubscriptionCancelResponseSerializer,
     SubscriptionPlanChangeResponseSerializer,
     SubscriptionPlanChangeSerializer,
     SubscriptionPlanSerializer,
@@ -1037,6 +1040,52 @@ def billing_subscription_change_plan(request):
             "target_plan_code": target_plan.code,
             "applied": result.applied,
             "proration_preview": result.preview,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@extend_schema(
+    operation_id="billing_subscription_cancel",
+    description=(
+        "Cancel the tenant's active subscription. "
+        "By default the subscription remains active until the end of the current billing period "
+        "(cancel_at_period_end). Pass `immediately: true` to cancel and revoke access now."
+    ),
+    request=SubscriptionCancelSerializer,
+    responses={
+        200: SubscriptionCancelResponseSerializer,
+        400: ErrorResponseSerializer,
+        401: ErrorResponseSerializer,
+        403: ErrorResponseSerializer,
+    },
+)
+@api_view(["POST"])
+@permission_classes([IsTenantBillingAdminOrOwner, HasActiveEntitlement])
+def billing_subscription_cancel(request):
+    serializer = SubscriptionCancelSerializer(data=request.data or {})
+    if not serializer.is_valid():
+        return Response({"error": "invalid payload", "detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    tenant = getattr(request, "tenant", None)
+    if tenant is None:
+        return Response({"error": "tenant not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+    subscription = get_latest_billable_subscription(tenant)
+    if not subscription:
+        return Response({"error": "active subscription not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+
+    immediately = bool(serializer.validated_data.get("immediately", False))
+    try:
+        result = cancel_subscription(subscription=subscription, immediately=immediately)
+    except BillingConfigurationError as exc:
+        return Response({"error": "billing not configured", "detail": str(exc), "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(
+        {
+            "subscription_id": result.subscription_id,
+            "status": result.status,
+            "canceled_at": result.canceled_at,
+            "cancel_at_period_end": result.cancel_at_period_end,
         },
         status=status.HTTP_200_OK,
     )

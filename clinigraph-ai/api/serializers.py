@@ -463,6 +463,24 @@ class SubscriptionPlanChangeResponseSerializer(serializers.Serializer):
     proration_preview = serializers.DictField()
 
 
+class SubscriptionCancelSerializer(serializers.Serializer):
+    immediately = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text=(
+            "If true, cancel immediately and revoke access now. "
+            "If false (default), cancel at the end of the current billing period."
+        ),
+    )
+
+
+class SubscriptionCancelResponseSerializer(serializers.Serializer):
+    subscription_id = serializers.IntegerField()
+    status = serializers.CharField()
+    canceled_at = serializers.DateTimeField(allow_null=True)
+    cancel_at_period_end = serializers.BooleanField()
+
+
 class PatientCaseUploadSerializer(serializers.Serializer):
     """
     Input for the patient case analysis endpoint.

@@ -49,6 +49,14 @@ class PlanChangeResult:
     applied: bool
 
 
+@dataclass
+class CancelSubscriptionResult:
+    subscription_id: int
+    status: str
+    canceled_at: datetime | None
+    cancel_at_period_end: bool
+
+
 def list_active_plans() -> list[SubscriptionPlan]:
     return list(SubscriptionPlan.objects.filter(is_active=True).order_by("price_cents"))
 
@@ -349,3 +357,50 @@ def change_subscription_plan(*, subscription: Subscription, target_plan: Subscri
     )
     incr("billing.events.total")
     return PlanChangeResult(preview=preview, applied=True)
+
+
+def cancel_subscription(*, subscription: Subscription, immediately: bool = False) -> CancelSubscriptionResult:
+    """Cancel a tenant subscription either immediately or at the end of the billing period.
+
+    When *immediately* is False (default), the subscription remains active until
+    ``current_period_end`` and Stripe sets ``cancel_at_period_end=True``.
+    When *immediately* is True, the subscription is deleted in Stripe and the
+    local status is set to CANCELED right away.
+    """
+    now = timezone.now()
+
+    if subscription.provider_subscription_id:
+        provider = StripeBillingProvider()
+        provider.cancel_subscription(
+            provider_subscription_id=subscription.provider_subscription_id,
+            cancel_at_period_end=not immediately,
+        )
+
+    if immediately:
+        subscription.status = Subscription.Status.CANCELED
+        subscription.canceled_at = now
+        subscription.save(update_fields=["status", "canceled_at", "updated_at"])
+    else:
+        # Stays active until period_end; record when the cancellation was requested.
+        subscription.canceled_at = now
+        subscription.save(update_fields=["canceled_at", "updated_at"])
+
+    BillingEvent.objects.create(
+        tenant=subscription.tenant,
+        event_type="subscription_canceled",
+        provider=subscription.provider or "internal",
+        status="applied" if immediately else "pending",
+        payload={
+            "subscription_id": subscription.pk,
+            "immediately": immediately,
+            "cancel_at_period_end": not immediately,
+        },
+    )
+    incr("billing.events.total")
+
+    return CancelSubscriptionResult(
+        subscription_id=int(subscription.pk),
+        status=subscription.status,
+        canceled_at=subscription.canceled_at,
+        cancel_at_period_end=not immediately,
+    )
