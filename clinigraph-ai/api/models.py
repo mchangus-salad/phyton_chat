@@ -3,6 +3,8 @@ import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
 
+from api.services.tenant_isolation import TenantBoundManager
+
 
 User = get_user_model()
 
@@ -53,6 +55,9 @@ class AgentChatSession(models.Model):
 	session_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 	tenant = models.ForeignKey("Tenant", on_delete=models.CASCADE, related_name="agent_chat_sessions")
 	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="agent_chat_sessions")
+
+	objects = models.Manager()          # kept for admin / migrations
+	tenant_objects = TenantBoundManager()  # use in application code
 	title = models.CharField(max_length=255, blank=True, default="")
 	is_archived = models.BooleanField(default=False)
 	created_at = models.DateTimeField(auto_now_add=True)
@@ -238,6 +243,9 @@ class Tenant(models.Model):
 class TenantMembership(models.Model):
 	"""Maps users to tenants with RBAC role assignments."""
 
+	objects = models.Manager()          # kept for admin / migrations
+	tenant_objects = TenantBoundManager()  # use in application code
+
 	class Role(models.TextChoices):
 		OWNER = "owner", "Owner"
 		ADMIN = "admin", "Admin"
@@ -302,6 +310,9 @@ class SubscriptionPlan(models.Model):
 class Subscription(models.Model):
 	"""Tenant subscription state; payment provider integration can sync this model."""
 
+	objects = models.Manager()          # kept for admin / migrations
+	tenant_objects = TenantBoundManager()  # use in application code
+
 	class Status(models.TextChoices):
 		TRIALING = "trialing", "Trialing"
 		ACTIVE = "active", "Active"
@@ -336,6 +347,9 @@ class Subscription(models.Model):
 
 class UsageRecord(models.Model):
 	"""Aggregated usage events used for quota management and billing analytics."""
+
+	objects = models.Manager()          # kept for admin / migrations
+	tenant_objects = TenantBoundManager()  # use in application code
 
 	tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="usage_records")
 	metric = models.CharField(max_length=64)
@@ -383,6 +397,8 @@ class BillingEvent(models.Model):
 
 
 class BillingInvoice(models.Model):
+	objects = models.Manager()          # kept for admin / migrations
+	tenant_objects = TenantBoundManager()  # use in application code
 	"""Periodic invoice snapshot generated from hybrid billing components."""
 
 	class Status(models.TextChoices):

@@ -1165,9 +1165,8 @@ def patient_case_analyze(request):
 
 
 def _get_chat_session_for_request(request, session_id: str):
-	return AgentChatSession.objects.filter(
+	return AgentChatSession.tenant_objects.for_tenant(request.tenant).filter(
 		session_id=session_id,
-		tenant=request.tenant,
 		user=request.user,
 		is_archived=False,
 	).first()
@@ -1260,8 +1259,7 @@ def agent_chat_sessions(request):
 	search = (request.query_params.get('q') or '').strip()
 	limit = _parse_positive_int(request.query_params.get('limit'), 30, minimum=1, maximum=100)
 	offset = _parse_positive_int(request.query_params.get('offset'), 0, minimum=0, maximum=5000)
-	sessions_qs = AgentChatSession.objects.filter(
-		tenant=request.tenant,
+	sessions_qs = AgentChatSession.tenant_objects.for_tenant(request.tenant).filter(
 		user=request.user,
 		is_archived=False,
 	).annotate(last_message_at=Max('messages__created_at')).order_by('-last_activity_at')

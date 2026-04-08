@@ -370,7 +370,7 @@ def billing_invoice_latest(request):
     if tenant is None:
         return Response({"error": "tenant not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
 
-    invoice = BillingInvoice.objects.filter(tenant=tenant).order_by("-generated_at").first()
+    invoice = BillingInvoice.tenant_objects.for_tenant(tenant).order_by("-generated_at").first()
     if not invoice:
         return Response({"error": "invoice not found", "request_id": _request_id(request)}, status=status.HTTP_404_NOT_FOUND)
     return Response(_serialize_invoice(invoice), status=status.HTTP_200_OK)
@@ -396,7 +396,7 @@ def billing_invoice_list(request):
     tenant = getattr(request, "tenant", None)
     if tenant is None:
         return Response({"error": "tenant not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
-    invoices = BillingInvoice.objects.filter(tenant=tenant).order_by("-generated_at")[:24]
+    invoices = BillingInvoice.tenant_objects.for_tenant(tenant).order_by("-generated_at")[:24]
     return Response([_serialize_invoice(inv) for inv in invoices], status=status.HTTP_200_OK)
 
 
@@ -420,7 +420,7 @@ def billing_invoice_detail(request, invoice_id):
     tenant = getattr(request, "tenant", None)
     if tenant is None:
         return Response({"error": "tenant not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
-    invoice = BillingInvoice.objects.filter(tenant=tenant, invoice_id=invoice_id).first()
+    invoice = BillingInvoice.tenant_objects.for_tenant(tenant).filter(invoice_id=invoice_id).first()
     if not invoice:
         return Response({"error": "invoice not found", "request_id": _request_id(request)}, status=status.HTTP_404_NOT_FOUND)
     return Response(_serialize_invoice_detail(invoice), status=status.HTTP_200_OK)
@@ -446,7 +446,7 @@ def billing_invoice_receipt(request, invoice_id):
     tenant = getattr(request, "tenant", None)
     if tenant is None:
         return Response({"error": "tenant not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
-    invoice = BillingInvoice.objects.filter(tenant=tenant, invoice_id=invoice_id).first()
+    invoice = BillingInvoice.tenant_objects.for_tenant(tenant).filter(invoice_id=invoice_id).first()
     if not invoice:
         return Response({"error": "invoice not found", "request_id": _request_id(request)}, status=status.HTTP_404_NOT_FOUND)
 
@@ -493,7 +493,7 @@ def billing_invoice_receipt_pdf(request, invoice_id):
     tenant = getattr(request, "tenant", None)
     if tenant is None:
         return Response({"error": "tenant not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
-    invoice = BillingInvoice.objects.filter(tenant=tenant, invoice_id=invoice_id).first()
+    invoice = BillingInvoice.tenant_objects.for_tenant(tenant).filter(invoice_id=invoice_id).first()
     if not invoice:
         return Response({"error": "invoice not found", "request_id": _request_id(request)}, status=status.HTTP_404_NOT_FOUND)
 
@@ -571,7 +571,7 @@ def billing_invoice_export_csv(request):
     if tenant is None:
         return Response({"error": "tenant not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
 
-    invoices_qs = BillingInvoice.objects.filter(tenant=tenant).order_by("-generated_at")
+    invoices_qs = BillingInvoice.tenant_objects.for_tenant(tenant).order_by("-generated_at")
     status_filter = (request.query_params.get("status") or "").strip()
     currency_filter = (request.query_params.get("currency") or "").strip().upper()
     start_date_raw = (request.query_params.get("start_date") or "").strip()
@@ -763,12 +763,12 @@ def billing_usage_summary(request):
 
     subscription = get_latest_billable_subscription(tenant)
     if not subscription:
-        subscription = Subscription.objects.filter(tenant=tenant).order_by("-updated_at").first()
+        subscription = Subscription.tenant_objects.for_tenant(tenant).order_by("-updated_at").first()
     if not subscription:
         return Response({"error": "subscription not found", "request_id": _request_id(request)}, status=status.HTTP_400_BAD_REQUEST)
 
     estimate = estimate_hybrid_monthly_bill(tenant=tenant, plan=subscription.plan)
-    latest_invoice = BillingInvoice.objects.filter(tenant=tenant).order_by("-generated_at").first()
+    latest_invoice = BillingInvoice.tenant_objects.for_tenant(tenant).order_by("-generated_at").first()
     entitlement_allowed = subscription.status in {Subscription.Status.ACTIVE, Subscription.Status.TRIALING}
     if subscription.status == Subscription.Status.PAST_DUE and subscription.grace_period_ends_at:
         entitlement_allowed = subscription.grace_period_ends_at > timezone.now()

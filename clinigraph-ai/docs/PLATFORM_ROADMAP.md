@@ -46,7 +46,7 @@ Rule:
 - [x] Usage record model
 - [x] Cache abstraction ready for Redis
 - [x] Database connection reuse
-- [ ] True tenant isolation strategy for data access
+- [x] True tenant isolation strategy for data access
 - [ ] Async task queue for heavy ingestion and case analysis
 - [ ] Read replica strategy
 - [ ] Regional deployment topology

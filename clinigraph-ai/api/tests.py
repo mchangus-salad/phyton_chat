@@ -3396,3 +3396,332 @@ class TaxInfoEndpointTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
+# ---------------------------------------------------------------------------
+# Tenant isolation strategy tests
+# ---------------------------------------------------------------------------
+
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tests-isolation-cache',
+        }
+    },
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+)
+class TenantBoundManagerTests(TestCase):
+    """Unit tests for TenantBoundManager and assert_tenant_owns()."""
+
+    def _make_tenant(self, username: str):
+        from api.models import Tenant
+        User = get_user_model()
+        user = User.objects.create_user(username=username, password='pw')
+        return Tenant.objects.create(name=f'Isolation Tenant {username}', owner=user)
+
+    def _make_invoice(self, tenant):
+        from api.models import SubscriptionPlan, Subscription, BillingInvoice
+        from django.utils import timezone
+        plan = SubscriptionPlan.objects.create(
+            code=f'plan-iso-{tenant.tenant_id}',
+            name='Isolation Plan',
+            billing_cycle='monthly',
+            price_cents=5_000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=3,
+            seat_price_cents=0,
+            api_overage_per_1000_cents=0,
+        )
+        sub = Subscription.objects.create(tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE)
+        now = timezone.now()
+        return BillingInvoice.objects.create(
+            tenant=tenant,
+            subscription=sub,
+            period_start=now,
+            period_end=now,
+            platform_fee_cents=5_000,
+            total_cents=5_000,
+            currency='USD',
+        )
+
+    def test_for_tenant_returns_only_own_records(self):
+        """tenant_objects.for_tenant(t) returns only records for t."""
+        from api.models import BillingInvoice
+        tenant_a = self._make_tenant('iso-mgr-a')
+        tenant_b = self._make_tenant('iso-mgr-b')
+        inv_a = self._make_invoice(tenant_a)
+        self._make_invoice(tenant_b)
+
+        qs = BillingInvoice.tenant_objects.for_tenant(tenant_a)
+        self.assertEqual(list(qs.values_list('pk', flat=True)), [inv_a.pk])
+
+    def test_for_tenant_excludes_other_tenant_records(self):
+        """tenant_objects.for_tenant(t) contains no records from other tenants."""
+        from api.models import BillingInvoice
+        tenant_a = self._make_tenant('iso-mgr-c')
+        tenant_b = self._make_tenant('iso-mgr-d')
+        self._make_invoice(tenant_a)
+        inv_b = self._make_invoice(tenant_b)
+
+        qs = BillingInvoice.tenant_objects.for_tenant(tenant_a)
+        self.assertNotIn(inv_b.pk, list(qs.values_list('pk', flat=True)))
+
+    def test_for_tenant_on_agent_chat_session(self):
+        """AgentChatSession.tenant_objects.for_tenant() scopes chat sessions."""
+        from api.models import AgentChatSession
+        tenant_a = self._make_tenant('iso-chat-a')
+        tenant_b = self._make_tenant('iso-chat-b')
+        User = get_user_model()
+        user = User.objects.create_user(username='iso-chat-user', password='pw')
+
+        sess_a = AgentChatSession.objects.create(tenant=tenant_a, user=user)
+        AgentChatSession.objects.create(tenant=tenant_b, user=user)
+
+        qs = AgentChatSession.tenant_objects.for_tenant(tenant_a)
+        self.assertEqual(list(qs.values_list('pk', flat=True)), [sess_a.pk])
+
+    def test_assert_tenant_owns_passes_for_correct_tenant(self):
+        """assert_tenant_owns() does not raise when ownership matches."""
+        from api.services.tenant_isolation import assert_tenant_owns
+        tenant = self._make_tenant('iso-assert-ok')
+        invoice = self._make_invoice(tenant)
+        assert_tenant_owns(invoice, tenant)  # should not raise
+
+    def test_assert_tenant_owns_raises_for_wrong_tenant(self):
+        """assert_tenant_owns() raises PermissionError on cross-tenant access."""
+        from api.services.tenant_isolation import assert_tenant_owns
+        tenant_a = self._make_tenant('iso-assert-a')
+        tenant_b = self._make_tenant('iso-assert-b')
+        invoice_a = self._make_invoice(tenant_a)
+        with self.assertRaises(PermissionError):
+            assert_tenant_owns(invoice_a, tenant_b)
+
+    def test_assert_tenant_owns_raises_for_non_tenant_model(self):
+        """assert_tenant_owns() raises PermissionError for objects without tenant_id."""
+        from api.services.tenant_isolation import assert_tenant_owns
+        from api.models import SubscriptionPlan
+        tenant = self._make_tenant('iso-assert-non')
+        plan = SubscriptionPlan.objects.create(
+            code='iso-plan-nt',
+            name='NT Plan',
+            billing_cycle='monthly',
+            price_cents=0,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=100,
+            max_users=1,
+            seat_price_cents=0,
+            api_overage_per_1000_cents=0,
+        )
+        with self.assertRaises(PermissionError):
+            assert_tenant_owns(plan, tenant)
+
+
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tests-idor-cache',
+        }
+    },
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+)
+class TenantIsolationIDORTests(APITestCase):
+    """
+    IDOR (Insecure Direct Object Reference) regression tests.
+
+    Each test verifies that a user from Tenant B cannot access data
+    owned by Tenant A, even when they know the object's ID.
+    """
+
+    def _make_billing_tenant(self, username: str):
+        """Create user + tenant + BILLING membership + ACTIVE subscription."""
+        from api.models import SubscriptionPlan, Subscription, Tenant, TenantMembership
+
+        User = get_user_model()
+        user = User.objects.create_user(username=username, password='pw', email=f'{username}@idor.test')
+        tenant = Tenant.objects.create(name=f'IDOR Tenant {username}', owner=user)
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.BILLING, is_active=True)
+        plan = SubscriptionPlan.objects.create(
+            code=f'plan-idor-{username}',
+            name='IDOR Plan',
+            billing_cycle='monthly',
+            price_cents=5_000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=3,
+            seat_price_cents=0,
+            api_overage_per_1000_cents=0,
+        )
+        Subscription.objects.create(tenant=tenant, plan=plan, status=Subscription.Status.ACTIVE)
+
+        token_resp = self.client.post('/api/v1/auth/token/', {'username': username, 'password': 'pw'}, format='json')
+        access = token_resp.data['access']
+        return tenant, user, access
+
+    def _make_invoice(self, tenant):
+        from api.models import SubscriptionPlan, Subscription, BillingInvoice
+        from django.utils import timezone
+        sub = Subscription.objects.filter(tenant=tenant).first()
+        now = timezone.now()
+        return BillingInvoice.objects.create(
+            tenant=tenant,
+            subscription=sub,
+            period_start=now,
+            period_end=now,
+            platform_fee_cents=5_000,
+            total_cents=5_000,
+            currency='USD',
+        )
+
+    def test_invoice_detail_idor_blocked(self):
+        """Tenant B cannot fetch Tenant A's invoice detail, even with a valid invoice_id."""
+        tenant_a, _, _ = self._make_billing_tenant('idor-inv-a')
+        _, _, token_b = self._make_billing_tenant('idor-inv-b')
+        tenant_b, _, _ = self._make_billing_tenant('idor-inv-b2')
+        tenant_a2, _, _ = self._make_billing_tenant('idor-inv-a2')
+
+        # Re-use existing method without duplicate username
+        invoice_a = self._make_invoice(tenant_a)
+
+        # Tenant B user authenticates with their own tenant but gives tenant_a's invoice id
+        _, _, token_b_final = self._make_billing_tenant('idor-inv-b-final')
+        tenant_b_final, _, _ = self._make_billing_tenant('idor-inv-b-final2')
+        # Create two independent tenants cleanly
+        from api.models import SubscriptionPlan, Subscription, Tenant, TenantMembership
+        User = get_user_model()
+        user_b = User.objects.create_user(username='idor-clean-b', password='pw', email='idor-clean-b@idor.test')
+        t_b = Tenant.objects.create(name='IDOR Clean B', owner=user_b)
+        TenantMembership.objects.create(tenant=t_b, user=user_b, role=TenantMembership.Role.BILLING, is_active=True)
+        plan_b = SubscriptionPlan.objects.create(
+            code='plan-idor-clean-b',
+            name='Clean Plan B',
+            billing_cycle='monthly',
+            price_cents=5_000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=3,
+            seat_price_cents=0,
+            api_overage_per_1000_cents=0,
+        )
+        Subscription.objects.create(tenant=t_b, plan=plan_b, status=Subscription.Status.ACTIVE)
+        tok = self.client.post('/api/v1/auth/token/', {'username': 'idor-clean-b', 'password': 'pw'}, format='json').data['access']
+
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {tok}')
+        resp = self.client.get(
+            f'/api/v1/billing/invoices/{invoice_a.invoice_id}/',
+            HTTP_X_TENANT_ID=str(t_b.tenant_id),
+        )
+        # Must be 404 (invoice not found in tenant B scope), not 200
+        self.assertNotEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_invoice_list_scoped_to_own_tenant(self):
+        """Invoice list returns only invoices belonging to the requesting tenant."""
+        from api.models import SubscriptionPlan, Subscription, Tenant, TenantMembership, BillingInvoice
+        from django.utils import timezone
+
+        User = get_user_model()
+        # Tenant A
+        user_a = User.objects.create_user(username='idor-list-a', password='pw', email='idor-list-a@idor.test')
+        t_a = Tenant.objects.create(name='IDOR List A', owner=user_a)
+        TenantMembership.objects.create(tenant=t_a, user=user_a, role=TenantMembership.Role.BILLING, is_active=True)
+        plan_a = SubscriptionPlan.objects.create(
+            code='plan-idor-list-a',
+            name='List Plan A',
+            billing_cycle='monthly',
+            price_cents=5_000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=3,
+            seat_price_cents=0,
+            api_overage_per_1000_cents=0,
+        )
+        sub_a = Subscription.objects.create(tenant=t_a, plan=plan_a, status=Subscription.Status.ACTIVE)
+        now = timezone.now()
+        BillingInvoice.objects.create(tenant=t_a, subscription=sub_a, period_start=now, period_end=now, platform_fee_cents=1000, total_cents=1000, currency='USD')
+
+        # Tenant B
+        user_b = User.objects.create_user(username='idor-list-b', password='pw', email='idor-list-b@idor.test')
+        t_b = Tenant.objects.create(name='IDOR List B', owner=user_b)
+        TenantMembership.objects.create(tenant=t_b, user=user_b, role=TenantMembership.Role.BILLING, is_active=True)
+        plan_b = SubscriptionPlan.objects.create(
+            code='plan-idor-list-b',
+            name='List Plan B',
+            billing_cycle='monthly',
+            price_cents=5_000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=1000,
+            max_users=3,
+            seat_price_cents=0,
+            api_overage_per_1000_cents=0,
+        )
+        sub_b = Subscription.objects.create(tenant=t_b, plan=plan_b, status=Subscription.Status.ACTIVE)
+        BillingInvoice.objects.create(tenant=t_b, subscription=sub_b, period_start=now, period_end=now, platform_fee_cents=9999, total_cents=9999, currency='USD')
+
+        tok_a = self.client.post('/api/v1/auth/token/', {'username': 'idor-list-a', 'password': 'pw'}, format='json').data['access']
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {tok_a}')
+        resp = self.client.get('/api/v1/billing/invoices/', HTTP_X_TENANT_ID=str(t_a.tenant_id))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        # Tenant A sees exactly one invoice (theirs)
+        for inv in resp.data:
+            self.assertEqual(inv['platform_fee_cents'], 1000)
+
+    def test_chat_session_cross_tenant_blocked(self):
+        """
+        User from Tenant B, authenticated with their own token, cannot list
+        chat sessions belonging to Tenant A even if they know Tenant A's tenant_id.
+        """
+        from api.models import AgentChatSession, Tenant, TenantMembership, SubscriptionPlan, Subscription
+
+        User = get_user_model()
+        user_a = User.objects.create_user(username='idor-chat-a', password='pw')
+        t_a = Tenant.objects.create(name='Chat IDOR A', owner=user_a)
+        TenantMembership.objects.create(tenant=t_a, user=user_a, role=TenantMembership.Role.CLINICIAN, is_active=True)
+        plan_a = SubscriptionPlan.objects.create(
+            code='plan-idor-chat-a',
+            name='Chat Plan A',
+            billing_cycle='monthly',
+            price_cents=1000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=10000,
+            max_users=5,
+            seat_price_cents=0,
+            api_overage_per_1000_cents=0,
+        )
+        Subscription.objects.create(tenant=t_a, plan=plan_a, status=Subscription.Status.ACTIVE)
+        AgentChatSession.objects.create(tenant=t_a, user=user_a, title='Secret Session')
+
+        user_b = User.objects.create_user(username='idor-chat-b', password='pw')
+        t_b = Tenant.objects.create(name='Chat IDOR B', owner=user_b)
+        TenantMembership.objects.create(tenant=t_b, user=user_b, role=TenantMembership.Role.CLINICIAN, is_active=True)
+        plan_b = SubscriptionPlan.objects.create(
+            code='plan-idor-chat-b',
+            name='Chat Plan B',
+            billing_cycle='monthly',
+            price_cents=1000,
+            billing_model='hybrid',
+            currency='USD',
+            max_monthly_requests=10000,
+            max_users=5,
+            seat_price_cents=0,
+            api_overage_per_1000_cents=0,
+        )
+        Subscription.objects.create(tenant=t_b, plan=plan_b, status=Subscription.Status.ACTIVE)
+
+        tok_b = self.client.post('/api/v1/auth/token/', {'username': 'idor-chat-b', 'password': 'pw'}, format='json').data['access']
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {tok_b}')
+
+        # User B requests Tenant A's session list — their membership check will fail (403)
+        resp = self.client.get('/api/v1/chat/sessions/', HTTP_X_TENANT_ID=str(t_a.tenant_id))
+        # Must not be 200 — either 403 (membership denied) or 404
+        self.assertNotEqual(resp.status_code, status.HTTP_200_OK)
+
+
+
