@@ -1,5 +1,16 @@
+"""LangGraph-based RAG pipeline for CliniGraph AI.
+
+The compiled graph executes four sequential nodes for every query::
+
+    retrieve_context → generate_answer → extract_citations → persist_and_emit
+
+Use ``build_agent_graph(domain, subdomain)`` to obtain a compiled graph and its
+associated ``RedisCache`` instance.  The graph is stateless — each invocation
+receives and returns a fresh ``AgentState`` dict.
+"""
 import re
 import logging
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as _TimeoutError
 from typing import TypedDict
 
 from langgraph.graph import StateGraph, END
@@ -11,12 +22,19 @@ from .prompts import build_context_block, build_history_block, build_system_prom
 from .queue import KafkaEventQueue
 from .vector_store import build_retriever
 from .mock_llm import MockLLM
+from .config import settings
 
 
 logger = logging.getLogger(__name__)
 
 
 class AgentState(TypedDict, total=False):
+    """Mutable state dict passed between graph nodes during a single query execution.
+
+    Nodes add or update keys; the final state after ``persist_and_emit`` contains
+    the complete answer with citations ready to return to the caller.
+    """
+
     user_id: str
     question: str
     # raw docs are stored only during graph execution, cleared before caching
@@ -33,6 +51,24 @@ class AgentState(TypedDict, total=False):
 
 
 def build_agent_graph(domain: str | None = None, subdomain: str | None = None):
+    """Build and compile the CliniGraph AI LangGraph pipeline.
+
+    Constructs all provider instances (LLM, embeddings, vector store, cache, queue)
+    and wires the four-node sequential graph::
+
+        retrieve_context → generate_answer → extract_citations → persist_and_emit
+
+    Args:
+        domain: Optional clinical domain scope (e.g. ``"oncology"``).  Affects
+            the vector store namespace and the system prompt selected.
+        subdomain: Optional sub-speciality (e.g. ``"lung-cancer"``). Used to
+            prefix the focus instruction injected into the LLM prompt.
+
+    Returns:
+        A 2-tuple ``(compiled_graph, cache)`` where ``compiled_graph`` is the
+        LangGraph ``CompiledStateGraph`` ready for ``.invoke()`` calls and
+        ``cache`` is the shared ``RedisCache`` instance.
+    """
     llm = build_llm()
     embeddings = build_embeddings()
     retriever = build_retriever(embeddings, domain=domain, subdomain=subdomain)
@@ -43,6 +79,7 @@ def build_agent_graph(domain: str | None = None, subdomain: str | None = None):
     # Node 1: Retrieve evidence from vector store
     # ------------------------------------------------------------------
     def retrieve_context(state: AgentState) -> AgentState:
+        """Fetch the top-k relevant documents from the vector store."""
         question = state["question"]
         docs = retriever.invoke(question)
         context, citation_labels = build_context_block(docs or [])
@@ -52,6 +89,13 @@ def build_agent_graph(domain: str | None = None, subdomain: str | None = None):
     # Node 2: Generate a clinically-structured answer
     # ------------------------------------------------------------------
     def generate_answer(state: AgentState) -> AgentState:
+        """Invoke the configured LLM with context and conversation history.
+
+        A per-call timeout (``settings.llm_timeout_seconds``) prevents worker
+        threads from hanging indefinitely on slow or unresponsive LLM backends.
+        On timeout or any other error the ``MockLLM`` fallback is used so
+        clinical workflows stay responsive in degraded environments.
+        """
         question = state["question"]
         context = state.get("context", "")
         citation_labels = state.get("citation_labels") or []
@@ -88,7 +132,15 @@ def build_agent_graph(domain: str | None = None, subdomain: str | None = None):
         )
 
         try:
-            answer = llm.invoke(prompt).content
+            with ThreadPoolExecutor(max_workers=1) as _pool:
+                _future = _pool.submit(llm.invoke, prompt)
+                answer = _future.result(timeout=settings.llm_timeout_seconds).content
+        except _TimeoutError:
+            logger.warning(
+                "LLM invoke timed out after %s s; using mock fallback",
+                settings.llm_timeout_seconds,
+            )
+            answer = MockLLM().invoke(prompt).content
         except Exception:
             # Keep clinical workflows responsive in local/dev when the configured LLM backend is unstable.
             logger.exception("primary llm invoke failed; using mock fallback")
@@ -99,6 +151,7 @@ def build_agent_graph(domain: str | None = None, subdomain: str | None = None):
     # Node 3: Extract cited references from the generated answer
     # ------------------------------------------------------------------
     def extract_citations(state: AgentState) -> AgentState:
+        """Parse ``[n]`` reference markers in the answer and resolve them to labels."""
         answer = state.get("answer", "")
         citation_labels = state.get("citation_labels") or []
 
@@ -117,6 +170,7 @@ def build_agent_graph(domain: str | None = None, subdomain: str | None = None):
     # Node 4: Persist answer to cache and publish to event queue
     # ------------------------------------------------------------------
     def persist_and_emit(state: AgentState) -> AgentState:
+        """Write the final answer to Redis cache and publish a Kafka event."""
         cache_key = state["cache_key"]
         answer = state["answer"]
         # Cache only the answer text (not docs) to keep memory lean

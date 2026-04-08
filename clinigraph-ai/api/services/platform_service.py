@@ -1,3 +1,15 @@
+"""Business logic layer for subscriptions, billing, and tenant management.
+
+All functions in this module are pure service functions (no HTTP concerns) and
+operate on Django ORM models.  Views delegate to these functions and should not
+duplicate billing or subscription logic.
+
+Key responsibilities:
+- Subscription lifecycle: create draft, checkout, cancel, change plan
+- Hybrid billing calculation (platform fee + per-seat + per-request overage)
+- Invoice finalisation and line-item ledger
+- Stripe portal and webhook event tracking via ``BillingEvent``
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -76,6 +88,14 @@ def ensure_tenant_for_user(*, user, tenant_name: str, tenant_type: str) -> Tenan
 
 
 def create_subscription_draft(*, user, tenant_name: str, tenant_type: str, plan: SubscriptionPlan, trial_days: int | None) -> SubscriptionDraftResult:
+    """Create a non-Stripe internal subscription for trial or manual provisioning.
+
+    When ``trial_days`` is ``None`` the plan's default (``plan.trial_days_default``)
+    is used.  A positive trial period sets ``status=TRIALING``; zero days results
+    in ``status=INCOMPLETE`` (requires manual activation).
+
+    A ``BillingEvent(event_type='subscription_created')`` is recorded for audit.
+    """
     tenant = ensure_tenant_for_user(user=user, tenant_name=tenant_name, tenant_type=tenant_type)
     effective_trial_days = plan.trial_days_default if trial_days is None else trial_days
     now = timezone.now()
@@ -184,6 +204,21 @@ def estimate_hybrid_monthly_bill(
     active_users: int | None = None,
     api_requests: int | None = None,
 ) -> HybridBillingEstimate:
+    """Calculate the hybrid monthly bill for a tenant on the given plan.
+
+    Hybrid pricing formula::
+
+        total = platform_fee
+              + max(active_users - included_users, 0) * seat_price
+              + ceil(max(api_requests - included_requests, 0) / 1000) * api_overage_per_1000
+
+    When ``active_users`` or ``api_requests`` are ``None`` they are derived from
+    the database: active memberships count for users; ``UsageRecord`` rows with
+    ``metric='api.request'`` in the current calendar month for API calls.
+
+    Returns a ``HybridBillingEstimate`` dataclass with full breakdown for
+    display and invoice generation.
+    """
     now = timezone.now()
     period_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     next_month = (period_start + timedelta(days=32)).replace(day=1)
@@ -242,6 +277,15 @@ def estimate_hybrid_monthly_bill(
 
 
 def close_current_billing_period(*, tenant: Tenant, subscription: Subscription, active_users: int | None = None, api_requests: int | None = None) -> BillingInvoice:
+    """Finalise the current billing period by creating or updating a BillingInvoice.
+
+    Calls ``estimate_hybrid_monthly_bill`` to compute the period totals, then
+    upserts a ``BillingInvoice`` (keyed by tenant + period dates) and replaces
+    all ``BillingInvoiceLineItem`` rows with a fresh three-line ledger:
+    platform fee, user overage, and API request overage.
+
+    Emits a ``BillingEvent(event_type='invoice_finalized')`` for audit.
+    """
     estimate = estimate_hybrid_monthly_bill(
         tenant=tenant,
         plan=subscription.plan,
@@ -330,6 +374,16 @@ def create_portal_session(*, subscription: Subscription, return_url: str | None 
 
 
 def change_subscription_plan(*, subscription: Subscription, target_plan: SubscriptionPlan, apply_change: bool) -> PlanChangeResult:
+    """Preview or apply a mid-cycle subscription plan change via Stripe.
+
+    When ``apply_change=False`` returns a proration preview from Stripe without
+    making any changes.  When ``apply_change=True`` calls
+    ``Subscription.modify`` in Stripe, updates the local ``Subscription.plan``
+    foreign key, and records a ``BillingEvent`` for audit.
+
+    Raises:
+        BillingConfigurationError: if Stripe is not configured.
+    """
     provider = StripeBillingProvider()
     preview = provider.preview_subscription_plan_change(
         provider_subscription_id=subscription.provider_subscription_id,

@@ -1,3 +1,13 @@
+"""Configuration for the CliniGraph AI agent pipeline.
+
+Settings are read from environment variables at import time.
+Load order: .env.agentai.local → .env → shell environment.
+
+Typical usage::
+
+    from api.agent_ai.config import settings
+    model = settings.llm_model
+"""
 from dataclasses import dataclass
 import os
 from pathlib import Path
@@ -13,6 +23,20 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 @dataclass(frozen=True)
 class AgentAISettings:
+    """Immutable runtime settings for the CliniGraph AI pipeline.
+
+    All fields map 1-to-1 to environment variables. The ``settings`` module-level
+    singleton is the authoritative instance — import and reuse it::
+
+        from api.agent_ai.config import settings
+
+    Valid provider values:
+
+    * ``llm_provider``: ``gpt`` | ``claude`` | ``ollama`` | ``mock``
+    * ``embeddings_provider``: ``openai`` | ``huggingface`` | ``local``
+    * ``vector_db_provider``: ``pinecone`` | ``weaviate``
+    """
+
     llm_provider: str = os.getenv("AGENT_LLM_PROVIDER", "gpt")
     llm_model: str = os.getenv("AGENT_LLM_MODEL", "gpt-4o-mini")
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
@@ -43,6 +67,8 @@ class AgentAISettings:
     kafka_topic: str = os.getenv("AGENT_KAFKA_TOPIC", "agent-events")
 
     max_context_docs: int = int(os.getenv("AGENT_MAX_CONTEXT_DOCS", "4"))
+    # Hard timeout on LLM calls to prevent indefinitely hung worker threads.
+    llm_timeout_seconds: int = int(os.getenv("AGENT_LLM_TIMEOUT_SECONDS", "60"))
 
 
 settings = AgentAISettings()

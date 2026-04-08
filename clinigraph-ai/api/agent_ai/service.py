@@ -1,3 +1,12 @@
+"""High-level service interface for the CliniGraph AI agent.
+
+This module exposes ``AgentAIService``, which wraps the LangGraph pipeline and
+provides three query modes: synchronous (``ask``), conversational
+(``ask_with_history``), and streaming (``ask_stream``).
+
+All heavy provider construction (LLM, embeddings, retriever, graph) happens
+once during ``__init__`` and is reused across calls for efficiency.
+"""
 from dataclasses import dataclass
 import re
 
@@ -36,7 +45,28 @@ class EvidenceSearchResult:
 
 
 class AgentAIService:
+    """Facade over the LangGraph RAG pipeline for clinical decision support.
+
+    Instantiate once per request (or cache it) and call ``ask``, ``ask_with_history``,
+    or ``ask_stream`` depending on the query mode required.
+
+    Example::
+
+        svc = AgentAIService(domain="oncology", subdomain="lung-cancer")
+        result = svc.ask("What are EGFR mutation prevalence rates?")
+        print(result.answer, result.citations)
+    """
+
     def __init__(self, domain: str | None = None, subdomain: str | None = None, initialize_graph: bool = True):
+        """Initialise the service and all downstream providers.
+
+        Args:
+            domain: Clinical domain used to scope the vector store retrieval and
+                select the speciality system prompt (e.g. ``"oncology"``).
+            subdomain: Sub-speciality narrowing (e.g. ``"lung-cancer"``).
+            initialize_graph: When ``False`` only the ingestor is built, skipping
+                the LLM / graph initialisation.  Used by train/upload endpoints.
+        """
         self.domain = domain
         self.subdomain = subdomain
         embeddings = build_embeddings()
@@ -56,6 +86,23 @@ class AgentAIService:
         return f"agent:{domain_part}:{subdomain_part}:{user_id}:{question.strip().lower()}"
 
     def ask(self, question: str, user_id: str = "anonymous") -> AgentAIResult:
+        """Answer a single question using the RAG pipeline.
+
+        Returns a cached ``AgentAIResult`` when an identical question was recently
+        answered for the same user/domain/subdomain (cache TTL is configured via
+        ``AGENT_CACHE_TTL_SECONDS``).  On cache miss the full LangGraph pipeline
+        runs: retrieve → generate → cite → persist.
+
+        Args:
+            question: The clinical question string (plain text).
+            user_id: Caller identifier used as part of the cache key.
+
+        Returns:
+            ``AgentAIResult`` with ``answer``, ``cache_hit`` flag, and ``citations``.
+
+        Raises:
+            RuntimeError: If the service was created with ``initialize_graph=False``.
+        """
         if self.graph is None or self.cache is None:
             raise RuntimeError("AgentAIService was initialized without query capabilities")
 
