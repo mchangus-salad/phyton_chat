@@ -35,7 +35,7 @@ Rule:
 - [x] Billing event counters
 - [x] Prometheus-compatible metrics endpoint
 - [x] Structured JSON logs
-- [ ] OpenTelemetry tracing
+- [x] OpenTelemetry tracing
 - [ ] Alert rules for auth failures / abuse spikes / 5xx spikes
 - [ ] SLO dashboard (latency, availability, failure rate)
 - [ ] Audit dashboards for patient-case flows
@@ -67,7 +67,7 @@ Rule:
 - [x] Invoice and receipt views
 - [x] Proration / upgrade / downgrade support
 - [x] Subscription cancellation UI/API
-- [ ] Trial expiration workflows
+- [x] Trial expiration workflows
 - [ ] Failed payment recovery flows
 - [ ] Tax/VAT strategy
 
