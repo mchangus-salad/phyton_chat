@@ -13,6 +13,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as _TimeoutError
 from typing import TypedDict
 
+from opentelemetry import trace as otel_trace
 from langgraph.graph import StateGraph, END
 
 from .cache import RedisCache
@@ -26,6 +27,7 @@ from .config import settings
 
 
 logger = logging.getLogger(__name__)
+_tracer = otel_trace.get_tracer(__name__)
 
 
 class AgentState(TypedDict, total=False):
@@ -80,10 +82,14 @@ def build_agent_graph(domain: str | None = None, subdomain: str | None = None):
     # ------------------------------------------------------------------
     def retrieve_context(state: AgentState) -> AgentState:
         """Fetch the top-k relevant documents from the vector store."""
-        question = state["question"]
-        docs = retriever.invoke(question)
-        context, citation_labels = build_context_block(docs or [])
-        return {**state, "retrieved_docs": docs or [], "context": context, "citation_labels": citation_labels}
+        with _tracer.start_as_current_span("rag.retrieve_context") as span:
+            question = state["question"]
+            span.set_attribute("rag.domain", domain or "")
+            span.set_attribute("rag.subdomain", subdomain or "")
+            docs = retriever.invoke(question)
+            context, citation_labels = build_context_block(docs or [])
+            span.set_attribute("rag.docs_retrieved", len(docs or []))
+            return {**state, "retrieved_docs": docs or [], "context": context, "citation_labels": citation_labels}
 
     # ------------------------------------------------------------------
     # Node 2: Generate a clinically-structured answer
@@ -96,97 +102,107 @@ def build_agent_graph(domain: str | None = None, subdomain: str | None = None):
         On timeout or any other error the ``MockLLM`` fallback is used so
         clinical workflows stay responsive in degraded environments.
         """
-        question = state["question"]
-        context = state.get("context", "")
-        citation_labels = state.get("citation_labels") or []
-        active_domain = state.get("domain") or domain
-        active_subdomain = state.get("subdomain") or subdomain
-        history = state.get("conversation_history") or []
+        with _tracer.start_as_current_span("rag.generate_answer") as span:
+            question = state["question"]
+            context = state.get("context", "")
+            citation_labels = state.get("citation_labels") or []
+            active_domain = state.get("domain") or domain
+            active_subdomain = state.get("subdomain") or subdomain
+            history = state.get("conversation_history") or []
 
-        system_prompt = build_system_prompt(active_domain)
+            span.set_attribute("rag.llm_provider", settings.llm_provider)
+            span.set_attribute("rag.domain", active_domain or "")
+            span.set_attribute("rag.history_turns", len(history))
 
-        # Build the subdomain scoping line
-        subdomain_line = ""
-        if active_subdomain:
-            subdomain_line = f"Focus on the subdomain: {active_subdomain}.\n"
+            system_prompt = build_system_prompt(active_domain)
 
-        # Build refence index for the LLM
-        ref_index = ""
-        if citation_labels:
-            entries = "\n".join(f"  [{i+1}] {lbl}" for i, lbl in enumerate(citation_labels))
-            ref_index = f"\nREFERENCE INDEX:\n{entries}\n"
+            # Build the subdomain scoping line
+            subdomain_line = ""
+            if active_subdomain:
+                subdomain_line = f"Focus on the subdomain: {active_subdomain}.\n"
 
-        history_block = build_history_block(history)
+            # Build reference index for the LLM
+            ref_index = ""
+            if citation_labels:
+                entries = "\n".join(f"  [{i+1}] {lbl}" for i, lbl in enumerate(citation_labels))
+                ref_index = f"\nREFERENCE INDEX:\n{entries}\n"
 
-        context_section = f"\nREVIEWED EVIDENCE:\n{context}" if context else (
-            "\nREVIEWED EVIDENCE: (none retrieved — answer from model knowledge only, note this limitation)"
-        )
+            history_block = build_history_block(history)
 
-        prompt = (
-            f"{system_prompt}\n\n"
-            f"{subdomain_line}"
-            f"{ref_index}"
-            f"{history_block}"
-            f"{context_section}\n\n"
-            f"QUESTION:\n{question}"
-        )
-
-        try:
-            with ThreadPoolExecutor(max_workers=1) as _pool:
-                _future = _pool.submit(llm.invoke, prompt)
-                answer = _future.result(timeout=settings.llm_timeout_seconds).content
-        except _TimeoutError:
-            logger.warning(
-                "LLM invoke timed out after %s s; using mock fallback",
-                settings.llm_timeout_seconds,
+            context_section = f"\nREVIEWED EVIDENCE:\n{context}" if context else (
+                "\nREVIEWED EVIDENCE: (none retrieved — answer from model knowledge only, note this limitation)"
             )
-            answer = MockLLM().invoke(prompt).content
-        except Exception:
-            # Keep clinical workflows responsive in local/dev when the configured LLM backend is unstable.
-            logger.exception("primary llm invoke failed; using mock fallback")
-            answer = MockLLM().invoke(prompt).content
-        return {**state, "answer": answer}
+
+            prompt = (
+                f"{system_prompt}\n\n"
+                f"{subdomain_line}"
+                f"{ref_index}"
+                f"{history_block}"
+                f"{context_section}\n\n"
+                f"QUESTION:\n{question}"
+            )
+
+            try:
+                with ThreadPoolExecutor(max_workers=1) as _pool:
+                    _future = _pool.submit(llm.invoke, prompt)
+                    answer = _future.result(timeout=settings.llm_timeout_seconds).content
+            except _TimeoutError:
+                logger.warning(
+                    "LLM invoke timed out after %s s; using mock fallback",
+                    settings.llm_timeout_seconds,
+                )
+                answer = MockLLM().invoke(prompt).content
+            except Exception:
+                # Keep clinical workflows responsive in local/dev when the configured LLM backend is unstable.
+                logger.exception("primary llm invoke failed; using mock fallback")
+                answer = MockLLM().invoke(prompt).content
+
+            span.set_attribute("rag.answer_length", len(answer))
+            return {**state, "answer": answer}
 
     # ------------------------------------------------------------------
     # Node 3: Extract cited references from the generated answer
     # ------------------------------------------------------------------
     def extract_citations(state: AgentState) -> AgentState:
         """Parse ``[n]`` reference markers in the answer and resolve them to labels."""
-        answer = state.get("answer", "")
-        citation_labels = state.get("citation_labels") or []
+        with _tracer.start_as_current_span("rag.extract_citations") as span:
+            answer = state.get("answer", "")
+            citation_labels = state.get("citation_labels") or []
 
-        cited: list[str] = []
-        seen: set[int] = set()
+            cited: list[str] = []
+            seen: set[int] = set()
 
-        for match in re.finditer(r"\[(\d+)\]", answer):
-            idx = int(match.group(1)) - 1  # convert to 0-based
-            if 0 <= idx < len(citation_labels) and idx not in seen:
-                cited.append(citation_labels[idx])
-                seen.add(idx)
+            for match in re.finditer(r"\[(\d+)\]", answer):
+                idx = int(match.group(1)) - 1  # convert to 0-based
+                if 0 <= idx < len(citation_labels) and idx not in seen:
+                    cited.append(citation_labels[idx])
+                    seen.add(idx)
 
-        return {**state, "citations": cited}
+            span.set_attribute("rag.citations_found", len(cited))
+            return {**state, "citations": cited}
 
     # ------------------------------------------------------------------
     # Node 4: Persist answer to cache and publish to event queue
     # ------------------------------------------------------------------
     def persist_and_emit(state: AgentState) -> AgentState:
         """Write the final answer to Redis cache and publish a Kafka event."""
-        cache_key = state["cache_key"]
-        answer = state["answer"]
-        # Cache only the answer text (not docs) to keep memory lean
-        cache.set(cache_key, answer)
-        queue.publish(
-            {
-                "type": "agent_answer_created",
-                "user_id": state.get("user_id", "anonymous"),
-                "question": state["question"],
-                "answer": answer,
-                "domain": state.get("domain") or domain,
-                "subdomain": state.get("subdomain") or subdomain,
-                "citations": state.get("citations") or [],
-            }
-        )
-        return state
+        with _tracer.start_as_current_span("rag.persist_and_emit"):
+            cache_key = state["cache_key"]
+            answer = state["answer"]
+            # Cache only the answer text (not docs) to keep memory lean
+            cache.set(cache_key, answer)
+            queue.publish(
+                {
+                    "type": "agent_answer_created",
+                    "user_id": state.get("user_id", "anonymous"),
+                    "question": state["question"],
+                    "answer": answer,
+                    "domain": state.get("domain") or domain,
+                    "subdomain": state.get("subdomain") or subdomain,
+                    "citations": state.get("citations") or [],
+                }
+            )
+            return state
 
     graph = StateGraph(AgentState)
     graph.add_node("retrieve_context", retrieve_context)
