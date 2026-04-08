@@ -1,0 +1,130 @@
+{{- if .Values.seed.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "clinigraph.fullname" . }}-seed
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "clinigraph.labels" . | nindent 4 }}
+    app.kubernetes.io/component: seed
+  annotations:
+    # Re-runs on every helm upgrade. The management commands are idempotent.
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  ttlSecondsAfterFinished: {{ .Values.seed.ttlAfterFinished }}
+  activeDeadlineSeconds: {{ .Values.seed.activeDeadlineSeconds }}
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        {{- include "clinigraph.labels" . | nindent 8 }}
+        app.kubernetes.io/component: seed
+    spec:
+      restartPolicy: Never
+
+      # ── Init containers run sequentially ─────────────────────────────────────
+      initContainers:
+
+        # 1. Wait for Weaviate HTTP endpoint to be ready
+        - name: wait-weaviate
+          image: curlimages/curl:8.7.1
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Weaviate..."
+              until curl -sf http://{{ include "clinigraph.weaviateHost" . }}:8080/v1/.well-known/ready; do
+                echo "  not ready, retrying in 5s"
+                sleep 5
+              done
+              echo "Weaviate is ready."
+
+        # 2. Wait for Postgres to accept connections
+        - name: wait-postgres
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Postgres..."
+              {{- if .Values.externalDatabase.enabled }}
+              until pg_isready -h {{ .Values.externalDatabase.host }} -p {{ .Values.externalDatabase.port }}; do
+              {{- else }}
+              until pg_isready -h {{ include "clinigraph.fullname" . }}-postgres -p 5432; do
+              {{- end }}
+                echo "  not ready, retrying in 5s"
+                sleep 5
+              done
+              echo "Postgres is ready."
+
+        {{- if and .Values.ollama.enabled .Values.seed.pullOllamaModels }}
+        # 3. Wait for Ollama then pull models (only if pullOllamaModels=true)
+        - name: pull-ollama-models
+          image: curlimages/curl:8.7.1
+          command:
+            - sh
+            - -c
+            - |
+              OLLAMA_URL="{{ include "clinigraph.ollamaUrl" . }}"
+              echo "Waiting for Ollama at $OLLAMA_URL ..."
+              until curl -sf "$OLLAMA_URL/api/tags" > /dev/null; do
+                echo "  not ready, retrying in 5s"
+                sleep 5
+              done
+              echo "Ollama is ready. Pulling models..."
+              {{- range .Values.ollama.models }}
+              echo "Pulling {{ . }} ..."
+              curl -s -X POST "$OLLAMA_URL/api/pull" \
+                -H "Content-Type: application/json" \
+                -d '{"name":"{{ . }}","stream":false}' | grep -o '"status":"[^"]*"' | tail -1 || true
+              {{- end }}
+              echo "All models pulled."
+        {{- end }}
+
+      # ── Main container: migrations + seeding ──────────────────────────────────
+      containers:
+        - name: seed
+          image: {{ include "clinigraph.image" (dict "global" .Values.global "image" .Values.web.image) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "clinigraph.fullname" . }}-config
+          env:
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "clinigraph.secretName" . }}
+                  key: DJANGO_SECRET_KEY
+            - name: AGENT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "clinigraph.secretName" . }}
+                  key: AGENT_API_KEY
+            - name: DJANGO_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "clinigraph.secretName" . }}
+                  key: DJANGO_DB_PASSWORD
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              echo "==> Running Django migrations..."
+              python manage.py migrate --noinput
+
+              echo "==> Seeding subscription plans..."
+              python manage.py seed_subscription_plans || true
+
+              echo "==> Seeding local dev users..."
+              python manage.py seed_local_users || true
+
+              echo "==> Importing medical corpus..."
+              {{- range .Values.seed.domains }}
+              python manage.py import_medical_corpus /app/data/seed_{{ . }}.json --domain {{ . }} || echo "WARN: seed for {{ . }} failed (non-fatal)"
+              {{- end }}
+
+              echo "==> Seed complete."
+{{- end }}

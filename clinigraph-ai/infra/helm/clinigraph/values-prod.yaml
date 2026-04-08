@@ -1,0 +1,53 @@
+# values-prod.yaml – HA, managed cloud databases, no debug
+# Merged on top of values.yaml with: helm ... -f values-prod.yaml
+# Requires: externalDatabase.host and externalRedis.url (from Terraform outputs)
+
+config:
+  django:
+    debug: "false"
+    logLevel: "WARNING"
+    gunicornWorkers: "4"
+    gunicornTimeout: "120"
+
+web:
+  replicaCount: 2
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 60
+
+frontend:
+  replicaCount: 2
+
+# Disable in-cluster Postgres – use the managed DB provisioned by Terraform
+postgres:
+  enabled: false
+
+externalDatabase:
+  enabled: true
+  # host, username, database set by deploy.ps1 via --set flags
+  # password comes from secrets.postgresPassword (also set by deploy.ps1)
+
+# Disable in-cluster Redis – use the managed cache provisioned by Terraform
+redis:
+  enabled: false
+
+externalRedis:
+  enabled: true
+  # url set by deploy.ps1 via --set flags
+
+ollama:
+  resources:
+    requests:
+      cpu: "2000m"
+      memory: "8Gi"
+    limits:
+      cpu: "8000m"
+      memory: "16Gi"
+  storage:
+    size: 80Gi
+
+seed:
+  enabled: true    # Idempotent – safe to run on every deploy
+  pullOllamaModels: false   # Models are already on the PVC after first run

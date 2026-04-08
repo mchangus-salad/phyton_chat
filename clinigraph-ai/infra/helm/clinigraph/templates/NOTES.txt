@@ -1,0 +1,28 @@
+Thank you for deploying CliniGraph AI!
+
+Release: {{ .Release.Name }}
+Namespace: {{ .Values.namespace.name }}
+
+== Access ==
+{{- if .Values.ingress.enabled }}
+URL: http{{ if .Values.ingress.tls.enabled }}s{{ end }}://{{ .Values.ingress.host }}
+{{- else }}
+Run the following to reach the API locally:
+  kubectl port-forward -n {{ .Values.namespace.name }} svc/{{ include "clinigraph.fullname" . }}-web 8000:8000
+{{- end }}
+
+== Seed Job ==
+{{- if .Values.seed.enabled }}
+The seed Job runs migrations, subscription plans, and corpus import automatically.
+Check its status with:
+  kubectl get jobs -n {{ .Values.namespace.name }} -l app.kubernetes.io/instance={{ .Release.Name }}
+  kubectl logs -n {{ .Values.namespace.name }} job/{{ include "clinigraph.fullname" . }}-seed
+WARNING: The first run will download Ollama models (~5 GB). This can take 15–60 minutes
+         depending on your internet speed. Monitor with the command above.
+{{- end }}
+
+== Monitoring ==
+{{- if .Values.prometheus.enabled }}
+  kubectl port-forward -n {{ .Values.namespace.name }} svc/{{ include "clinigraph.fullname" . }}-grafana 3000:3000
+  Open: http://localhost:3000  (admin / <grafana admin password>)
+{{- end }}

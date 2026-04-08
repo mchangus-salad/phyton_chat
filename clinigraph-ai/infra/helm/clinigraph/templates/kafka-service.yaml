@@ -1,0 +1,20 @@
+{{- if .Values.kafka.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "clinigraph.fullname" . }}-kafka
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "clinigraph.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kafka
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9092
+      targetPort: 9092
+      protocol: TCP
+      name: kafka
+  selector:
+    {{- include "clinigraph.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: kafka
+{{- end }}

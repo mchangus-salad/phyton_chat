@@ -1,0 +1,15 @@
+apiVersion: v2
+name: clinigraph
+description: CliniGraph AI – Clinical Decision Support SaaS Platform (full stack)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - healthcare
+  - ai
+  - rag
+  - clinical-decision-support
+  - hipaa
+home: https://github.com/clinigraph/clinigraph-ai
+maintainers:
+  - name: CliniGraph Platform Team

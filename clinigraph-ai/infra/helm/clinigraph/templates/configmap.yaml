@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "clinigraph.fullname" . }}-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "clinigraph.labels" . | nindent 4 }}
+data:
+  # ── Django ──────────────────────────────────────────────────────────────────
+  DJANGO_DEBUG: {{ .Values.config.django.debug | quote }}
+  DJANGO_ALLOWED_HOSTS: {{ .Values.config.django.allowedHosts | quote }}
+  DJANGO_LOG_LEVEL: {{ .Values.config.django.logLevel | quote }}
+  GUNICORN_WORKERS: {{ .Values.config.django.gunicornWorkers | quote }}
+  GUNICORN_TIMEOUT: {{ .Values.config.django.gunicornTimeout | quote }}
+  DATABASE_URL: {{ include "clinigraph.databaseUrl" . | quote }}
+  REDIS_URL: {{ include "clinigraph.redisUrl" . | quote }}
+
+  # ── Agent AI ────────────────────────────────────────────────────────────────
+  AGENT_AI_LLM_PROVIDER: {{ .Values.config.agent.llmProvider | quote }}
+  AGENT_AI_LLM_MODEL: {{ .Values.config.agent.llmModel | quote }}
+  AGENT_EMBEDDINGS_PROVIDER: {{ .Values.config.agent.embeddingsProvider | quote }}
+  AGENT_EMBEDDINGS_MODEL: {{ .Values.config.agent.embeddingsModel | quote }}
+  AGENT_AI_VECTOR_DB_PROVIDER: {{ .Values.config.agent.vectorDbProvider | quote }}
+  AGENT_AI_MAX_CONTEXT_DOCS: {{ .Values.config.agent.maxContextDocs | quote }}
+  AGENT_AI_CACHE_TTL_SECONDS: {{ .Values.config.agent.cacheTtlSeconds | quote }}
+  KAFKA_TOPIC: {{ .Values.config.agent.kafkaTopic | quote }}
+
+  # ── Service endpoints ────────────────────────────────────────────────────────
+  WEAVIATE_HOST: {{ include "clinigraph.weaviateHost" . | quote }}
+  WEAVIATE_PORT: "8080"
+  WEAVIATE_GRPC_PORT: "50051"
+  OLLAMA_BASE_URL: {{ include "clinigraph.ollamaUrl" . | quote }}
+  KAFKA_BOOTSTRAP_SERVERS: {{ include "clinigraph.kafkaBootstrap" . | quote }}

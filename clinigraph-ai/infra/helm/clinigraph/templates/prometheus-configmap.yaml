@@ -1,0 +1,34 @@
+{{- if .Values.prometheus.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "clinigraph.fullname" . }}-prometheus-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "clinigraph.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 30s
+      evaluation_interval: 30s
+
+    scrape_configs:
+      - job_name: clinigraph-api
+        metrics_path: /api/v1/ops/metrics/prometheus/
+        static_configs:
+          - targets:
+              - {{ include "clinigraph.fullname" . }}-web:{{ .Values.web.service.port }}
+        authorization:
+          credentials_file: /etc/prometheus/api_key
+
+      - job_name: weaviate
+        static_configs:
+          - targets:
+              - {{ include "clinigraph.weaviateHost" . }}:2112
+
+      - job_name: kafka
+        static_configs:
+          - targets:
+              - {{ include "clinigraph.fullname" . }}-kafka:7071
+{{- end }}

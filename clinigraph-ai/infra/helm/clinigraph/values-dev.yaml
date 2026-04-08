@@ -1,0 +1,29 @@
+# values-dev.yaml – lightweight, all services in-cluster
+# Merged on top of values.yaml with: helm ... -f values-dev.yaml
+
+config:
+  django:
+    debug: "true"
+    logLevel: "DEBUG"
+    gunicornWorkers: "1"
+
+web:
+  replicaCount: 1
+  hpa:
+    enabled: false
+
+postgres:
+  enabled: true         # In-cluster Postgres for dev
+
+externalDatabase:
+  enabled: false
+
+redis:
+  enabled: true         # In-cluster Redis for dev
+
+externalRedis:
+  enabled: false
+
+seed:
+  enabled: true
+  pullOllamaModels: true
