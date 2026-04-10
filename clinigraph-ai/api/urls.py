@@ -108,3 +108,29 @@ urlpatterns += [
     path('billing/tax-info/', billing_tax_info_update, name='billing-tax-info-update'),
     path('billing/webhook/', billing_webhook, name='billing-webhook'),
 ]
+
+from .mobile_views import (
+    mobile_device_deregister,
+    mobile_device_register,
+    mobile_case_upload,
+    mobile_evidence_search,
+)
+urlpatterns += [
+    path('mobile/devices/', mobile_device_register, name='mobile-device-register'),
+    path('mobile/devices/<str:token>/', mobile_device_deregister, name='mobile-device-deregister'),
+    path('mobile/cases/upload/', mobile_case_upload, name='mobile-case-upload'),
+    path('mobile/evidence/', mobile_evidence_search, name='mobile-evidence-search'),
+]
+
+from .mobile_views import (
+    mobile_device_deregister,
+    mobile_device_register,
+    mobile_case_upload,
+    mobile_evidence_search,
+)
+urlpatterns += [
+    path('mobile/devices/', mobile_device_register, name='mobile-device-register'),
+    path('mobile/devices/<str:token>/', mobile_device_deregister, name='mobile-device-deregister'),
+    path('mobile/cases/upload/', mobile_case_upload, name='mobile-case-upload'),
+    path('mobile/evidence/', mobile_evidence_search, name='mobile-evidence-search'),
+]

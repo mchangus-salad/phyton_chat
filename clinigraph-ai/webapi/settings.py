@@ -88,6 +88,42 @@ DATABASES = {
     }
 }
 
+# ── Read replica (optional) ───────────────────────────────────────────────────
+# Set DJANGO_REPLICA_DB_HOST to activate the read-replica router.
+# When the env var is absent the router falls back to 'default' for reads.
+_replica_host = os.getenv('DJANGO_REPLICA_DB_HOST', '')
+if _replica_host:
+    DATABASES['replica'] = {
+        'ENGINE':   os.getenv('DJANGO_REPLICA_DB_ENGINE', os.getenv('DJANGO_DB_ENGINE', 'django.db.backends.postgresql')),
+        'NAME':     os.getenv('DJANGO_REPLICA_DB_NAME', os.getenv('DJANGO_DB_NAME', 'clinigraph')),
+        'USER':     os.getenv('DJANGO_REPLICA_DB_USER', os.getenv('DJANGO_DB_USER', '')),
+        'PASSWORD': os.getenv('DJANGO_REPLICA_DB_PASSWORD', os.getenv('DJANGO_DB_PASSWORD', '')),
+        'HOST':     _replica_host,
+        'PORT':     os.getenv('DJANGO_REPLICA_DB_PORT', os.getenv('DJANGO_DB_PORT', '5432')),
+        'CONN_MAX_AGE': int(os.getenv('DJANGO_REPLICA_DB_CONN_MAX_AGE', '60')),
+        'TEST': {'MIRROR': 'default'},   # replica mirrors the primary in tests
+    }
+
+DATABASE_ROUTERS = ['api.db_router.ReadReplicaRouter']
+
+# ── Read replica (optional) ───────────────────────────────────────────────────
+# Set DJANGO_REPLICA_DB_HOST to activate the read-replica router.
+# When the env var is absent the router falls back to 'default' for reads.
+_replica_host = os.getenv('DJANGO_REPLICA_DB_HOST', '')
+if _replica_host:
+    DATABASES['replica'] = {
+        'ENGINE':   os.getenv('DJANGO_REPLICA_DB_ENGINE', os.getenv('DJANGO_DB_ENGINE', 'django.db.backends.postgresql')),
+        'NAME':     os.getenv('DJANGO_REPLICA_DB_NAME', os.getenv('DJANGO_DB_NAME', 'clinigraph')),
+        'USER':     os.getenv('DJANGO_REPLICA_DB_USER', os.getenv('DJANGO_DB_USER', '')),
+        'PASSWORD': os.getenv('DJANGO_REPLICA_DB_PASSWORD', os.getenv('DJANGO_DB_PASSWORD', '')),
+        'HOST':     _replica_host,
+        'PORT':     os.getenv('DJANGO_REPLICA_DB_PORT', os.getenv('DJANGO_DB_PORT', '5432')),
+        'CONN_MAX_AGE': int(os.getenv('DJANGO_REPLICA_DB_CONN_MAX_AGE', '60')),
+        'TEST': {'MIRROR': 'default'},   # replica mirrors the primary in tests
+    }
+
+DATABASE_ROUTERS = ['api.db_router.ReadReplicaRouter']
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

@@ -48,10 +48,10 @@ Rule:
 - [x] Database connection reuse
 - [x] True tenant isolation strategy for data access
 - [x] Async task queue for heavy ingestion and case analysis
-- [ ] Read replica strategy
-- [ ] Regional deployment topology
-- [ ] CDN and API gateway design
-- [ ] Global rate-limiting design
+- [x] Read replica strategy
+- [x] Regional deployment topology
+- [x] CDN and API gateway design
+- [x] Global rate-limiting design
 
 ## 4. Billing and Payments
 
@@ -81,7 +81,7 @@ Rule:
 - [x] Ollama containerized in SaaS stack
 - [x] Auto model pull script for Ollama
 - [x] React web frontend containerized
-- [ ] Mobile backend gateway/container profile
+- [x] Mobile backend gateway/container profile
 - [x] Production container scanning pipeline
 
 ## 6. Product Surfaces
@@ -100,18 +100,18 @@ Rule:
 ### iOS App
 
 - [x] Mobile architecture decision
-- [ ] Auth/session strategy
-- [ ] Case upload workflow
-- [ ] Evidence viewer
-- [ ] Notifications strategy
+- [x] Auth/session strategy
+- [x] Case upload workflow
+- [x] Evidence viewer
+- [x] Notifications strategy
 
 ### Android App
 
 - [x] Mobile architecture decision
-- [ ] Auth/session strategy
-- [ ] Case upload workflow
-- [ ] Evidence viewer
-- [ ] Notifications strategy
+- [x] Auth/session strategy
+- [x] Case upload workflow
+- [x] Evidence viewer
+- [x] Notifications strategy
 
 ## 7. Documentation and Governance
 

@@ -4319,3 +4319,238 @@ class GeoIPReputationMiddlewareTests(TestCase):
         # Real client IP 192.0.2.99 is in the blocklist — must be 403
         self.assertEqual(response.status_code, 403)
 
+
+# ── Read-replica DB router tests ──────────────────────────────────────────────
+
+class ReadReplicaRouterTests(TestCase):
+    """Unit tests for api.db_router.ReadReplicaRouter."""
+
+    def _router(self):
+        from api.db_router import ReadReplicaRouter
+        return ReadReplicaRouter()
+
+    @override_settings(DATABASES={'default': {}, 'replica': {'HOST': 'replica.db.internal'}})
+    def test_read_goes_to_replica_when_configured(self):
+        router = self._router()
+        result = router.db_for_read(None)
+        self.assertEqual(result, 'replica')
+
+    @override_settings(DATABASES={'default': {}})
+    def test_read_falls_back_to_default_when_no_replica(self):
+        router = self._router()
+        result = router.db_for_read(None)
+        self.assertEqual(result, 'default')
+
+    @override_settings(DATABASES={'default': {}, 'replica': {'HOST': 'replica.db.internal'}})
+    def test_write_always_goes_to_default(self):
+        router = self._router()
+        self.assertEqual(router.db_for_write(None), 'default')
+
+    @override_settings(DATABASES={'default': {}, 'replica': {'HOST': 'replica.db.internal'}})
+    def test_migration_blocked_on_replica(self):
+        router = self._router()
+        self.assertFalse(router.allow_migrate('replica', 'api'))
+
+    @override_settings(DATABASES={'default': {}, 'replica': {'HOST': 'replica.db.internal'}})
+    def test_migration_allowed_on_default(self):
+        router = self._router()
+        self.assertIsNone(router.allow_migrate('default', 'api'))
+
+
+# ── Mobile device token tests ─────────────────────────────────────────────────
+
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tests-mobile-cache',
+        }
+    }
+)
+class MobileDeviceTokenTests(APITestCase):
+    """Tests for POST /api/v1/mobile/devices/ (register) and DELETE (deregister)."""
+
+    def setUp(self):
+        from api.models import Tenant, TenantMembership
+        User = get_user_model()
+        self.user = User.objects.create_user(username='mobileuser', password='testpass123')
+        self.tenant = Tenant.objects.create(name='MobileTenant', is_active=True)
+        TenantMembership.objects.create(
+            tenant=self.tenant, user=self.user,
+            role=TenantMembership.Role.CLINICIAN, is_active=True,
+        )
+        self.client.force_authenticate(user=self.user)
+        self.tenant_header = {'HTTP_X_TENANT_ID': str(self.tenant.tenant_id)}
+
+    def test_register_device_token_success(self):
+        payload = {
+            'token': 'fcm-token-abc123',
+            'platform': 'fcm',
+            'device_label': 'Pixel 8',
+            'app_version': '1.2.0',
+        }
+        response = self.client.post(
+            '/api/v1/mobile/devices/', payload, format='json', **self.tenant_header
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('device_id', response.data)
+        self.assertEqual(response.data['platform'], 'fcm')
+
+    def test_register_device_token_upsert_idempotent(self):
+        """Registering the same token twice returns 201 and updates the record."""
+        payload = {'token': 'apns-token-xyz', 'platform': 'apns'}
+        self.client.post('/api/v1/mobile/devices/', payload, format='json', **self.tenant_header)
+        response = self.client.post(
+            '/api/v1/mobile/devices/', {**payload, 'app_version': '2.0.0'},
+            format='json', **self.tenant_header
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        from api.models import DeviceToken
+        count = DeviceToken.objects.filter(user=self.user, token='apns-token-xyz').count()
+        self.assertEqual(count, 1)
+
+    def test_deregister_device_token_marks_inactive(self):
+        from api.models import DeviceToken
+        import uuid
+        DeviceToken.objects.create(
+            device_id=uuid.uuid4(),
+            user=self.user,
+            tenant=self.tenant,
+            platform='fcm',
+            token='token-to-remove',
+            is_active=True,
+        )
+        response = self.client.delete(
+            '/api/v1/mobile/devices/token-to-remove/', **self.tenant_header
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        device = DeviceToken.objects.get(token='token-to-remove')
+        self.assertFalse(device.is_active)
+
+
+# ── Mobile case upload tests ──────────────────────────────────────────────────
+
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tests-mobile-upload-cache',
+        }
+    }
+)
+class MobileCaseUploadTests(APITestCase):
+    """Tests for POST /api/v1/mobile/cases/upload/."""
+
+    def setUp(self):
+        from api.models import Tenant, TenantMembership, SubscriptionPlan, Subscription
+        User = get_user_model()
+        self.user = User.objects.create_user(username='uploaduser', password='testpass123')
+        self.tenant = Tenant.objects.create(name='UploadTenant', is_active=True)
+        TenantMembership.objects.create(
+            tenant=self.tenant, user=self.user,
+            role=TenantMembership.Role.CLINICIAN, is_active=True,
+        )
+        plan = SubscriptionPlan.objects.create(
+            code='mobile-upload-plan', name='Mobile Upload Plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=5000, billing_model='hybrid', currency='USD',
+            max_monthly_requests=500, max_users=5,
+            seat_price_cents=500, api_overage_per_1000_cents=50,
+        )
+        Subscription.objects.create(
+            tenant=self.tenant, plan=plan,
+            status=Subscription.Status.ACTIVE, provider='internal',
+        )
+        self.client.force_authenticate(user=self.user)
+        self.tenant_header = {'HTTP_X_TENANT_ID': str(self.tenant.tenant_id)}
+
+    @patch('api.mobile_views.extract_text', return_value='Patient text sample.')
+    @patch('api.mobile_views.deidentify', return_value=('Redacted text.', type('RS', (), {'total_redactions': 1, 'categories': {'NAME': 1}})()))
+    def test_upload_creates_session(self, mock_deidentify, mock_extract):
+        upload = SimpleUploadedFile('case.txt', b'Patient text sample.', content_type='text/plain')
+        response = self.client.post(
+            '/api/v1/mobile/cases/upload/',
+            {'file': upload, 'domain': 'medical'},
+            format='multipart',
+            **self.tenant_header,
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('session_id', response.data)
+        self.assertEqual(response.data['redaction_count'], 1)
+
+    @patch('api.mobile_views.extract_text', side_effect=ValueError('bad file'))
+    def test_upload_bad_file_returns_400(self, mock_extract):
+        upload = SimpleUploadedFile('bad.bin', b'\x00\x01', content_type='application/octet-stream')
+        response = self.client.post(
+            '/api/v1/mobile/cases/upload/',
+            {'file': upload, 'domain': 'medical'},
+            format='multipart',
+            **self.tenant_header,
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+# ── Mobile evidence search tests ──────────────────────────────────────────────
+
+@override_settings(
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tests-mobile-evidence-cache',
+        }
+    }
+)
+class MobileEvidenceSearchTests(APITestCase):
+    """Tests for POST /api/v1/mobile/evidence/."""
+
+    def setUp(self):
+        from api.models import Tenant, TenantMembership, SubscriptionPlan, Subscription
+        User = get_user_model()
+        self.user = User.objects.create_user(username='evidenceuser', password='testpass123')
+        self.tenant = Tenant.objects.create(name='EvidenceTenant', is_active=True)
+        TenantMembership.objects.create(
+            tenant=self.tenant, user=self.user,
+            role=TenantMembership.Role.CLINICIAN, is_active=True,
+        )
+        plan = SubscriptionPlan.objects.create(
+            code='mobile-evidence-plan', name='Mobile Evidence Plan',
+            billing_cycle=SubscriptionPlan.BillingCycle.MONTHLY,
+            price_cents=5000, billing_model='hybrid', currency='USD',
+            max_monthly_requests=500, max_users=5,
+            seat_price_cents=500, api_overage_per_1000_cents=50,
+        )
+        Subscription.objects.create(
+            tenant=self.tenant, plan=plan,
+            status=Subscription.Status.ACTIVE, provider='internal',
+        )
+        self.client.force_authenticate(user=self.user)
+        self.tenant_header = {'HTTP_X_TENANT_ID': str(self.tenant.tenant_id)}
+
+    @patch('api.mobile_views._get_service')
+    def test_evidence_search_returns_results(self, mock_get_service):
+        mock_result = type('EvidenceSearchResult', (), {
+            'evidence': [
+                {'title': 'Study A', 'text': 'excerpt A', 'source': 'NEJM 2023', 'score': 0.95},
+            ]
+        })()
+        mock_get_service.return_value.search_evidence.return_value = mock_result
+
+        response = self.client.post(
+            '/api/v1/mobile/evidence/',
+            {'query': 'EGFR mutation', 'domain': 'oncology', 'top_k': 1},
+            format='json',
+            **self.tenant_header,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['total'], 1)
+        self.assertEqual(response.data['results'][0]['title'], 'Study A')
+
+    def test_evidence_search_missing_query_returns_400(self):
+        response = self.client.post(
+            '/api/v1/mobile/evidence/',
+            {'domain': 'oncology'},
+            format='json',
+            **self.tenant_header,
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+

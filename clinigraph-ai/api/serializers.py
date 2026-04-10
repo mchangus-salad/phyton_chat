@@ -652,3 +652,91 @@ class IngestionJobSerializer(serializers.Serializer):
     submitted_by = serializers.CharField(required=False)
     created_at = serializers.DateTimeField()
     updated_at = serializers.DateTimeField()
+
+
+# ── Mobile API serializers ────────────────────────────────────────────────────
+
+class DeviceTokenRegisterSerializer(serializers.Serializer):
+    """Register or refresh a push notification device token."""
+
+    token = serializers.CharField(
+        max_length=512,
+        help_text="FCM registration token or APNs device token.",
+    )
+    platform = serializers.ChoiceField(choices=['fcm', 'apns'])
+    device_label = serializers.CharField(max_length=128, required=False, allow_blank=True, default='')
+    app_version = serializers.CharField(max_length=32, required=False, allow_blank=True, default='')
+
+
+class DeviceTokenResponseSerializer(serializers.Serializer):
+    """Response payload after registering a device token."""
+
+    device_id = serializers.UUIDField()
+    platform = serializers.CharField()
+    device_label = serializers.CharField()
+    is_active = serializers.BooleanField()
+    registered_at = serializers.DateTimeField()
+
+
+class MobileCaseUploadSerializer(serializers.Serializer):
+    """Mobile patient-case upload: file + optional metadata."""
+
+    file = serializers.FileField(
+        help_text="Patient case document (PDF, TXT, or plain text).",
+    )
+    domain = serializers.CharField(
+        max_length=64,
+        required=False,
+        default='medical',
+        help_text="Clinical domain (e.g. 'oncology', 'cardiology').",
+    )
+    subdomain = serializers.CharField(max_length=128, required=False, allow_blank=True, default='')
+    note = serializers.CharField(
+        max_length=500,
+        required=False,
+        allow_blank=True,
+        default='',
+        help_text="Optional clinician note attached to this upload.",
+    )
+
+
+class MobileCaseUploadResponseSerializer(serializers.Serializer):
+    """Response after a successful mobile case upload."""
+
+    session_id = serializers.UUIDField()
+    domain = serializers.CharField()
+    redaction_count = serializers.IntegerField(
+        help_text="Number of PHI entities redacted from the uploaded document.",
+    )
+    redaction_categories = serializers.JSONField(
+        help_text='e.g. {"DATE": 2, "PHONE_FAX": 1}',
+    )
+    source_filename = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+
+class MobileEvidenceQuerySerializer(serializers.Serializer):
+    """Mobile evidence search request."""
+
+    query = serializers.CharField(max_length=1000, allow_blank=False, trim_whitespace=True)
+    domain = serializers.CharField(max_length=64, required=False, default='medical')
+    top_k = serializers.IntegerField(min_value=1, max_value=20, required=False, default=5)
+
+
+class MobileEvidenceResultSerializer(serializers.Serializer):
+    """Single evidence item returned for the mobile evidence viewer."""
+
+    rank = serializers.IntegerField()
+    title = serializers.CharField(allow_blank=True)
+    excerpt = serializers.CharField()
+    source = serializers.CharField(allow_blank=True)
+    score = serializers.FloatField(required=False, allow_null=True)
+
+
+class MobileEvidenceResponseSerializer(serializers.Serializer):
+    """Response for the mobile evidence viewer endpoint."""
+
+    results = MobileEvidenceResultSerializer(many=True)
+    query = serializers.CharField()
+    domain = serializers.CharField()
+    total = serializers.IntegerField()

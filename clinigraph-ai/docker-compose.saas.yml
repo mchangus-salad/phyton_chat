@@ -186,6 +186,21 @@ services:
     volumes:
       - corpus_state:/app/data/corpus_state
 
+  # ── Mobile API gateway (nginx) ─────────────────────────────────────────────────
+  # Activate with: docker compose --profile mobile up
+  mobile-gateway:
+    image: nginx:1.26-alpine
+    container_name: clinigraph-mobile-gateway
+    restart: unless-stopped
+    profiles: ["mobile"]
+    ports:
+      - "${MOBILE_GATEWAY_PORT:-8443}:8080"
+    volumes:
+      - ./infra/nginx/mobile-gateway.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      web:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   redis_data:

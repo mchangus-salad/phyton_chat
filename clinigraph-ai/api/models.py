@@ -515,3 +515,45 @@ class BillingInvoiceLineItem(models.Model):
 
 	def __str__(self) -> str:
 		return f"BillingInvoiceLineItem({self.invoice_id}, {self.code}, {self.total_price_cents})"
+
+
+class DeviceToken(models.Model):
+	"""
+	Stores a mobile device push notification token (FCM or APNs).
+
+	One user may register multiple devices (phone + tablet).
+	Tokens are tenant-scoped so multi-tenant users can use multiple push
+	endpoints per tenant context.
+	"""
+
+	class Platform(models.TextChoices):
+		FCM = 'fcm', 'Firebase (Android / Web)'
+		APNS = 'apns', 'Apple Push Notification service (iOS)'
+
+	device_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='device_tokens')
+	tenant = models.ForeignKey('Tenant', on_delete=models.CASCADE, related_name='device_tokens')
+	platform = models.CharField(max_length=8, choices=Platform.choices)
+	token = models.CharField(
+		max_length=512,
+		help_text="FCM registration token or APNs device token. Never log or expose outside push dispatch.",
+	)
+	device_label = models.CharField(max_length=128, blank=True, default='')
+	app_version = models.CharField(max_length=32, blank=True, default='')
+	is_active = models.BooleanField(default=True)
+	registered_at = models.DateTimeField(auto_now_add=True)
+	last_seen_at = models.DateTimeField(auto_now=True)
+
+	class Meta:
+		ordering = ['-registered_at']
+		# Enforce token uniqueness per (user, tenant, platform) combination.
+		unique_together = [('user', 'tenant', 'token')]
+		indexes = [
+			models.Index(fields=['tenant', 'user', 'is_active']),
+			models.Index(fields=['platform', 'is_active']),
+		]
+		verbose_name = 'Device Token'
+		verbose_name_plural = 'Device Tokens'
+
+	def __str__(self) -> str:
+		return f"DeviceToken({self.platform}, {self.user_id}, {self.device_label or self.device_id})"
