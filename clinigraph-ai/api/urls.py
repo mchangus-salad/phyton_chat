@@ -122,15 +122,22 @@ urlpatterns += [
     path('mobile/evidence/', mobile_evidence_search, name='mobile-evidence-search'),
 ]
 
-from .mobile_views import (
-    mobile_device_deregister,
-    mobile_device_register,
-    mobile_case_upload,
-    mobile_evidence_search,
+from .sharing_views import (
+    case_snapshot_create,
+    image_ocr_upload,
+    share_create,
+    share_revoke,
+    share_send_email,
+    share_view,
 )
 urlpatterns += [
-    path('mobile/devices/', mobile_device_register, name='mobile-device-register'),
-    path('mobile/devices/<str:token>/', mobile_device_deregister, name='mobile-device-deregister'),
-    path('mobile/cases/upload/', mobile_case_upload, name='mobile-case-upload'),
-    path('mobile/evidence/', mobile_evidence_search, name='mobile-evidence-search'),
+    # Case analysis snapshots (save AI output for sharing)
+    path('sharing/snapshots/', case_snapshot_create, name='case-snapshot-create'),
+    # Share token lifecycle
+    path('sharing/', share_create, name='share-create'),
+    path('sharing/<uuid:token>/', share_view, name='share-view'),
+    path('sharing/<uuid:token>/email/', share_send_email, name='share-send-email'),
+    path('sharing/<uuid:token>/revoke/', share_revoke, name='share-revoke'),
+    # Image OCR / Vision AI endpoint
+    path('cases/image-ocr/', image_ocr_upload, name='image-ocr-upload'),
 ]

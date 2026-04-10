@@ -740,3 +740,153 @@ class MobileEvidenceResponseSerializer(serializers.Serializer):
     query = serializers.CharField()
     domain = serializers.CharField()
     total = serializers.IntegerField()
+
+
+# ── Sharing serializers ───────────────────────────────────────────────────────
+
+class CaseSnapshotCreateSerializer(serializers.Serializer):
+    """Request body to save an AI analysis snapshot for later sharing."""
+
+    session_id = serializers.UUIDField(
+        help_text="session_id returned by the patient-case upload endpoint.",
+    )
+    analysis_text = serializers.CharField(
+        max_length=50_000,
+        help_text="De-identified AI analysis text (no PHI).",
+    )
+    citations = serializers.ListField(
+        child=serializers.CharField(max_length=512),
+        required=False,
+        default=list,
+    )
+    safety_notice = serializers.CharField(max_length=1000, required=False, allow_blank=True, default='')
+    domain = serializers.CharField(max_length=64, required=False, default='medical')
+
+
+class CaseSnapshotResponseSerializer(serializers.Serializer):
+    """Response after saving a case snapshot."""
+
+    snapshot_id = serializers.UUIDField()
+    session_id = serializers.UUIDField()
+    domain = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+
+class ShareCreateSerializer(serializers.Serializer):
+    """Request body to generate a share token."""
+
+    target_type = serializers.ChoiceField(choices=['highlight', 'case_snapshot'])
+    target_id = serializers.UUIDField(
+        help_text="highlight_id (integer cast) or snapshot_id (UUID) of the content to share.",
+    )
+    expires_hours = serializers.IntegerField(
+        min_value=1, max_value=720, default=168,
+        help_text="Hours until the token expires (default 168 = 7 days).",
+    )
+    max_views = serializers.IntegerField(
+        min_value=1, required=False, allow_null=True, default=None,
+        help_text="Optional cap on how many times the link can be viewed.",
+    )
+    recipient_emails = serializers.ListField(
+        child=serializers.EmailField(),
+        required=False,
+        default=list,
+        max_length=20,
+        help_text="Optional list of emails to notify. Kept for audit only; use /email/ to send.",
+    )
+
+
+class ShareTokenResponseSerializer(serializers.Serializer):
+    """Response after creating a share token."""
+
+    token = serializers.UUIDField()
+    target_type = serializers.CharField()
+    share_url = serializers.CharField()
+    expires_at = serializers.DateTimeField()
+    max_views = serializers.IntegerField(required=False, allow_null=True)
+
+
+class SharedHighlightPayloadSerializer(serializers.Serializer):
+    """Content returned when viewing a shared highlight."""
+
+    highlight_id = serializers.IntegerField()
+    selected_text = serializers.CharField()
+    context_snippet = serializers.CharField(allow_blank=True)
+    session_id = serializers.UUIDField()
+    created_at = serializers.DateTimeField()
+
+
+class SharedCaseSnapshotPayloadSerializer(serializers.Serializer):
+    """Content returned when viewing a shared case snapshot."""
+
+    snapshot_id = serializers.UUIDField()
+    domain = serializers.CharField()
+    analysis_text = serializers.CharField()
+    citations = serializers.ListField(child=serializers.CharField())
+    safety_notice = serializers.CharField(allow_blank=True)
+    created_at = serializers.DateTimeField()
+
+
+class ShareViewResponseSerializer(serializers.Serializer):
+    """Response when fetching content via a share token."""
+
+    token = serializers.UUIDField()
+    target_type = serializers.CharField()
+    view_count = serializers.IntegerField()
+    expires_at = serializers.DateTimeField()
+    highlight = SharedHighlightPayloadSerializer(required=False, allow_null=True)
+    case_snapshot = SharedCaseSnapshotPayloadSerializer(required=False, allow_null=True)
+
+
+class ShareEmailSerializer(serializers.Serializer):
+    """Request body to (re-)send a share link by email."""
+
+    emails = serializers.ListField(
+        child=serializers.EmailField(),
+        min_length=1,
+        max_length=20,
+    )
+    message = serializers.CharField(
+        max_length=500,
+        required=False,
+        allow_blank=True,
+        default='',
+        help_text="Optional personalised message appended to the email body.",
+    )
+
+
+# ── Image analysis serializers ────────────────────────────────────────────────
+
+class ImageOCRUploadSerializer(serializers.Serializer):
+    """Request to extract text from a clinical image (JPEG, PNG, TIFF, WEBP)."""
+
+    file = serializers.FileField(
+        help_text="Image file to analyse (JPEG, PNG, TIFF, WEBP, BMP, max 20 MB).",
+    )
+    domain = serializers.CharField(max_length=64, required=False, default='medical')
+    subdomain = serializers.CharField(max_length=128, required=False, allow_blank=True, default='')
+    strategy = serializers.ChoiceField(
+        choices=['auto', 'ocr', 'vision'],
+        required=False,
+        default='auto',
+        help_text=(
+            "auto: try Vision API first, fall back to local OCR; "
+            "ocr: local Tesseract only (no data leaves the server); "
+            "vision: OpenAI GPT-4o Vision (richer clinical interpretation)."
+        ),
+    )
+
+
+class ImageOCRResponseSerializer(serializers.Serializer):
+    """Response after image text extraction and PHI de-identification."""
+
+    session_id = serializers.UUIDField()
+    domain = serializers.CharField()
+    strategy_used = serializers.CharField()
+    extracted_text_length = serializers.IntegerField(
+        help_text="Number of characters in the de-identified extracted text.",
+    )
+    redaction_count = serializers.IntegerField()
+    redaction_categories = serializers.JSONField()
+    source_filename = serializers.CharField()
+    created_at = serializers.DateTimeField()

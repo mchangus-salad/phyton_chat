@@ -180,6 +180,22 @@ BILLING_WEBHOOK_SECRET = os.getenv('BILLING_WEBHOOK_SECRET', '')
 BILLING_GRACE_PERIOD_DAYS = int(os.getenv('BILLING_GRACE_PERIOD_DAYS', '7'))
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@clinigraph.ai')
 
+# ── Email (share notifications) ────────────────────────────────────────────────
+# Default: console backend for development. Set EMAIL_BACKEND env var to use SMTP.
+EMAIL_BACKEND = os.getenv(
+    'DJANGO_EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend',
+)
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'true').lower() == 'true'
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
+
+# ── Frontend URL (used in share links sent by email) ──────────────────────────
+CLINIGRAPH_FRONTEND_URL = os.getenv('CLINIGRAPH_FRONTEND_URL', 'http://localhost:5173')
+
 REDIS_URL = os.getenv('REDIS_URL', '').strip()
 CACHES = {
     'default': {

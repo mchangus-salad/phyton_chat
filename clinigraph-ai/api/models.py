@@ -557,3 +557,108 @@ class DeviceToken(models.Model):
 
 	def __str__(self) -> str:
 		return f"DeviceToken({self.platform}, {self.user_id}, {self.device_label or self.device_id})"
+
+
+# ── Sharing ───────────────────────────────────────────────────────────────────
+
+class CaseAnalysisSnapshot(models.Model):
+	"""
+	Stores the AI-generated analysis result for a patient case session.
+
+	HIPAA note: This model stores ONLY the de-identified AI output (the LLM's
+	response to de-identified input). The original patient text and any PHI are
+	NEVER stored here. The intent is to allow authorised users to share or
+	review the AI findings after the session ends.
+	"""
+
+	snapshot_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	session = models.ForeignKey(
+		PatientCaseSession, on_delete=models.CASCADE, related_name='snapshots',
+		help_text="The originating patient case session (audit record only, no PHI).",
+	)
+	tenant = models.ForeignKey('Tenant', on_delete=models.CASCADE, related_name='case_snapshots')
+	created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='case_snapshots')
+	domain = models.CharField(max_length=64, blank=True, default='medical')
+	# De-identified AI analysis output — safe to share within the same tenant.
+	analysis_text = models.TextField(help_text="AI-generated analysis of de-identified case (no PHI).")
+	citations = models.JSONField(default=list)
+	safety_notice = models.TextField(blank=True, default='')
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ['-created_at']
+		indexes = [
+			models.Index(fields=['tenant', '-created_at']),
+			models.Index(fields=['session']),
+		]
+		verbose_name = 'Case Analysis Snapshot'
+		verbose_name_plural = 'Case Analysis Snapshots'
+
+	def __str__(self) -> str:
+		return f"CaseAnalysisSnapshot({self.snapshot_id}, domain={self.domain})"
+
+
+class SharedContentToken(models.Model):
+	"""
+	Token-based share link for AI content (chat highlights or case snapshots).
+
+	Design rules:
+	- Tokens are scoped to a single tenant — no cross-tenant sharing of clinical content.
+	- Tokens expire (default 7 days, configurable per-token).
+	- Optional max_views cap prevents abuse of open links.
+	- The email list records intended recipients; actual delivery is handled by the
+	  sending view and is not stored as PII beyond the email address.
+	- No PHI travels through this model; only de-identified AI output is shared.
+	"""
+
+	class TargetType(models.TextChoices):
+		HIGHLIGHT = 'highlight', 'Chat Highlight'
+		CASE_SNAPSHOT = 'case_snapshot', 'Patient Case Snapshot'
+
+	token = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True, editable=False)
+	created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='shared_tokens')
+	tenant = models.ForeignKey(
+		'Tenant', on_delete=models.CASCADE, related_name='shared_tokens', null=True, blank=True,
+	)
+	target_type = models.CharField(max_length=32, choices=TargetType.choices)
+	highlight = models.ForeignKey(
+		AgentChatHighlight, on_delete=models.CASCADE, null=True, blank=True, related_name='share_tokens',
+	)
+	case_snapshot = models.ForeignKey(
+		CaseAnalysisSnapshot, on_delete=models.CASCADE, null=True, blank=True, related_name='share_tokens',
+	)
+	recipient_emails = models.JSONField(
+		default=list,
+		help_text='List of email addresses this token was sent to (audit trail only).',
+	)
+	expires_at = models.DateTimeField(help_text='UTC timestamp after which the token is invalid.')
+	view_count = models.PositiveIntegerField(default=0)
+	max_views = models.PositiveIntegerField(
+		null=True, blank=True,
+		help_text='Maximum number of views allowed. Null = unlimited.',
+	)
+	is_active = models.BooleanField(default=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ['-created_at']
+		indexes = [
+			models.Index(fields=['token']),
+			models.Index(fields=['tenant', '-created_at']),
+		]
+		verbose_name = 'Shared Content Token'
+		verbose_name_plural = 'Shared Content Tokens'
+
+	def is_valid(self) -> bool:
+		"""Return True when the token may still be consumed."""
+		from django.utils import timezone
+		if not self.is_active:
+			return False
+		if self.expires_at < timezone.now():
+			return False
+		if self.max_views is not None and self.view_count >= self.max_views:
+			return False
+		return True
+
+	def __str__(self) -> str:
+		return f"SharedContentToken({self.token}, type={self.target_type}, active={self.is_active})"

@@ -135,3 +135,29 @@ Rule:
 - [ ] Validate Stripe webhook end-to-end
 - [x] Start React SaaS workspace scaffold
 - [x] Add Prometheus / Grafana stack
+
+## 9. UX Improvements & Collaboration (v1.9)
+
+### §9.1 — Content Sharing (token-based)
+
+- [x] `CaseAnalysisSnapshot` model — stores de-identified AI output only (HIPAA-safe)
+- [x] `SharedContentToken` model — UUID token with expiry, max_views, recipient audit trail
+- [x] POST `/api/v1/sharing/snapshots/` — save AI case analysis result for sharing
+- [x] POST `/api/v1/sharing/` — create a share token (highlight or case snapshot)
+- [x] GET `/api/v1/sharing/<token>/` — view shared content (public, no auth required)
+- [x] POST `/api/v1/sharing/<token>/email/` — send share URL by email (Django send_mail)
+- [x] DELETE `/api/v1/sharing/<token>/revoke/` — deactivate token
+- [x] Email settings configurable via env vars (`DJANGO_EMAIL_BACKEND`, `EMAIL_HOST`, etc.)
+- [x] Frontend share URL via `CLINIGRAPH_FRONTEND_URL` env var
+
+### §9.2 — Image Recognition for Clinical Documents
+
+- [x] `file_extractor.py` extended with `IMAGE_EXTENSIONS` (jpg, jpeg, png, webp, tiff, bmp)
+- [x] Strategy `auto`: tries GPT-4o Vision first, falls back to Tesseract OCR
+- [x] Strategy `vision`: OpenAI GPT-4o Vision only (model via `OPENAI_VISION_MODEL` env var)
+- [x] Strategy `ocr`: local pytesseract + Pillow (no API key required)
+- [x] 20 MB size guard for uploaded images
+- [x] POST `/api/v1/cases/image-ocr/` — upload clinical image → extract text → de-identify PHI → create `PatientCaseSession`
+- [x] Returns session metadata only — never extracted raw text or PHI
+- [x] 18 new tests covering sharing lifecycle + image OCR paths (184 total, all passing)
+

@@ -4554,3 +4554,353 @@ class MobileEvidenceSearchTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+
+# ── Sharing: CaseAnalysisSnapshot ─────────────────────────────────────────────
+
+class CaseSnapshotTests(APITestCase):
+    """Tests for saving AI case analysis snapshots for sharing."""
+
+    def setUp(self):
+        from api.models import Tenant, TenantMembership, SubscriptionPlan, Subscription
+        User = get_user_model()
+        self.user = User.objects.create_user(username='snapuser', password='pass')
+        self.tenant = Tenant.objects.create(name='SnapTenant', is_active=True)
+        TenantMembership.objects.create(
+            tenant=self.tenant, user=self.user,
+            role=TenantMembership.Role.CLINICIAN, is_active=True,
+        )
+        plan = SubscriptionPlan.objects.create(
+            code='snap-basic', name='Snap Basic', billing_cycle='monthly',
+            price_cents=0, currency='USD', max_monthly_requests=1000, max_users=10,
+        )
+        Subscription.objects.create(
+            tenant=self.tenant, plan=plan,
+            status=Subscription.Status.ACTIVE, provider='internal',
+        )
+        self.client.force_authenticate(user=self.user)
+        self.tenant_header = {'HTTP_X_TENANT_ID': str(self.tenant.tenant_id)}
+
+    def _make_session(self):
+        from api.models import PatientCaseSession
+        return PatientCaseSession.objects.create(
+            domain='oncology', redaction_count=2,
+            redaction_categories={'DATE': 2}, source_filename='test.pdf',
+            user_id=str(self.user.pk),
+        )
+
+    def test_create_snapshot_success(self):
+        session = self._make_session()
+        resp = self.client.post(
+            '/api/v1/sharing/snapshots/',
+            {
+                'session_id': str(session.session_id),
+                'analysis_text': 'AI generated analysis of de-identified case.',
+                'citations': ['[1] Source A'],
+                'domain': 'oncology',
+            },
+            format='json',
+            **self.tenant_header,
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertIn('snapshot_id', resp.data)
+        self.assertEqual(resp.data['domain'], 'oncology')
+
+    def test_create_snapshot_unknown_session_returns_400(self):
+        import uuid
+        resp = self.client.post(
+            '/api/v1/sharing/snapshots/',
+            {
+                'session_id': str(uuid.uuid4()),
+                'analysis_text': 'Some text',
+            },
+            format='json',
+            **self.tenant_header,
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+# ── Sharing: SharedContentToken ───────────────────────────────────────────────
+
+class SharedContentTokenTests(APITestCase):
+    """Tests for the share-token create / view / revoke lifecycle."""
+
+    def setUp(self):
+        from api.models import Tenant, TenantMembership, SubscriptionPlan, Subscription
+        User = get_user_model()
+        self.user = User.objects.create_user(username='shareuser', password='pass')
+        self.tenant = Tenant.objects.create(name='ShareTenant', is_active=True)
+        TenantMembership.objects.create(
+            tenant=self.tenant, user=self.user,
+            role=TenantMembership.Role.CLINICIAN, is_active=True,
+        )
+        plan = SubscriptionPlan.objects.create(
+            code='share-plan', name='Share Plan', billing_cycle='monthly',
+            price_cents=0, currency='USD', max_monthly_requests=1000, max_users=10,
+        )
+        Subscription.objects.create(
+            tenant=self.tenant, plan=plan,
+            status=Subscription.Status.ACTIVE, provider='internal',
+        )
+        self.client.force_authenticate(user=self.user)
+        self.tenant_header = {'HTTP_X_TENANT_ID': str(self.tenant.tenant_id)}
+
+    def _make_snapshot(self):
+        from api.models import PatientCaseSession, CaseAnalysisSnapshot
+        session = PatientCaseSession.objects.create(
+            domain='cardiology', redaction_count=1,
+            redaction_categories={'DATE': 1}, source_filename='echo.pdf',
+            user_id=str(self.user.pk),
+        )
+        return CaseAnalysisSnapshot.objects.create(
+            session=session,
+            tenant=self.tenant,
+            created_by=self.user,
+            domain='cardiology',
+            analysis_text='ECG findings: normal sinus rhythm.',
+            citations=['[1] NEJM 2024'],
+            safety_notice='For clinical support only.',
+        )
+
+    def test_create_share_token_for_case_snapshot(self):
+        snapshot = self._make_snapshot()
+        resp = self.client.post(
+            '/api/v1/sharing/',
+            {
+                'target_type': 'case_snapshot',
+                'target_id': str(snapshot.snapshot_id),
+                'expires_hours': 48,
+            },
+            format='json',
+            **self.tenant_header,
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertIn('token', resp.data)
+        self.assertIn('share_url', resp.data)
+        self.assertEqual(resp.data['target_type'], 'case_snapshot')
+
+    def test_view_shared_case_snapshot(self):
+        from api.models import SharedContentToken, CaseAnalysisSnapshot
+        from django.utils import timezone
+
+        snapshot = self._make_snapshot()
+        token_obj = SharedContentToken.objects.create(
+            created_by=self.user,
+            tenant=self.tenant,
+            target_type=SharedContentToken.TargetType.CASE_SNAPSHOT,
+            case_snapshot=snapshot,
+            expires_at=timezone.now() + timezone.timedelta(hours=24),
+        )
+
+        resp = self.client.get(f'/api/v1/sharing/{token_obj.token}/')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['target_type'], 'case_snapshot')
+        self.assertIsNotNone(resp.data['case_snapshot'])
+        self.assertEqual(resp.data['case_snapshot']['domain'], 'cardiology')
+        self.assertIn('analysis_text', resp.data['case_snapshot'])
+
+    def test_view_increments_view_count(self):
+        from api.models import SharedContentToken
+        from django.utils import timezone
+
+        snapshot = self._make_snapshot()
+        token_obj = SharedContentToken.objects.create(
+            created_by=self.user,
+            tenant=self.tenant,
+            target_type=SharedContentToken.TargetType.CASE_SNAPSHOT,
+            case_snapshot=snapshot,
+            expires_at=timezone.now() + timezone.timedelta(hours=24),
+        )
+        self.client.get(f'/api/v1/sharing/{token_obj.token}/')
+        self.client.get(f'/api/v1/sharing/{token_obj.token}/')
+        token_obj.refresh_from_db()
+        self.assertEqual(token_obj.view_count, 2)
+
+    def test_expired_token_returns_410(self):
+        from api.models import SharedContentToken
+        from django.utils import timezone
+
+        snapshot = self._make_snapshot()
+        token_obj = SharedContentToken.objects.create(
+            created_by=self.user,
+            tenant=self.tenant,
+            target_type=SharedContentToken.TargetType.CASE_SNAPSHOT,
+            case_snapshot=snapshot,
+            expires_at=timezone.now() - timezone.timedelta(hours=1),  # already expired
+        )
+        resp = self.client.get(f'/api/v1/sharing/{token_obj.token}/')
+        self.assertEqual(resp.status_code, status.HTTP_410_GONE)
+
+    def test_max_views_cap_returns_410(self):
+        from api.models import SharedContentToken
+        from django.utils import timezone
+
+        snapshot = self._make_snapshot()
+        token_obj = SharedContentToken.objects.create(
+            created_by=self.user,
+            tenant=self.tenant,
+            target_type=SharedContentToken.TargetType.CASE_SNAPSHOT,
+            case_snapshot=snapshot,
+            expires_at=timezone.now() + timezone.timedelta(hours=24),
+            max_views=1,
+            view_count=1,  # already at cap
+        )
+        resp = self.client.get(f'/api/v1/sharing/{token_obj.token}/')
+        self.assertEqual(resp.status_code, status.HTTP_410_GONE)
+
+    def test_revoke_token(self):
+        from api.models import SharedContentToken
+        from django.utils import timezone
+
+        snapshot = self._make_snapshot()
+        token_obj = SharedContentToken.objects.create(
+            created_by=self.user,
+            tenant=self.tenant,
+            target_type=SharedContentToken.TargetType.CASE_SNAPSHOT,
+            case_snapshot=snapshot,
+            expires_at=timezone.now() + timezone.timedelta(hours=24),
+        )
+        resp = self.client.delete(
+            f'/api/v1/sharing/{token_obj.token}/revoke/',
+            **self.tenant_header,
+        )
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        token_obj.refresh_from_db()
+        self.assertFalse(token_obj.is_active)
+
+    def test_nonexistent_token_returns_404(self):
+        import uuid
+        resp = self.client.get(f'/api/v1/sharing/{uuid.uuid4()}/')
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+
+# ── Image OCR / Vision AI ─────────────────────────────────────────────────────
+
+class ImageOCRUploadTests(APITestCase):
+    """Tests for the image OCR endpoint."""
+
+    def setUp(self):
+        from api.models import Tenant, TenantMembership, SubscriptionPlan, Subscription
+        User = get_user_model()
+        self.user = User.objects.create_user(username='ocruser', password='pass')
+        self.tenant = Tenant.objects.create(name='OCRTenant', is_active=True)
+        TenantMembership.objects.create(
+            tenant=self.tenant, user=self.user,
+            role=TenantMembership.Role.CLINICIAN, is_active=True,
+        )
+        plan = SubscriptionPlan.objects.create(
+            code='ocr-plan', name='OCR Plan', billing_cycle='monthly',
+            price_cents=0, currency='USD', max_monthly_requests=1000, max_users=10,
+        )
+        Subscription.objects.create(
+            tenant=self.tenant, plan=plan,
+            status=Subscription.Status.ACTIVE, provider='internal',
+        )
+        self.client.force_authenticate(user=self.user)
+        self.tenant_header = {'HTTP_X_TENANT_ID': str(self.tenant.tenant_id)}
+
+    @patch('api.agent_ai.file_extractor.extract_text')
+    @patch('api.agent_ai.phi_deidentifier.deidentify')
+    def test_image_ocr_success(self, mock_deidentify, mock_extract):
+        from api.agent_ai.phi_deidentifier import RedactionSummary
+        mock_extract.return_value = 'Patient report: Labs within normal limits.'
+        mock_deidentify.return_value = (
+            'Patient report: Labs within normal limits.',
+            RedactionSummary(total_redactions=0, categories={}),
+        )
+
+        import io
+        fake_image = io.BytesIO(b'\xff\xd8\xff\xe0' + b'\x00' * 100)  # minimal JPEG header
+        fake_image.name = 'lab_report.jpg'
+
+        resp = self.client.post(
+            '/api/v1/cases/image-ocr/',
+            {'file': fake_image, 'domain': 'medical', 'strategy': 'ocr'},
+            format='multipart',
+            **self.tenant_header,
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertIn('session_id', resp.data)
+        self.assertEqual(resp.data['strategy_used'], 'ocr')
+        self.assertEqual(resp.data['domain'], 'medical')
+
+    @patch('api.agent_ai.file_extractor.extract_text')
+    def test_image_ocr_extraction_failure_returns_400(self, mock_extract):
+        mock_extract.side_effect = ValueError('No text could be extracted.')
+
+        import io
+        fake_image = io.BytesIO(b'\xff\xd8\xff\xe0' + b'\x00' * 100)
+        fake_image.name = 'blank.jpg'
+
+        resp = self.client.post(
+            '/api/v1/cases/image-ocr/',
+            {'file': fake_image, 'domain': 'medical', 'strategy': 'ocr'},
+            format='multipart',
+            **self.tenant_header,
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_image_ocr_wrong_extension_returns_400(self):
+        import io
+        fake_file = io.BytesIO(b'%PDF-1.4')
+        fake_file.name = 'report.pdf'  # PDF is not an image
+
+        resp = self.client.post(
+            '/api/v1/cases/image-ocr/',
+            {'file': fake_file, 'domain': 'medical'},
+            format='multipart',
+            **self.tenant_header,
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+# ── File extractor: image support ─────────────────────────────────────────────
+
+class FileExtractorImageTests(TestCase):
+    """Unit tests for the image extraction paths in file_extractor.py."""
+
+    def test_supported_extensions_includes_images(self):
+        from api.agent_ai.file_extractor import SUPPORTED_EXTENSIONS, IMAGE_EXTENSIONS
+        for ext in ('.jpg', '.jpeg', '.png', '.webp', '.tiff', '.bmp'):
+            self.assertIn(ext, SUPPORTED_EXTENSIONS)
+            self.assertIn(ext, IMAGE_EXTENSIONS)
+
+    def test_unsupported_extension_raises(self):
+        from api.agent_ai.file_extractor import extract_text
+        with self.assertRaises(ValueError) as ctx:
+            extract_text('photo.heic', b'\x00')
+        self.assertIn('heic', str(ctx.exception))
+
+    @patch('api.agent_ai.file_extractor._vision_api_extract')
+    def test_auto_strategy_calls_vision_first(self, mock_vision):
+        mock_vision.return_value = 'Extracted via Vision API.'
+        from api.agent_ai.file_extractor import extract_text
+        result = extract_text('scan.jpg', b'\xff\xd8\xff', image_strategy='auto')
+        self.assertEqual(result, 'Extracted via Vision API.')
+        mock_vision.assert_called_once()
+
+    @patch('api.agent_ai.file_extractor._tesseract_extract')
+    @patch('api.agent_ai.file_extractor._vision_api_extract')
+    def test_auto_strategy_falls_back_to_ocr_on_vision_failure(self, mock_vision, mock_ocr):
+        mock_vision.side_effect = RuntimeError('No API key')
+        mock_ocr.return_value = 'Extracted via OCR.'
+        from api.agent_ai.file_extractor import extract_text
+        result = extract_text('scan.png', b'\x89PNG', image_strategy='auto')
+        self.assertEqual(result, 'Extracted via OCR.')
+        mock_ocr.assert_called_once()
+
+    @patch('api.agent_ai.file_extractor._vision_api_extract')
+    def test_vision_strategy_raises_on_failure_without_fallback(self, mock_vision):
+        mock_vision.side_effect = RuntimeError('API error')
+        from api.agent_ai.file_extractor import extract_text
+        with self.assertRaises(ValueError) as ctx:
+            extract_text('scan.jpg', b'\xff\xd8\xff', image_strategy='vision')
+        self.assertIn('Vision API', str(ctx.exception))
+
+    def test_image_too_large_raises(self):
+        from api.agent_ai.file_extractor import extract_text, _MAX_IMAGE_BYTES
+        oversized = b'\x00' * (_MAX_IMAGE_BYTES + 1)
+        with self.assertRaises(ValueError) as ctx:
+            extract_text('huge.png', oversized, image_strategy='auto')
+        self.assertIn('too large', str(ctx.exception))
+
+
