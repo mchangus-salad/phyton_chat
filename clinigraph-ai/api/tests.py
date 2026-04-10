@@ -3938,3 +3938,126 @@ class RegistrationEndpointTests(APITestCase):
         self.assertEqual(user.last_name, "Doe")
 
 
+class SecurityAuditEndpointTests(APITestCase):
+    """Tests for /security/events/export/ and /audit/patient-cases/ endpoints."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.staff = User.objects.create_user(
+            username="auditor_staff", password="pass", is_staff=True
+        )
+        self.regular = User.objects.create_user(
+            username="auditor_regular", password="pass", is_staff=False
+        )
+        from api.models import SecurityEvent, PatientCaseSession
+        SecurityEvent.objects.create(
+            event_type="auth_failure",
+            severity="high",
+            ip_address="10.0.0.1",
+            path="/api/v1/auth/token/",
+            method="POST",
+        )
+        PatientCaseSession.objects.create(
+            domain="oncology",
+            subdomain="breast",
+            redaction_count=3,
+            redaction_categories={"DATE": 2, "NAME": 1},
+            user_id="u1",
+        )
+
+    def _token(self, user):
+        resp = self.client.post(
+            "/api/v1/auth/token/",
+            {"username": user.username, "password": "pass"},
+            format="json",
+        )
+        return resp.data["access"]
+
+    # --- SIEM export: JSON ---
+    def test_security_export_json_staff(self):
+        token = self._token(self.staff)
+        resp = self.client.get(
+            "/api/v1/security/events/export/?output=json&limit=10",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertIn("application/x-ndjson", resp["Content-Type"])
+        lines = [l for l in resp.content.decode().strip().split("\n") if l]
+        self.assertGreaterEqual(len(lines), 1)
+        row = json.loads(lines[0])
+        self.assertIn("event_type", row)
+        self.assertIn("severity", row)
+
+    def test_security_export_cef_staff(self):
+        token = self._token(self.staff)
+        resp = self.client.get(
+            "/api/v1/security/events/export/?output=cef&limit=10",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertIn("text/plain", resp["Content-Type"])
+        self.assertIn("CEF:0", resp.content.decode())
+
+    def test_security_export_invalid_format(self):
+        token = self._token(self.staff)
+        resp = self.client.get(
+            "/api/v1/security/events/export/?output=xml",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_security_export_forbidden_non_staff(self):
+        token = self._token(self.regular)
+        resp = self.client.get(
+            "/api/v1/security/events/export/",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_security_export_unauthenticated(self):
+        resp = self.client.get("/api/v1/security/events/export/")
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # --- Patient-case audit ---
+    def test_patient_case_audit_staff(self):
+        token = self._token(self.staff)
+        resp = self.client.get(
+            "/api/v1/audit/patient-cases/?days=30&limit=10",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.json()
+        self.assertIn("total_sessions", data)
+        self.assertIn("total_redactions", data)
+        self.assertIn("redactions_by_category", data)
+        self.assertIn("sessions_by_domain", data)
+        self.assertIn("recent_sessions", data)
+        self.assertGreaterEqual(data["total_sessions"], 1)
+        self.assertGreaterEqual(data["total_redactions"], 1)
+
+    def test_patient_case_audit_forbidden_non_staff(self):
+        token = self._token(self.regular)
+        resp = self.client.get(
+            "/api/v1/audit/patient-cases/",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_patient_case_audit_unauthenticated(self):
+        resp = self.client.get("/api/v1/audit/patient-cases/")
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_patient_case_audit_phi_not_exposed(self):
+        """Ensure no raw text hash or PHI appears in audit output."""
+        token = self._token(self.staff)
+        resp = self.client.get(
+            "/api/v1/audit/patient-cases/",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        content = resp.content.decode()
+        # text_hash field is shown but only as a hash, not PHI — verify no plain text body key
+        self.assertNotIn('"text":', content)
+        self.assertNotIn('"patient_name":', content)
+        self.assertNotIn('"original_text":', content)
+

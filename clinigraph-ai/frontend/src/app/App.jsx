@@ -13,6 +13,7 @@ import { useAppSession } from './useAppSession';
 import { AppShellProvider } from './AppShellContext';
 import { useSignup } from '../features/auth/hooks/useSignup';
 import { SecurityDashboard } from '../features/security/components/SecurityDashboard';
+import { PatientCaseAuditDashboard } from '../features/security/components/PatientCaseAuditDashboard';
 
 function LoginScreen({ credentials, setCredentials, login, loading, error, health, t, onSignUp, successMessage }) {
   return (
@@ -378,7 +379,12 @@ export default function App() {
       case 'billing':
         return <BillingDashboard authToken={session.accessToken} tenantId={session.tenantId} />;
       case 'security':
-        return <SecurityDashboard authToken={session.accessToken} isStaff={isStaff} />;
+        return (
+          <div className="module-stack">
+            <SecurityDashboard authToken={session.accessToken} isStaff={isStaff} />
+            <PatientCaseAuditDashboard authToken={session.accessToken} isStaff={isStaff} />
+          </div>
+        );
       case 'overview':
       default:
         return (

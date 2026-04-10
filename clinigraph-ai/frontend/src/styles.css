@@ -2122,3 +2122,138 @@ button.primary-action:disabled {
 .severity-medium   { background: rgba(200, 170, 0, 0.2);  color: #a90; border: 1px solid rgba(200,170,0,0.35); }
 .severity-low      { background: rgba(30, 160, 60, 0.15); color: #3a7; border: 1px solid rgba(30,160,60,0.3);  }
 
+/* ──────────────────────────────────── PatientCaseAuditDashboard */
+.pca-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.pca-dashboard--locked {
+  padding: 2rem;
+  text-align: center;
+  opacity: 0.75;
+}
+
+.pca-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1rem;
+}
+
+.pca-stat-card {
+  background: var(--surface-raised, rgba(255,255,255,0.05));
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+  border-radius: 10px;
+  padding: 1.1rem 1rem;
+  text-align: center;
+}
+
+.pca-stat-value {
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin: 0 0 0.2rem;
+  color: var(--accent, #7ab8f5);
+}
+
+.pca-stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #999);
+  margin: 0;
+}
+
+.pca-stat-sub {
+  font-size: 0.68rem;
+  color: var(--text-muted, #bbb);
+  margin: 0.2rem 0 0;
+}
+
+.pca-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pca-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #999);
+  margin: 0;
+}
+
+.pca-domain-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pca-domain-pill {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 50px;
+  border: 1px solid;
+  background: rgba(255,255,255,0.04);
+}
+
+.pca-domain-pill strong {
+  font-weight: 700;
+  margin-left: 0.3rem;
+}
+
+/* PHI category bar chart */
+.pca-phi-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.pca-phi-bar-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 40px;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pca-phi-cat {
+  font-size: 0.74rem;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-muted, #bbb);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pca-phi-track {
+  height: 6px;
+  background: var(--surface-raised, rgba(255,255,255,0.06));
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.pca-phi-fill {
+  height: 100%;
+  background: var(--accent, #7ab8f5);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.pca-phi-count {
+  font-size: 0.72rem;
+  text-align: right;
+  color: var(--text-muted, #999);
+}
+
+.pca-days-select {
+  background: var(--surface-raised, rgba(255,255,255,0.07));
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.15));
+  color: inherit;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+

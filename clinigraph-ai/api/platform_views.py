@@ -4,6 +4,7 @@ import csv
 import io
 import json
 from datetime import timedelta
+from collections import Counter
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -17,7 +18,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import BillingEvent, BillingInvoice, BillingInvoiceLineItem, SecurityEvent, Subscription, SubscriptionPlan, Tenant, TenantMembership, UsageRecord
+from .models import BillingEvent, BillingInvoice, BillingInvoiceLineItem, PatientCaseSession, SecurityEvent, Subscription, SubscriptionPlan, Tenant, TenantMembership, UsageRecord
 from .billing import BillingConfigurationError, StripeBillingProvider
 from .invoice_render import render_invoice_pdf
 from .permissions import HasAgentApiKeyOrAuthenticated
@@ -216,6 +217,129 @@ def security_events_recent(request):
         for e in events
     ]
     return Response(payload, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    operation_id="patient_case_audit",
+    description="Staff-only audit log for patient-case analysis sessions. No PHI is stored or returned.",
+    responses={200: {"type": "object"}, 401: ErrorResponseSerializer, 403: ErrorResponseSerializer},
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def patient_case_audit(request):
+    user = request.user
+    if not user.is_staff:
+        return Response({"error": "forbidden", "request_id": _request_id(request)}, status=status.HTTP_403_FORBIDDEN)
+
+    limit = min(int(request.query_params.get("limit", 50)), 500)
+    since_days = min(int(request.query_params.get("days", 30)), 90)
+    since = timezone.now() - timedelta(days=since_days)
+
+    qs = PatientCaseSession.objects.filter(created_at__gte=since)
+
+    # Aggregate stats across the time window.
+    total_sessions = qs.count()
+    total_redactions = sum(s.redaction_count for s in qs.only("redaction_count"))
+
+    phi_counter: Counter = Counter()
+    domain_counter: Counter = Counter()
+    for session in qs.only("redaction_categories", "domain"):
+        phi_counter.update(session.redaction_categories or {})
+        if session.domain:
+            domain_counter[session.domain] += 1
+
+    recent = qs.order_by("-created_at")[:limit]
+    sessions_payload = [
+        {
+            "session_id": str(s.session_id),
+            "domain": s.domain,
+            "subdomain": s.subdomain,
+            "redaction_count": s.redaction_count,
+            "redaction_categories": s.redaction_categories,
+            "source_filename": s.source_filename,
+            "user_id": s.user_id,
+            "created_at": s.created_at,
+        }
+        for s in recent
+    ]
+
+    return Response(
+        {
+            "window_days": since_days,
+            "total_sessions": total_sessions,
+            "total_redactions": total_redactions,
+            "redactions_by_category": dict(phi_counter.most_common(20)),
+            "sessions_by_domain": dict(domain_counter.most_common()),
+            "recent_sessions": sessions_payload,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+_CEF_SEVERITY_MAP = {
+    "low": 3,
+    "medium": 5,
+    "high": 8,
+    "critical": 10,
+}
+
+
+def _to_cef_line(event) -> str:
+    """Render a SecurityEvent as a CEF 0 syslog line (RFC 5424 header omitted for brevity)."""
+    sev_num = _CEF_SEVERITY_MAP.get(str(event.get("severity", "")).lower(), 5)
+    etype = str(event.get("event_type", "")).replace("|", "\\|")
+    ext = (
+        f"src={event.get('ip_address', '-')} "
+        f"requestMethod={event.get('method', '-')} "
+        f"request={event.get('path', '-')} "
+        f"cs1Label=UserAgent cs1={str(event.get('user_agent', ''))[:100]}"
+    )
+    return f"CEF:0|CliniGraph AI|security-monitor|1.0|{etype}|{etype}|{sev_num}|{ext}"
+
+
+@extend_schema(
+    operation_id="security_events_export",
+    description=(
+        "Export security events in machine-readable format for SIEM ingestion. "
+        "Supported formats: json (default) or cef (ArcSight Common Event Format). "
+        "Staff only."
+    ),
+    responses={200: {"type": "string"}, 400: ErrorResponseSerializer, 401: ErrorResponseSerializer, 403: ErrorResponseSerializer},
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def security_events_export(request):
+    user = request.user
+    if not user.is_staff:
+        return Response({"error": "forbidden", "request_id": _request_id(request)}, status=status.HTTP_403_FORBIDDEN)
+
+    export_format = request.query_params.get("output", "json").lower()
+    if export_format not in ("json", "cef"):
+        return Response({"error": "invalid format; use json or cef"}, status=status.HTTP_400_BAD_REQUEST)
+
+    limit = min(int(request.query_params.get("limit", 500)), 1000)
+    events = SecurityEvent.objects.all()[:limit]
+    rows = [
+        {
+            "event_type": e.event_type,
+            "severity": e.severity,
+            "ip_address": str(e.ip_address or ""),
+            "path": e.path,
+            "method": e.method,
+            "user_agent": e.user_agent,
+            "meta": e.meta,
+            "created_at": e.created_at.isoformat() if e.created_at else "",
+        }
+        for e in events
+    ]
+
+    if export_format == "cef":
+        lines = "\n".join(_to_cef_line(r) for r in rows)
+        return HttpResponse(lines, content_type="text/plain; charset=utf-8")
+
+    # Default: NDJSON — one JSON object per line, easy for log shippers.
+    ndjson = "\n".join(json.dumps(r, default=str) for r in rows)
+    return HttpResponse(ndjson, content_type="application/x-ndjson; charset=utf-8")
 
 
 @extend_schema(

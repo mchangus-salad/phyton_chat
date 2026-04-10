@@ -20,7 +20,7 @@ Rule:
 - [x] Token blacklist / revocation support
 - [x] RBAC by tenant role (owner/admin/clinician/auditor)
 - [x] Per-tenant API quotas and enforcement
-- [ ] SIEM export pipeline
+- [x] SIEM export pipeline
 - [ ] Geo/IP reputation controls
 - [ ] WAF / reverse proxy hardening profile
 - [ ] Penetration testing checklist and runbook
@@ -38,7 +38,7 @@ Rule:
 - [x] OpenTelemetry tracing
 - [x] Alert rules for auth failures / abuse spikes / 5xx spikes
 - [x] SLO dashboard (latency, availability, failure rate)
-- [ ] Audit dashboards for patient-case flows
+- [x] Audit dashboards for patient-case flows
 
 ## 3. Scalability and Multi-Tenancy
 
@@ -120,9 +120,9 @@ Rule:
 - [x] Client manual in English
 - [x] Documentation update template
 - [x] Mermaid diagrams
-- [ ] Security architecture document
+- [x] Security architecture document
 - [x] Billing integration guide
-- [ ] Operations handbook
+- [x] Operations handbook
 - [ ] Incident response runbook
 - [x] Mobile/API integration guide
 
