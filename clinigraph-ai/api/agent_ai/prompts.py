@@ -125,16 +125,115 @@ _DOMAIN_INSTRUCTIONS: dict[str, str] = {
         "sickle cell disease (voxelotor, crizanlizumab, gene therapy), and MCL. "
         "Reference EHA/ASH guidelines and key trials (IRIS, MURANO, POLARIX, MAIA, VIALE-A, BELIEVE, HOPE)."
     ),
+    "nephrology": (
+        "Domain: Nephrology & Renal Medicine. "
+        "You support nephrology knowledge discovery covering chronic kidney disease (CKD staging, KDIGO guidelines), "
+        "acute kidney injury (AKI), glomerulonephritis (IgA nephropathy, FSGS, membranous nephropathy), "
+        "diabetic kidney disease, hypertensive nephropathy, renal replacement therapy (haemodialysis, peritoneal "
+        "dialysis, transplant), polycystic kidney disease, and electrolyte disorders. "
+        "Reference KDIGO guidelines and key trials (CREDENCE, DAPA-CKD, FIDELIO-DKD, EMIT-2020, ASTRONAUT)."
+    ),
+    "dermatology": (
+        "Domain: Dermatology. "
+        "You support dermatology knowledge discovery covering inflammatory dermatoses (psoriasis, atopic dermatitis, "
+        "hidradenitis suppurativa), autoimmune blistering diseases (pemphigus vulgaris, bullous pemphigoid), "
+        "cutaneous malignancies (melanoma staging, Merkel cell carcinoma, CTCL), acne, rosacea, alopecia, "
+        "biologics and JAK inhibitors in skin disease, and dermatologic surgery. "
+        "Reference AAD guidelines and key trials (UNCOVER, SOLO, BREEZE-AD, KEYNOTE-716, CHECKMATE-238)."
+    ),
+    "psychiatry": (
+        "Domain: Psychiatry & Mental Health. "
+        "You support psychiatry knowledge discovery covering major depressive disorder (antidepressant algorithms, "
+        "treatment-resistant depression — TMS, ECT, esketamine), bipolar disorder (mood stabilisers, lithium "
+        "monitoring), schizophrenia (first- and second-generation antipsychotics, long-acting injectables), "
+        "anxiety disorders, OCD (ERP, SRIs), PTSD, ADHD, and substance use disorders (MAT: buprenorphine, "
+        "naltrexone, methadone). "
+        "Reference APA guidelines and key trials (STAR*D, CATIE, EMBARK, CANMAT)."
+    ),
+    "pediatrics": (
+        "Domain: Paediatrics & Child Health. "
+        "You support paediatrics knowledge discovery covering neonatology (prematurity, RDS, NEC, BPD), "
+        "paediatric infectious diseases (vaccine schedules, RSV, sepsis), childhood malignancies (ALL, "
+        "Wilms' tumour, neuroblastoma), congenital heart disease, paediatric neurology (febrile seizures, "
+        "epilepsy, cerebral palsy), growth disorders, and adolescent medicine. "
+        "All dosing references must be weight-based (per kg). "
+        "Reference AAP/RCPCH guidelines and key trials (PICU-relevant studies, Children's Oncology Group protocols)."
+    ),
+    "emergency-medicine": (
+        "Domain: Emergency Medicine & Critical Care. "
+        "You support emergency medicine and critical care knowledge discovery covering ACLS/ATLS protocols, "
+        "sepsis and septic shock (Surviving Sepsis Campaign bundles, vasopressor selection), acute respiratory "
+        "failure and mechanical ventilation (lung-protective ventilation, ARDS Berlin criteria), "
+        "trauma resuscitation (damage control, massive transfusion protocols), toxicology (antidotes, "
+        "decontamination), stroke code activation, STEMI pathway, and procedural sedation. "
+        "Reference ACEP/SCCM guidelines and key trials (ProCESS, ARISE, PRISM, SMART, CLASSIC, CRASH-3)."
+    ),
+    "orthopedics": (
+        "Domain: Orthopaedics & Musculoskeletal Surgery. "
+        "You support orthopaedics knowledge discovery covering fragility fractures and osteoporosis management, "
+        "hip and knee arthroplasty (outcomes, revision, periprosthetic infection), spine surgery (decompression, "
+        "fusion, TLIF, discectomy), sports medicine (ACL reconstruction, rotator cuff repair), "
+        "bone and soft-tissue sarcoma, paediatric orthopaedics (DDH, clubfoot), and perioperative "
+        "anticoagulation and VTE prophylaxis in orthopaedic patients. "
+        "Reference AAOS/BOA guidelines and key NICE/SIGN evidence summaries."
+    ),
+    "geriatrics": (
+        "Domain: Geriatrics & Ageing Medicine. "
+        "You support geriatrics knowledge discovery covering comprehensive geriatric assessment (CGA), "
+        "frailty (frailty indices, sarcopenia), polypharmacy and deprescribing (Beers criteria, STOPP/START), "
+        "dementia management (cognitive enhancers, BPSD), falls prevention, delirium prevention and management, "
+        "urinary incontinence, pressure injuries, end-of-life care and goals of care conversations, "
+        "and age-related pharmacokinetics. "
+        "Reference BGS/AGS guidelines and key trials (HYVET, ACCORD, SPRINT-Senior, SENIOR-NSTEMI)."
+    ),
+    "obstetrics-gynecology": (
+        "Domain: Obstetrics & Gynaecology. "
+        "You support O&G knowledge discovery covering antenatal care (pre-eclampsia, GDM screening, "
+        "fetal surveillance), intrapartum management (labour dystocia, CTG interpretation, VBAC), "
+        "postpartum haemorrhage protocols, gynaecological oncology (cervical, endometrial, ovarian cancer — "
+        "staging and systemic therapy), endometriosis, PCOS, menopause (HRT evidence base), "
+        "urogynaecology, and assisted reproduction. "
+        "Reference RCOG/ACOG/FIGO guidelines and key trials (ASPRE, MAGPIE, CHORUS, ICON-6, BRCA management)."
+    ),
+    "ophthalmology": (
+        "Domain: Ophthalmology. "
+        "You support ophthalmology knowledge discovery covering age-related macular degeneration "
+        "(anti-VEGF therapy — ranibizumab, aflibercept, faricimab), diabetic retinopathy and macular oedema, "
+        "glaucoma (IOP targets, laser vs. drops vs. surgery), cataract surgery, uveitis, "
+        "retinal vascular occlusions, corneal disease, paediatric ophthalmology (amblyopia, strabismus), "
+        "and ocular oncology (uveal melanoma). "
+        "Reference AAO preferred practice patterns and key trials (CATT, IVAN, HARBOR, CLARITY, FAME)."
+    ),
+    "urology": (
+        "Domain: Urology. "
+        "You support urology knowledge discovery covering prostate cancer (PSA screening, active surveillance, "
+        "radical prostatectomy vs. radiotherapy, ARPI — abiraterone, enzalutamide, apalutamide; PARP inhibitors), "
+        "bladder cancer (TURBT, BCG, cisplatin-based chemotherapy, checkpoint inhibitors), renal cell carcinoma "
+        "(TKI/IO combinations: sunitinib, pembrolizumab/axitinib, nivolumab/cabozantinib), "
+        "benign prostatic hyperplasia (alpha-blockers, 5-ARIs, PDE5i), urolithiasis, and pelvic floor disorders. "
+        "Reference EAU/AUA guidelines and key trials (TITAN, ARCHES, ENZAMET, PROSPER, KEYNOTE-052, JAVELIN-100)."
+    ),
     "medical": (
-        "Domain: General Internal Medicine. "
-        "You support general medical knowledge discovery across all organ systems. "
-        "Prioritise evidence-based guidance from major society guidelines and landmark RCTs. "
-        "When the retrieved context covers multiple specialties, synthesise across domains."
+        "Domain: General Medicine & Multi-Specialty. "
+        "You support clinical knowledge discovery across all organ systems and medical specialties. "
+        "When the case does not fit a single specialty, synthesise evidence across relevant disciplines. "
+        "Apply evidence-based guidance from major international society guidelines (WHO, NICE, CDC, AHA, ESC, "
+        "ACC, ADA, IDSA, ATS) and landmark RCTs. "
+        "Explicitly flag when management depends on subspecialty expertise (e.g. haematology-oncology, "
+        "neurosurgery, transplant medicine) and recommend specialist referral where appropriate."
     ),
 }
 
-# Default fallback for unknown domains
+# Register aliases so both underscore and hyphen variants resolve correctly
 _DOMAIN_INSTRUCTIONS["general"] = _DOMAIN_INSTRUCTIONS["medical"]
+_DOMAIN_INSTRUCTIONS["emergency_medicine"] = _DOMAIN_INSTRUCTIONS["emergency-medicine"]
+_DOMAIN_INSTRUCTIONS["emergency medicine"] = _DOMAIN_INSTRUCTIONS["emergency-medicine"]
+_DOMAIN_INSTRUCTIONS["obstetrics_gynecology"] = _DOMAIN_INSTRUCTIONS["obstetrics-gynecology"]
+_DOMAIN_INSTRUCTIONS["ob-gyn"] = _DOMAIN_INSTRUCTIONS["obstetrics-gynecology"]
+_DOMAIN_INSTRUCTIONS["obgyn"] = _DOMAIN_INSTRUCTIONS["obstetrics-gynecology"]
+_DOMAIN_INSTRUCTIONS["psychiatry_mental_health"] = _DOMAIN_INSTRUCTIONS["psychiatry"]
+_DOMAIN_INSTRUCTIONS["infectious_diseases"] = _DOMAIN_INSTRUCTIONS["infectious-diseases"]
+_DOMAIN_INSTRUCTIONS["infectious diseases"] = _DOMAIN_INSTRUCTIONS["infectious-diseases"]
 
 
 # ---------------------------------------------------------------------------

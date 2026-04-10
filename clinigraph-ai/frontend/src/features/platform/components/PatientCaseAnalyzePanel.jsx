@@ -5,11 +5,26 @@ import { useRuntimeTranslation, useRuntimeTranslationList } from '../../../share
 import { useAppShell } from '../../../app/AppShellContext';
 
 const DOMAINS = [
-  { value: 'cardiology', label: 'domainCardiology' },
-  { value: 'neurology', label: 'domainNeurology' },
-  { value: 'oncology', label: 'domainOncology' },
-  { value: 'gastroenterology', label: 'domainGastroenterology' },
-  { value: 'pulmonology', label: 'domainPulmonology' },
+  { value: 'general',                  label: 'domainGeneral' },
+  { value: 'cardiology',               label: 'domainCardiology' },
+  { value: 'dermatology',              label: 'domainDermatology' },
+  { value: 'emergency-medicine',       label: 'domainEmergencyMedicine' },
+  { value: 'endocrinology',            label: 'domainEndocrinology' },
+  { value: 'gastroenterology',         label: 'domainGastroenterology' },
+  { value: 'geriatrics',               label: 'domainGeriatrics' },
+  { value: 'hematology',               label: 'domainHematology' },
+  { value: 'infectious-diseases',      label: 'domainInfectiousDiseases' },
+  { value: 'nephrology',               label: 'domainNephrology' },
+  { value: 'neurology',                label: 'domainNeurology' },
+  { value: 'obstetrics-gynecology',    label: 'domainObstetricsGynecology' },
+  { value: 'oncology',                 label: 'domainOncology' },
+  { value: 'ophthalmology',            label: 'domainOphthalmology' },
+  { value: 'orthopedics',              label: 'domainOrthopedics' },
+  { value: 'pediatrics',               label: 'domainPediatrics' },
+  { value: 'psychiatry',               label: 'domainPsychiatry' },
+  { value: 'pulmonology',              label: 'domainPulmonology' },
+  { value: 'rheumatology',             label: 'domainRheumatology' },
+  { value: 'urology',                  label: 'domainUrology' },
 ];
 
 function formatRedactionSummary(summary) {
@@ -44,7 +59,7 @@ export function PatientCaseAnalyzePanel({ authToken, tenantId }) {
   const [inputMode, setInputMode] = useState('text'); // 'text' or 'file'
   const [caseText, setCaseText] = useState('');
   const [caseFile, setCaseFile] = useState(null);
-  const [domain, setDomain] = useState('cardiology');
+  const [domain, setDomain] = useState('general');
   const [question, setQuestion] = useState('');
   const { status, data, error, errorCode, analyze } = usePatientCaseAnalyze();
   const rawAnswer =
