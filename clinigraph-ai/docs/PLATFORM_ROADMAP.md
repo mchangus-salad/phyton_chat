@@ -37,7 +37,7 @@ Rule:
 - [x] Structured JSON logs
 - [x] OpenTelemetry tracing
 - [x] Alert rules for auth failures / abuse spikes / 5xx spikes
-- [ ] SLO dashboard (latency, availability, failure rate)
+- [x] SLO dashboard (latency, availability, failure rate)
 - [ ] Audit dashboards for patient-case flows
 
 ## 3. Scalability and Multi-Tenancy
@@ -92,9 +92,9 @@ Rule:
 - [x] Login / signup / billing pages
 - [x] Tenant admin console
 - [x] Medical query workspace
-- [ ] Evidence search workspace
-- [ ] Patient-case analysis UI
-- [ ] Audit/security dashboards
+- [x] Evidence search workspace
+- [x] Patient-case analysis UI
+- [x] Audit/security dashboards
 - [x] Billing cockpit dashboard scaffold
 
 ### iOS App

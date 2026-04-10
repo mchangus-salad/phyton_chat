@@ -70,6 +70,7 @@ export const translations = {
       patientCases: 'Patient Case Analysis',
       users: 'User Administration',
       billing: 'Billing',
+      security: 'Security Audit',
     },
     shell: {
       productName: 'Clinical Ops Suite',
@@ -102,6 +103,8 @@ export const translations = {
       billingDescription: 'Subscription status, usage, estimates, exports, and Stripe operations in one place.',
       billingGuidance: 'Open the Billing section from the sidebar to resolve subscription access.',
       loginGuidance: 'Your session may have expired. Sign out and sign in again from the workspace shell.',
+      securityTitle: 'Security audit log',
+      securityDescription: 'Recent security events, auth failures, and abuse blocks. Staff only.',
       quickActions: 'Quick actions',
       quickActionsTitle: 'Jump straight into the workflow you need',
       quickActionsDescription: 'Each area is now a dedicated page with a focused task flow instead of mixed cards in one screen.',
@@ -398,6 +401,7 @@ export const translations = {
       patientCases: 'Analisis de Paciente',
       users: 'Administracion de Usuarios',
       billing: 'Billing',
+      security: 'Auditoria de Seguridad',
     },
     shell: {
       productName: 'Clinical Ops Suite',
@@ -430,6 +434,8 @@ export const translations = {
       billingDescription: 'Estado de suscripcion, uso, estimados, exportaciones y operaciones Stripe en un solo lugar.',
       billingGuidance: 'Abre la seccion de Billing desde el menu lateral para resolver el acceso por suscripcion.',
       loginGuidance: 'Tu sesion puede haber expirado. Cierra sesion e inicia nuevamente desde el shell principal.',
+      securityTitle: 'Registro de auditoria de seguridad',
+      securityDescription: 'Eventos de seguridad recientes, fallas de autenticacion y bloqueos por abuso. Solo staff.',
       quickActions: 'Acciones rapidas',
       quickActionsTitle: 'Entra directo al workflow que necesitas',
       quickActionsDescription: 'Cada area ahora vive en una pagina dedicada con un flujo enfocado, no como tarjetas mezcladas en una sola pantalla.',

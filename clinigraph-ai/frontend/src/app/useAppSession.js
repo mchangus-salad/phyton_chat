@@ -12,6 +12,7 @@ const emptySession = {
   memberships: [],
   roles: [],
   tenantId: '',
+  isStaff: false,
 };
 
 function toBase64(value) {
@@ -48,6 +49,7 @@ function sanitizeSession(candidate) {
     memberships: Array.isArray(candidate.memberships) ? candidate.memberships : [],
     roles: Array.isArray(candidate.roles) ? candidate.roles : [],
     tenantId: candidate.tenantId || '',
+    isStaff: Boolean(candidate.isStaff),
   };
 }
 
@@ -116,6 +118,7 @@ export function useAppSession() {
         memberships: Array.isArray(payload?.tenant_memberships) ? payload.tenant_memberships : [],
         roles: Array.isArray(payload?.roles) ? payload.roles : [],
         tenantId: deriveTenantId(payload, session.tenantId),
+        isStaff: Boolean(payload?.is_staff_user),
       };
 
       persistSession(nextSession);
@@ -158,6 +161,7 @@ export function useAppSession() {
     loading,
     error,
     isAuthenticated: Boolean(session.accessToken),
+    isStaff: session.isStaff,
     activeMembership,
   };
 }

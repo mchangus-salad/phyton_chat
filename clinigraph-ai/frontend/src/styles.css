@@ -1947,3 +1947,178 @@ button.primary-action:disabled {
   color: var(--accent-strong);
 }
 
+/* ──────────────────────────────────────────────────────── SecurityDashboard */
+.sec-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sec-dashboard--locked {
+  padding: 2rem;
+  text-align: center;
+  opacity: 0.75;
+}
+
+.sec-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.sec-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0.15rem 0;
+}
+
+.sec-muted {
+  font-size: 0.78rem;
+  color: var(--text-muted, #888);
+  margin: 0;
+}
+
+.sec-error {
+  color: #e25;
+  background: rgba(220, 34, 85, 0.08);
+  border: 1px solid rgba(220, 34, 85, 0.25);
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.sec-empty {
+  text-align: center;
+  color: var(--text-muted, #888);
+  padding: 2rem 1rem;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.sec-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.sec-summary-pills {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.sec-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 50px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.sec-pill--critical { background: rgba(200, 30, 30, 0.18); color: #c11; }
+.sec-pill--high     { background: rgba(210, 100, 0, 0.18);  color: #c60; }
+.sec-pill--total    { background: var(--surface-raised, rgba(255,255,255,0.08)); color: var(--text-muted, #999); }
+
+.sec-table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.07));
+}
+
+.sec-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+
+.sec-table thead th {
+  padding: 0.55rem 0.85rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted, #999);
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.07));
+  white-space: nowrap;
+}
+
+.sec-table tbody tr {
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.04));
+  transition: background 0.15s;
+}
+
+.sec-table tbody tr:hover {
+  background: var(--surface-raised, rgba(255,255,255,0.04));
+}
+
+.sec-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.sec-table td {
+  padding: 0.6rem 0.85rem;
+  vertical-align: middle;
+}
+
+.sec-row--critical {
+  background: rgba(200, 30, 30, 0.04);
+}
+
+.sec-event-type {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.sec-method {
+  font-size: 0.72rem;
+  padding: 0.1rem 0.35rem;
+  background: var(--surface-raised, rgba(255,255,255,0.06));
+  border-radius: 4px;
+  color: var(--text-muted, #bbb);
+}
+
+.sec-path {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sec-ip {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.sec-ts {
+  white-space: nowrap;
+  color: var(--text-muted, #999);
+  font-size: 0.78rem;
+}
+
+/* Severity badges */
+.sec-severity-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.18rem 0.5rem;
+  border-radius: 50px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.severity-critical { background: rgba(200, 30, 30, 0.2);  color: #e03; border: 1px solid rgba(200,30,30,0.35); }
+.severity-high     { background: rgba(210, 100, 0, 0.2);  color: #d60; border: 1px solid rgba(210,100,0,0.35); }
+.severity-medium   { background: rgba(200, 170, 0, 0.2);  color: #a90; border: 1px solid rgba(200,170,0,0.35); }
+.severity-low      { background: rgba(30, 160, 60, 0.15); color: #3a7; border: 1px solid rgba(30,160,60,0.3);  }
+

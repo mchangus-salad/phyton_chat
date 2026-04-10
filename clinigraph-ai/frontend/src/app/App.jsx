@@ -12,6 +12,7 @@ import { useI18n } from '../shared/i18n/I18nProvider';
 import { useAppSession } from './useAppSession';
 import { AppShellProvider } from './AppShellContext';
 import { useSignup } from '../features/auth/hooks/useSignup';
+import { SecurityDashboard } from '../features/security/components/SecurityDashboard';
 
 function LoginScreen({ credentials, setCredentials, login, loading, error, health, t, onSignUp, successMessage }) {
   return (
@@ -300,7 +301,7 @@ function OverviewPage({ health, activeMembership, session, setActiveView, t }) {
 export default function App() {
   const platformSnapshot = usePlatformSnapshot();
   const { t } = useI18n();
-  const { session, credentials, setCredentials, login, logout, setTenantId, loading, error, isAuthenticated, activeMembership } = useAppSession();
+  const { session, credentials, setCredentials, login, logout, setTenantId, loading, error, isAuthenticated, isStaff, activeMembership } = useAppSession();
   const [activeView, setActiveView] = useState('overview');
   const [authView, setAuthView] = useState('login');
   const [signupSuccessMessage, setSignupSuccessMessage] = useState('');
@@ -312,6 +313,7 @@ export default function App() {
     { id: 'patient', label: t('nav.patientCases'), title: t('shell.patientTitle'), description: t('shell.patientDescription') },
     { id: 'users', label: t('nav.users'), title: t('shell.usersTitle'), description: t('shell.usersDescription') },
     { id: 'billing', label: t('nav.billing'), title: t('shell.billingTitle'), description: t('shell.billingDescription') },
+    ...(isStaff ? [{ id: 'security', label: t('nav.security'), title: t('shell.securityTitle'), description: t('shell.securityDescription') }] : []),
   ];
 
   const activeMeta = views.find((item) => item.id === activeView) || views[0];
@@ -375,6 +377,8 @@ export default function App() {
         return <UserAccessAdmin authToken={session.accessToken} tenantId={session.tenantId} />;
       case 'billing':
         return <BillingDashboard authToken={session.accessToken} tenantId={session.tenantId} />;
+      case 'security':
+        return <SecurityDashboard authToken={session.accessToken} isStaff={isStaff} />;
       case 'overview':
       default:
         return (
