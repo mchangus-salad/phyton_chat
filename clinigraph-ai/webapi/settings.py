@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'api.middleware.RequestIDMiddleware',
+    'api.middleware.GeoIPReputationMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -166,6 +167,15 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_RESULT_EXPIRES = 86400  # 24 hours
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Fair dispatch for long-running ingestion tasks
+
+# ── Geo/IP reputation checks ──────────────────────────────────────────────────
+# Comma-separated CIDR blocks. Requests from BLOCKLIST are rejected 403.
+# Requests from FLAGLIST are passed through but logged as a SecurityEvent.
+# Requests from ALLOWLIST bypass all geo/IP checks (health probes, internal infra).
+GEO_IP_BLOCKLIST_CIDRS = os.getenv('GEO_IP_BLOCKLIST_CIDRS', '')
+GEO_IP_FLAGLIST_CIDRS = os.getenv('GEO_IP_FLAGLIST_CIDRS', '')
+GEO_IP_ALLOWLIST_CIDRS = os.getenv('GEO_IP_ALLOWLIST_CIDRS', '127.0.0.1/32,::1/128')
+
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',

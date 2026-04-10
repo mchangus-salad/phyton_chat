@@ -21,10 +21,10 @@ Rule:
 - [x] RBAC by tenant role (owner/admin/clinician/auditor)
 - [x] Per-tenant API quotas and enforcement
 - [x] SIEM export pipeline
-- [ ] Geo/IP reputation controls
-- [ ] WAF / reverse proxy hardening profile
-- [ ] Penetration testing checklist and runbook
-- [ ] Secrets rotation runbook
+- [x] Geo/IP reputation controls
+- [x] WAF / reverse proxy hardening profile
+- [x] Penetration testing checklist and runbook
+- [x] Secrets rotation runbook
 
 ## 2. Observability and SRE
 
@@ -82,7 +82,7 @@ Rule:
 - [x] Auto model pull script for Ollama
 - [x] React web frontend containerized
 - [ ] Mobile backend gateway/container profile
-- [ ] Production container scanning pipeline
+- [x] Production container scanning pipeline
 
 ## 6. Product Surfaces
 
@@ -123,7 +123,7 @@ Rule:
 - [x] Security architecture document
 - [x] Billing integration guide
 - [x] Operations handbook
-- [ ] Incident response runbook
+- [x] Incident response runbook
 - [x] Mobile/API integration guide
 
 ## 8. Immediate Next Milestones

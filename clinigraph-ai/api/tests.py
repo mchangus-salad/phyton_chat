@@ -4178,3 +4178,144 @@ class IngestionJobTests(APITestCase):
         self.assertEqual(response.data['status'], 'failed')
         self.assertEqual(response.data['error'], 'vector store unavailable')
 
+
+# =============================================================================
+# GeoIPReputationMiddleware tests
+# =============================================================================
+
+class GeoIPReputationMiddlewareTests(TestCase):
+    """
+    Unit tests for api.middleware.GeoIPReputationMiddleware.
+
+    All tests override django.test.override_settings to configure the three
+    CIDR lists and use an APIClient that can set REMOTE_ADDR.
+    """
+
+    def _get_response(self, remote_addr='127.0.0.1', xff=None,
+                      blocklist='', flaglist='', allowlist='127.0.0.1/32,::1/128'):
+        """Build a mock request through the middleware and return the response."""
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+        from api.middleware import GeoIPReputationMiddleware
+
+        factory = RequestFactory()
+        request = factory.get('/api/v1/health/')
+        request.META['REMOTE_ADDR'] = remote_addr
+        if xff:
+            request.META['HTTP_X_FORWARDED_FOR'] = xff
+
+        def dummy_view(_req):
+            return HttpResponse('ok', status=200)
+
+        with self.settings(
+            GEO_IP_BLOCKLIST_CIDRS=blocklist,
+            GEO_IP_FLAGLIST_CIDRS=flaglist,
+            GEO_IP_ALLOWLIST_CIDRS=allowlist,
+        ):
+            middleware = GeoIPReputationMiddleware(dummy_view)
+            return middleware(request)
+
+    # ── Blocklist ─────────────────────────────────────────────────────────────
+
+    def test_blocklisted_ip_returns_403(self):
+        """An IP inside the blocklist CIDR must receive a 403 response."""
+        response = self._get_response(
+            remote_addr='192.0.2.10',
+            blocklist='192.0.2.0/24',
+            allowlist='',  # no allowlist so the block takes effect
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_non_blocklisted_ip_passes_through(self):
+        """An IP NOT in the blocklist must receive a 200 response."""
+        response = self._get_response(
+            remote_addr='203.0.113.5',
+            blocklist='192.0.2.0/24',
+            allowlist='',
+        )
+        self.assertEqual(response.status_code, 200)
+
+    # ── Flaglist ──────────────────────────────────────────────────────────────
+
+    def test_flaglisted_ip_passes_through(self):
+        """A flaglisted IP is allowed through but logged; response must be 200."""
+        response = self._get_response(
+            remote_addr='10.20.30.40',
+            flaglist='10.0.0.0/8',
+            allowlist='',
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_flaglisted_ip_creates_security_event(self):
+        """A flaglisted IP must create a SecurityEvent record with type geo_ip_flagged."""
+        from api.models import SecurityEvent
+        initial_count = SecurityEvent.objects.filter(event_type='geo_ip_flagged').count()
+        self._get_response(
+            remote_addr='10.20.30.40',
+            flaglist='10.0.0.0/8',
+            allowlist='',
+        )
+        self.assertEqual(
+            SecurityEvent.objects.filter(event_type='geo_ip_flagged').count(),
+            initial_count + 1,
+        )
+
+    def test_blocklisted_ip_creates_security_event(self):
+        """A blocked IP must create a SecurityEvent record with type geo_ip_blocked."""
+        from api.models import SecurityEvent
+        initial_count = SecurityEvent.objects.filter(event_type='geo_ip_blocked').count()
+        self._get_response(
+            remote_addr='192.0.2.1',
+            blocklist='192.0.2.0/24',
+            allowlist='',
+        )
+        self.assertEqual(
+            SecurityEvent.objects.filter(event_type='geo_ip_blocked').count(),
+            initial_count + 1,
+        )
+
+    # ── Allowlist ─────────────────────────────────────────────────────────────
+
+    def test_allowlisted_ip_bypasses_blocklist(self):
+        """An IP in both blocklist and allowlist must be allowed (allowlist wins)."""
+        response = self._get_response(
+            remote_addr='192.0.2.5',
+            blocklist='192.0.2.0/24',
+            allowlist='192.0.2.0/24',  # same CIDR on both sides
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_localhost_always_passes_by_default(self):
+        """127.0.0.1 is in the default allowlist and must never be blocked."""
+        response = self._get_response(
+            remote_addr='127.0.0.1',
+            blocklist='127.0.0.0/8',  # try to block loopback range
+            # allowlist defaults to '127.0.0.1/32,::1/128'
+        )
+        self.assertEqual(response.status_code, 200)
+
+    # ── Empty lists (no-op) ───────────────────────────────────────────────────
+
+    def test_empty_cidr_lists_pass_all_traffic(self):
+        """When no CIDR lists are configured, all traffic must pass through."""
+        response = self._get_response(
+            remote_addr='1.2.3.4',
+            blocklist='',
+            flaglist='',
+            allowlist='',
+        )
+        self.assertEqual(response.status_code, 200)
+
+    # ── X-Forwarded-For ───────────────────────────────────────────────────────
+
+    def test_xff_header_takes_precedence_over_remote_addr(self):
+        """When X-Forwarded-For is present, the first IP in it is used for checks."""
+        response = self._get_response(
+            remote_addr='10.0.0.1',     # proxy/internal — not blocked
+            xff='192.0.2.99, 10.0.0.1',
+            blocklist='192.0.2.0/24',
+            allowlist='',
+        )
+        # Real client IP 192.0.2.99 is in the blocklist — must be 403
+        self.assertEqual(response.status_code, 403)
+
