@@ -88,10 +88,10 @@ Rule:
 
 ### React SaaS Web App
 
-- [ ] Workspace/app shell design
+- [x] Workspace/app shell design
 - [x] Login / signup / billing pages
-- [ ] Tenant admin console
-- [ ] Medical query workspace
+- [x] Tenant admin console
+- [x] Medical query workspace
 - [ ] Evidence search workspace
 - [ ] Patient-case analysis UI
 - [ ] Audit/security dashboards

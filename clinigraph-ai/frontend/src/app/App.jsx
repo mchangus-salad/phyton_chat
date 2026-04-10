@@ -11,8 +11,9 @@ import { AgentQueryPanel } from '../features/platform/components/AgentQueryPanel
 import { useI18n } from '../shared/i18n/I18nProvider';
 import { useAppSession } from './useAppSession';
 import { AppShellProvider } from './AppShellContext';
+import { useSignup } from '../features/auth/hooks/useSignup';
 
-function LoginScreen({ credentials, setCredentials, login, loading, error, health, t }) {
+function LoginScreen({ credentials, setCredentials, login, loading, error, health, t, onSignUp, successMessage }) {
   return (
     <main className="auth-shell">
       <section className="auth-hero auth-panel">
@@ -35,6 +36,8 @@ function LoginScreen({ credentials, setCredentials, login, loading, error, healt
           <h2>{t('auth.signInHeading')}</h2>
           <p>{t('auth.internalTokenNotice')}</p>
         </div>
+
+        {successMessage ? <p className="auth-success-message">{successMessage}</p> : null}
 
         <label className="auth-field">
           <span>{t('auth.username')}</span>
@@ -67,6 +70,123 @@ function LoginScreen({ credentials, setCredentials, login, loading, error, healt
           {loading ? t('auth.signingIn') : t('auth.signIn')}
         </button>
         {error ? <p className="billing-error">{error}</p> : null}
+        <p className="auth-switch-hint">
+          {t('auth.noAccountYet')}{' '}
+          <button type="button" className="auth-link" onClick={onSignUp}>
+            {t('auth.createAccount')}
+          </button>
+        </p>
+      </section>
+    </main>
+  );
+}
+
+function SignupScreen({ onSignedUp, onBackToLogin, t }) {
+  const { form, setField, loading, error, fieldErrors, submit } = useSignup({
+    onSuccess: (data) => onSignedUp(data.username),
+  });
+
+  return (
+    <main className="auth-shell">
+      <section className="auth-hero auth-panel">
+        <p className="eyebrow">{t('auth.brand')}</p>
+        <h1>{t('auth.title')}</h1>
+        <p className="auth-copy">{t('auth.createAccountSubtitle')}</p>
+        <ul className="auth-points">
+          <li>{t('auth.pointOne')}</li>
+          <li>{t('auth.pointTwo')}</li>
+          <li>{t('auth.pointThree')}</li>
+        </ul>
+      </section>
+
+      <section className="auth-panel auth-form-panel">
+        <div className="auth-form-header">
+          <h2>{t('auth.createAccountHeading')}</h2>
+        </div>
+
+        <div className="auth-row">
+          <label className="auth-field">
+            <span>{t('auth.firstName')}</span>
+            <input
+              type="text"
+              value={form.first_name}
+              onChange={(e) => setField('first_name', e.target.value)}
+              placeholder={t('auth.firstNamePlaceholder')}
+            />
+          </label>
+          <label className="auth-field">
+            <span>{t('auth.lastName')}</span>
+            <input
+              type="text"
+              value={form.last_name}
+              onChange={(e) => setField('last_name', e.target.value)}
+              placeholder={t('auth.lastNamePlaceholder')}
+            />
+          </label>
+        </div>
+
+        <label className="auth-field">
+          <span>{t('auth.username')} <span className="auth-required">*</span></span>
+          <input
+            type="text"
+            autoComplete="username"
+            value={form.username}
+            onChange={(e) => setField('username', e.target.value)}
+            placeholder={t('auth.usernamePlaceholder')}
+            className={fieldErrors.username ? 'auth-input--error' : ''}
+          />
+          {fieldErrors.username && <small className="auth-field-error">{fieldErrors.username}</small>}
+        </label>
+
+        <label className="auth-field">
+          <span>{t('auth.email')} <span className="auth-required">*</span></span>
+          <input
+            type="email"
+            autoComplete="email"
+            value={form.email}
+            onChange={(e) => setField('email', e.target.value)}
+            placeholder={t('auth.emailPlaceholder')}
+            className={fieldErrors.email ? 'auth-input--error' : ''}
+          />
+          {fieldErrors.email && <small className="auth-field-error">{fieldErrors.email}</small>}
+        </label>
+
+        <label className="auth-field">
+          <span>{t('auth.password')} <span className="auth-required">*</span></span>
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={form.password}
+            onChange={(e) => setField('password', e.target.value)}
+            placeholder={t('auth.passwordPlaceholder')}
+            className={fieldErrors.password ? 'auth-input--error' : ''}
+          />
+          {fieldErrors.password && <small className="auth-field-error">{fieldErrors.password}</small>}
+        </label>
+
+        <label className="auth-field">
+          <span>{t('auth.confirmPassword')} <span className="auth-required">*</span></span>
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={form.confirmPassword}
+            onChange={(e) => setField('confirmPassword', e.target.value)}
+            placeholder={t('auth.confirmPasswordPlaceholder')}
+            className={fieldErrors.confirmPassword ? 'auth-input--error' : ''}
+          />
+          {fieldErrors.confirmPassword && <small className="auth-field-error">{fieldErrors.confirmPassword}</small>}
+        </label>
+
+        <button type="button" className="primary-action auth-submit" onClick={submit} disabled={loading}>
+          {loading ? t('auth.creating') : t('auth.createAccount')}
+        </button>
+        {error ? <p className="billing-error">{error}</p> : null}
+        <p className="auth-switch-hint">
+          {t('auth.alreadyHaveAccount')}{' '}
+          <button type="button" className="auth-link" onClick={onBackToLogin}>
+            {t('auth.backToSignIn')}
+          </button>
+        </p>
       </section>
     </main>
   );
@@ -182,6 +302,8 @@ export default function App() {
   const { t } = useI18n();
   const { session, credentials, setCredentials, login, logout, setTenantId, loading, error, isAuthenticated, activeMembership } = useAppSession();
   const [activeView, setActiveView] = useState('overview');
+  const [authView, setAuthView] = useState('login');
+  const [signupSuccessMessage, setSignupSuccessMessage] = useState('');
 
   const views = [
     { id: 'overview', label: t('nav.overview'), title: t('shell.overviewTitle'), description: t('shell.overviewDescription') },
@@ -203,6 +325,19 @@ export default function App() {
   );
 
   if (!isAuthenticated) {
+    if (authView === 'signup') {
+      return (
+        <SignupScreen
+          onSignedUp={(username) => {
+            setCredentials((c) => ({ ...c, username }));
+            setSignupSuccessMessage(t('auth.registerSuccess'));
+            setAuthView('login');
+          }}
+          onBackToLogin={() => setAuthView('login')}
+          t={t}
+        />
+      );
+    }
     return (
       <LoginScreen
         credentials={credentials}
@@ -212,6 +347,8 @@ export default function App() {
         error={error}
         health={platformSnapshot.health}
         t={t}
+        onSignUp={() => { setSignupSuccessMessage(''); setAuthView('signup'); }}
+        successMessage={signupSuccessMessage}
       />
     );
   }

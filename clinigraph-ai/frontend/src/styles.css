@@ -881,6 +881,59 @@ button.primary-action:disabled {
   margin-top: 10px;
 }
 
+.auth-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.auth-required {
+  color: var(--accent);
+}
+
+.auth-input--error {
+  border-color: #c0392b !important;
+}
+
+.auth-field-error {
+  font-size: 0.8rem;
+  color: #8a1f2a;
+  margin-top: 2px;
+}
+
+.auth-success-message {
+  font-size: 0.88rem;
+  color: #1a5c2e;
+  background: rgba(26, 92, 46, 0.08);
+  border: 1px solid rgba(26, 92, 46, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+
+.auth-switch-hint {
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-top: 12px;
+}
+
+.auth-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.88rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.auth-link:hover {
+  color: var(--accent-strong);
+}
+
 .workspace-shell {
   min-height: 100vh;
   display: grid;
