@@ -623,3 +623,32 @@ class PatientCaseAnalysisResponseSerializer(serializers.Serializer):
     domain = serializers.CharField()
     safety_notice = serializers.CharField()
     request_id = serializers.CharField()
+
+
+class AsyncIngestionAcceptedSerializer(serializers.Serializer):
+    """202 Accepted response for fire-and-forget corpus ingestion jobs."""
+
+    job_id = serializers.UUIDField(
+        help_text='Track this job via GET /api/v1/jobs/{job_id}/',
+    )
+    status = serializers.CharField(default='pending')
+    status_url = serializers.CharField(
+        help_text='Poll this URL to observe job progress.',
+    )
+    domain = serializers.CharField(required=False, allow_blank=True)
+    corpus_name = serializers.CharField(required=False, allow_blank=True)
+
+
+class IngestionJobSerializer(serializers.Serializer):
+    """Full status response for a corpus ingestion job."""
+
+    job_id = serializers.UUIDField()
+    status = serializers.ChoiceField(choices=['pending', 'running', 'completed', 'failed'])
+    domain = serializers.CharField(required=False, allow_blank=True)
+    subdomain = serializers.CharField(required=False, allow_blank=True)
+    corpus_name = serializers.CharField(required=False, allow_blank=True)
+    result = serializers.JSONField(required=False, allow_null=True)
+    error = serializers.CharField(required=False, allow_blank=True)
+    submitted_by = serializers.CharField(required=False)
+    created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField()

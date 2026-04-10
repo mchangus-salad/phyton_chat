@@ -132,6 +132,36 @@ services:
       - weaviate
       - ollama
 
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: clinigraph-ai-web
+    container_name: agentai-celery-worker
+    restart: unless-stopped
+    command: ["celery", "-A", "webapi", "worker", "--loglevel=info", "--concurrency=2", "-Q", "celery"]
+    env_file:
+      - .env.agentai.local
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      OLLAMA_BASE_URL: http://ollama:11434
+      WEAVIATE_HTTP_HOST: weaviate
+      WEAVIATE_HTTP_PORT: 8080
+      WEAVIATE_GRPC_HOST: weaviate
+      WEAVIATE_GRPC_PORT: 50051
+      DJANGO_DB_ENGINE: django.db.backends.sqlite3
+      DJANGO_DB_NAME: /app/db.sqlite3
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+    depends_on:
+      - redis
+      - kafka
+      - weaviate
+      - ollama
+
   frontend:
     build:
       context: ./frontend

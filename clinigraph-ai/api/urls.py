@@ -11,6 +11,7 @@ from .views import (
     agent_query,
     agent_query_stream,
     health,
+    ingestion_job_status,
     medical_evidence_search,
     medical_query,
     medical_query_stream,
@@ -78,6 +79,7 @@ urlpatterns = [
     path('agent/oncology/upload/', oncology_upload, name='oncology-upload'),
 ]
 urlpatterns += [
+    path('jobs/<uuid:job_id>/', ingestion_job_status, name='ingestion-job-status'),
     path('agent/patient/analyze/', patient_case_analyze, name='patient-case-analyze'),
     path('ops/metrics/', ops_metrics, name='ops-metrics'),
     path('ops/metrics/prometheus/', ops_metrics_prometheus, name='ops-metrics-prometheus'),

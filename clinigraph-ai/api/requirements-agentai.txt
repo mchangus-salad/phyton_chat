@@ -19,6 +19,7 @@ psycopg2-binary
 stripe
 reportlab
 uvicorn[standard]
+celery
 opentelemetry-api
 opentelemetry-sdk
 opentelemetry-instrumentation-django

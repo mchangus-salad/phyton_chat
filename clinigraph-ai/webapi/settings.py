@@ -155,6 +155,17 @@ if REDIS_URL:
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': REDIS_URL,
     }
+
+# Celery — use Redis as broker and result backend (DB 1 to avoid collision with cache DB 0).
+_celery_redis_url = REDIS_URL.rstrip('/').rsplit('/', 1)[0] + '/1' if REDIS_URL else 'redis://localhost:6379/1'
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', _celery_redis_url)
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', _celery_redis_url)
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_RESULT_EXPIRES = 86400  # 24 hours
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Fair dispatch for long-running ingestion tasks
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',

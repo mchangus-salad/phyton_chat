@@ -46,6 +46,10 @@ from .serializers import (  # patient-case additions
 	PatientCaseAnalysisResponseSerializer,
 	PatientCaseUploadSerializer,
 )
+from .serializers import (
+	AsyncIngestionAcceptedSerializer,
+	IngestionJobSerializer,
+)
 from .throttles import AgentAnonRateThrottle, AgentUserRateThrottle, TenantPlanQuotaThrottle
 
 
@@ -299,40 +303,34 @@ def oncology_train(request):
 
 	payload = serializer.validated_data
 	subdomain = payload.get('subdomain') or None
+	corpus_name = payload['corpus_name']
 	request_id = getattr(request, 'request_id', 'n/a')
+	submitted_by = str(request.user) if request.user.is_authenticated else 'anonymous'
 
-	try:
-		service = _get_service(domain='oncology', subdomain=subdomain)
-		result = service.ingest_documents(
-			documents=payload['documents'],
-			domain='oncology',
-			subdomain=subdomain,
-			dedup_mode=payload.get('dedup_mode', 'upsert'),
-			version_tag=payload.get('version_tag') or None,
-		)
-		return Response(
-			{
-				'domain': result.domain,
-				'subdomain': result.subdomain or '',
-				'corpus_name': payload['corpus_name'],
-				'documents_received': result.documents_received,
-				'duplicates_dropped': result.duplicates_dropped,
-				'documents_indexed': result.documents_indexed,
-				'dedup_mode': result.dedup_mode,
-				'version_tag': result.version_tag,
-				'request_id': request_id,
-			},
-			status=status.HTTP_200_OK,
-		)
-	except Exception:
-		logger.exception('oncology ingestion failed request_id=%s', request_id)
-		return Response(
-			{
-				'error': 'oncology ingestion failed',
-				'request_id': request_id,
-			},
-			status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-		)
+	from .models import IngestionJob
+	from .tasks import ingest_corpus
+	job = IngestionJob.objects.create(
+		domain='oncology', subdomain=subdomain or '', corpus_name=corpus_name, submitted_by=submitted_by,
+	)
+	ingest_corpus.delay(
+		job_id=str(job.job_id),
+		domain='oncology',
+		subdomain=subdomain,
+		documents=payload['documents'],
+		corpus_name=corpus_name,
+		dedup_mode=payload.get('dedup_mode', 'upsert'),
+		version_tag=payload.get('version_tag') or None,
+	)
+	return Response(
+		{
+			'job_id': str(job.job_id),
+			'status': job.status,
+			'status_url': f'/api/v1/jobs/{job.job_id}/',
+			'domain': 'oncology',
+			'corpus_name': corpus_name,
+		},
+		status=status.HTTP_202_ACCEPTED,
+	)
 
 
 @extend_schema(
@@ -589,45 +587,50 @@ def oncology_upload(request):
 	request_id = getattr(request, 'request_id', 'n/a')
 	uploaded_file = payload['file']
 	subdomain = payload.get('subdomain') or None
+	corpus_name = payload['corpus_name']
+	submitted_by = str(request.user) if request.user.is_authenticated else 'anonymous'
 
 	try:
-		documents = load_oncology_corpus_content(uploaded_file.name, uploaded_file.read())
-		service = _get_service(domain='oncology', subdomain=subdomain)
-		result = service.ingest_documents(
-			documents=documents,
-			domain='oncology',
-			subdomain=subdomain,
-			dedup_mode='batch-dedup',
-		)
-		return Response(
-			{
-				'domain': result.domain,
-				'subdomain': result.subdomain or '',
-				'corpus_name': payload['corpus_name'],
-				'documents_received': result.documents_received,
-				'duplicates_dropped': result.duplicates_dropped,
-				'documents_indexed': result.documents_indexed,
-				'dedup_mode': result.dedup_mode,
-				'version_tag': result.version_tag,
-				'request_id': request_id,
-			},
-			status=status.HTTP_200_OK,
-		)
+		# Validate and parse the file synchronously so we can return 400 for bad formats
+		# before dispatch; the bytes are base64-encoded for JSON-safe broker transport.
+		import base64
+		file_bytes = uploaded_file.read()
+		load_oncology_corpus_content(uploaded_file.name, file_bytes)  # validates format/content
+		file_bytes_b64 = base64.b64encode(file_bytes).decode('ascii')
 	except ValueError as exc:
 		return Response(
 			{'error': 'invalid upload file', 'detail': str(exc), 'request_id': request_id},
 			status=status.HTTP_400_BAD_REQUEST,
 		)
-	except Exception:
-		logger.exception('oncology upload failed request_id=%s', request_id)
-		return Response(
-			{'error': 'oncology upload failed', 'request_id': request_id},
-			status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-		)
+
+	from .models import IngestionJob
+	from .tasks import ingest_file
+	job = IngestionJob.objects.create(
+		domain='oncology', subdomain=subdomain or '', corpus_name=corpus_name, submitted_by=submitted_by,
+	)
+	ingest_file.delay(
+		job_id=str(job.job_id),
+		domain='oncology',
+		subdomain=subdomain,
+		filename=uploaded_file.name,
+		file_bytes_b64=file_bytes_b64,
+		corpus_name=corpus_name,
+	)
+	return Response(
+		{
+			'job_id': str(job.job_id),
+			'status': job.status,
+			'status_url': f'/api/v1/jobs/{job.job_id}/',
+			'domain': 'oncology',
+			'corpus_name': corpus_name,
+		},
+		status=status.HTTP_202_ACCEPTED,
+	)
 
 
 @extend_schema(
 	operation_id='medical_train_v2',
+
 	description='Ingest a medical corpus for any disease domain. V2 generic endpoint.',
 	request=MedicalTrainingSerializer,
 	parameters=[
@@ -661,37 +664,34 @@ def medical_train(request):
 	payload = serializer.validated_data
 	domain = (payload.get('domain') or 'medical').strip() or 'medical'
 	subdomain = payload.get('subdomain') or None
+	corpus_name = payload['corpus_name']
 	request_id = getattr(request, 'request_id', 'n/a')
+	submitted_by = str(request.user) if request.user.is_authenticated else 'anonymous'
 
-	try:
-		service = _get_service(domain=domain, subdomain=subdomain)
-		result = service.ingest_documents(
-			documents=payload['documents'],
-			domain=domain,
-			subdomain=subdomain,
-			dedup_mode=payload.get('dedup_mode', 'upsert'),
-			version_tag=payload.get('version_tag') or None,
-		)
-		return Response(
-			{
-				'domain': result.domain,
-				'subdomain': result.subdomain or '',
-				'corpus_name': payload['corpus_name'],
-				'documents_received': result.documents_received,
-				'duplicates_dropped': result.duplicates_dropped,
-				'documents_indexed': result.documents_indexed,
-				'dedup_mode': result.dedup_mode,
-				'version_tag': result.version_tag,
-				'request_id': request_id,
-			},
-			status=status.HTTP_200_OK,
-		)
-	except Exception:
-		logger.exception('medical ingestion failed request_id=%s domain=%s', request_id, domain)
-		return Response(
-			{'error': 'medical ingestion failed', 'request_id': request_id},
-			status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-		)
+	from .models import IngestionJob
+	from .tasks import ingest_corpus
+	job = IngestionJob.objects.create(
+		domain=domain, subdomain=subdomain or '', corpus_name=corpus_name, submitted_by=submitted_by,
+	)
+	ingest_corpus.delay(
+		job_id=str(job.job_id),
+		domain=domain,
+		subdomain=subdomain,
+		documents=payload['documents'],
+		corpus_name=corpus_name,
+		dedup_mode=payload.get('dedup_mode', 'upsert'),
+		version_tag=payload.get('version_tag') or None,
+	)
+	return Response(
+		{
+			'job_id': str(job.job_id),
+			'status': job.status,
+			'status_url': f'/api/v1/jobs/{job.job_id}/',
+			'domain': domain,
+			'corpus_name': corpus_name,
+		},
+		status=status.HTTP_202_ACCEPTED,
+	)
 
 
 @extend_schema(
@@ -928,41 +928,43 @@ def medical_upload(request):
 	uploaded_file = payload['file']
 	domain = (payload.get('domain') or 'medical').strip() or 'medical'
 	subdomain = payload.get('subdomain') or None
+	corpus_name = payload['corpus_name']
+	submitted_by = str(request.user) if request.user.is_authenticated else 'anonymous'
 
 	try:
-		documents = load_oncology_corpus_content(uploaded_file.name, uploaded_file.read())
-		service = _get_service(domain=domain, subdomain=subdomain)
-		result = service.ingest_documents(
-			documents=documents,
-			domain=domain,
-			subdomain=subdomain,
-			dedup_mode='batch-dedup',
-		)
-		return Response(
-			{
-				'domain': result.domain,
-				'subdomain': result.subdomain or '',
-				'corpus_name': payload['corpus_name'],
-				'documents_received': result.documents_received,
-				'duplicates_dropped': result.duplicates_dropped,
-				'documents_indexed': result.documents_indexed,
-				'dedup_mode': result.dedup_mode,
-				'version_tag': result.version_tag,
-				'request_id': request_id,
-			},
-			status=status.HTTP_200_OK,
-		)
+		import base64
+		file_bytes = uploaded_file.read()
+		load_oncology_corpus_content(uploaded_file.name, file_bytes)  # validates format/content
+		file_bytes_b64 = base64.b64encode(file_bytes).decode('ascii')
 	except ValueError as exc:
 		return Response(
 			{'error': 'invalid upload file', 'detail': str(exc), 'request_id': request_id},
 			status=status.HTTP_400_BAD_REQUEST,
 		)
-	except Exception:
-		logger.exception('medical upload failed request_id=%s domain=%s', request_id, domain)
-		return Response(
-			{'error': 'medical upload failed', 'request_id': request_id},
-			status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-		)
+
+	from .models import IngestionJob
+	from .tasks import ingest_file
+	job = IngestionJob.objects.create(
+		domain=domain, subdomain=subdomain or '', corpus_name=corpus_name, submitted_by=submitted_by,
+	)
+	ingest_file.delay(
+		job_id=str(job.job_id),
+		domain=domain,
+		subdomain=subdomain,
+		filename=uploaded_file.name,
+		file_bytes_b64=file_bytes_b64,
+		corpus_name=corpus_name,
+	)
+	return Response(
+		{
+			'job_id': str(job.job_id),
+			'status': job.status,
+			'status_url': f'/api/v1/jobs/{job.job_id}/',
+			'domain': domain,
+			'corpus_name': corpus_name,
+		},
+		status=status.HTTP_202_ACCEPTED,
+	)
 
 
 # ── Patient Case Analysis ────────────────────────────────────────────────────
@@ -1582,3 +1584,46 @@ def agent_chat_highlights_pop(request, session_id):
 	session.save(update_fields=['last_activity_at', 'updated_at'])
 
 	return Response({'undone_highlight_id': deleted_id}, status=status.HTTP_200_OK)
+
+
+# ── Ingestion Job Status ─────────────────────────────────────────────────────
+
+@extend_schema(
+	operation_id='ingestion_job_status',
+	description=(
+		'Poll the status of a background corpus ingestion job submitted via a train or upload endpoint. '
+		'Status progresses: pending → running → completed | failed.'
+	),
+	responses={
+		200: IngestionJobSerializer,
+		401: ErrorResponseSerializer,
+		403: ErrorResponseSerializer,
+		404: ErrorResponseSerializer,
+	},
+	auth=['BearerAuth', 'ApiKeyAuth'],
+)
+@api_view(['GET'])
+@permission_classes([HasLlmAccessOrApiKey])
+def ingestion_job_status(request, job_id):
+	"""Return the current lifecycle status of a corpus ingestion job."""
+	from .models import IngestionJob
+	try:
+		job = IngestionJob.objects.get(pk=job_id)
+	except IngestionJob.DoesNotExist:
+		return Response({'error': 'job not found'}, status=status.HTTP_404_NOT_FOUND)
+
+	return Response(
+		{
+			'job_id': str(job.job_id),
+			'status': job.status,
+			'domain': job.domain,
+			'subdomain': job.subdomain,
+			'corpus_name': job.corpus_name,
+			'result': job.result,
+			'error': job.error,
+			'submitted_by': job.submitted_by,
+			'created_at': job.created_at,
+			'updated_at': job.updated_at,
+		},
+		status=status.HTTP_200_OK,
+	)

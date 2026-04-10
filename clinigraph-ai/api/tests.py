@@ -111,21 +111,8 @@ class AgentApiTests(APITestCase):
 
     @override_settings(AGENT_API_KEY='test-key')
     def test_oncology_train_accepts_api_key(self):
-        def fake_ingest_documents(documents, domain='oncology', subdomain=None, **kwargs):
-            return SimpleNamespace(
-                domain=domain,
-                subdomain=subdomain,
-                documents_received=len(documents),
-                duplicates_dropped=0,
-                documents_indexed=2,
-                dedup_mode=kwargs.get('dedup_mode', 'upsert'),
-                version_tag=kwargs.get('version_tag') or '',
-            )
-
-        fake_service = SimpleNamespace(
-            ingest_documents=fake_ingest_documents
-        )
-        with patch('api.views._get_service', return_value=fake_service):
+        with patch('api.tasks.ingest_corpus') as mock_task:
+            mock_task.delay.return_value = None
             response = self.client.post(
                 '/api/v1/agent/oncology/train/',
                 {
@@ -140,36 +127,29 @@ class AgentApiTests(APITestCase):
                 HTTP_X_API_KEY='test-key',
             )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertIn('job_id', response.data)
         self.assertEqual(response.data.get('domain'), 'oncology')
-        self.assertEqual(response.data.get('subdomain'), 'lung-cancer')
-        self.assertEqual(response.data.get('documents_indexed'), 2)
+        self.assertEqual(response.data.get('status'), 'pending')
+        self.assertIn('status_url', response.data)
+        mock_task.delay.assert_called_once()
+        call_kwargs = mock_task.delay.call_args.kwargs
+        self.assertEqual(call_kwargs.get('domain'), 'oncology')
+        self.assertEqual(call_kwargs.get('subdomain'), 'lung-cancer')
+        self.assertEqual(call_kwargs.get('corpus_name'), 'oncology-papers')
 
     @override_settings(AGENT_API_KEY='test-key')
     def test_oncology_upload_accepts_multipart_file(self):
-        def fake_ingest_documents(documents, domain='oncology', subdomain=None, **kwargs):
-            return SimpleNamespace(
-                domain=domain,
-                subdomain=subdomain,
-                documents_received=len(documents),
-                duplicates_dropped=0,
-                documents_indexed=len(documents),
-                dedup_mode=kwargs.get('dedup_mode', 'batch-dedup'),
-                version_tag=kwargs.get('version_tag') or '',
-            )
-
-        fake_service = SimpleNamespace(
-            ingest_documents=fake_ingest_documents
-        )
         upload = SimpleUploadedFile(
             'oncology.json',
             b'[{"source":"paper-1","text":"EGFR evidence","cancer_type":"lung cancer","biomarkers":["EGFR"]}]',
             content_type='application/json',
         )
-        with patch('api.views._get_service', return_value=fake_service), patch(
+        with patch('api.tasks.ingest_file') as mock_task, patch(
             'api.views.load_oncology_corpus_content',
             return_value=[{'source': 'paper-1', 'text': 'EGFR evidence', 'cancer_type': 'lung cancer', 'biomarkers': ['EGFR']}],
         ):
+            mock_task.delay.return_value = None
             response = self.client.post(
                 '/api/v1/agent/oncology/upload/',
                 {'corpus_name': 'oncology-upload', 'subdomain': 'lung-cancer', 'file': upload},
@@ -177,9 +157,12 @@ class AgentApiTests(APITestCase):
                 HTTP_X_API_KEY='test-key',
             )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data.get('subdomain'), 'lung-cancer')
-        self.assertEqual(response.data.get('documents_indexed'), 1)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertIn('job_id', response.data)
+        self.assertEqual(response.data.get('domain'), 'oncology')
+        self.assertEqual(response.data.get('status'), 'pending')
+        self.assertIn('status_url', response.data)
+        mock_task.delay.assert_called_once()
 
     @override_settings(AGENT_API_KEY='test-key')
     def test_oncology_evidence_search_returns_filtered_documents(self):
@@ -265,19 +248,8 @@ class AgentApiTests(APITestCase):
 
     @override_settings(AGENT_API_KEY='test-key')
     def test_medical_train_accepts_generic_domain(self):
-        def fake_ingest_documents(documents, domain='medical', subdomain=None, **kwargs):
-            return SimpleNamespace(
-                domain=domain,
-                subdomain=subdomain,
-                documents_received=len(documents),
-                duplicates_dropped=0,
-                documents_indexed=len(documents),
-                dedup_mode=kwargs.get('dedup_mode', 'upsert'),
-                version_tag=kwargs.get('version_tag') or '',
-            )
-
-        fake_service = SimpleNamespace(ingest_documents=fake_ingest_documents)
-        with patch('api.views._get_service', return_value=fake_service):
+        with patch('api.tasks.ingest_corpus') as mock_task:
+            mock_task.delay.return_value = None
             response = self.client.post(
                 '/api/v1/agent/medical/train/',
                 {
@@ -286,15 +258,20 @@ class AgentApiTests(APITestCase):
                     'documents': [
                         {'source': 'guideline-1', 'text': 'Heart failure management overview.'},
                     ],
+                    'corpus_name': 'cardiology-guidelines',
                 },
                 format='json',
                 HTTP_X_API_KEY='test-key',
             )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertIn('job_id', response.data)
         self.assertEqual(response.data.get('domain'), 'cardiology')
-        self.assertEqual(response.data.get('subdomain'), 'heart-failure')
-        self.assertEqual(response.data.get('documents_indexed'), 1)
+        self.assertEqual(response.data.get('status'), 'pending')
+        mock_task.delay.assert_called_once()
+        call_kwargs = mock_task.delay.call_args.kwargs
+        self.assertEqual(call_kwargs.get('domain'), 'cardiology')
+        self.assertEqual(call_kwargs.get('subdomain'), 'heart-failure')
 
     @override_settings(AGENT_API_KEY='test-key')
     def test_medical_query_returns_domain_and_notice(self):
@@ -387,23 +364,8 @@ class AgentApiTests(APITestCase):
 
     @override_settings(AGENT_API_KEY='test-key')
     def test_oncology_train_passes_versioned_dedup_parameters(self):
-        captured = {}
-
-        def fake_ingest_documents(documents, domain='oncology', subdomain=None, **kwargs):
-            captured['dedup_mode'] = kwargs.get('dedup_mode')
-            captured['version_tag'] = kwargs.get('version_tag')
-            return SimpleNamespace(
-                domain=domain,
-                subdomain=subdomain,
-                documents_received=len(documents),
-                duplicates_dropped=0,
-                documents_indexed=len(documents),
-                dedup_mode=kwargs.get('dedup_mode', 'upsert'),
-                version_tag=kwargs.get('version_tag') or '',
-            )
-
-        fake_service = SimpleNamespace(ingest_documents=fake_ingest_documents)
-        with patch('api.views._get_service', return_value=fake_service):
+        with patch('api.tasks.ingest_corpus') as mock_task:
+            mock_task.delay.return_value = None
             response = self.client.post(
                 '/api/v1/agent/oncology/train/',
                 {
@@ -419,11 +381,11 @@ class AgentApiTests(APITestCase):
                 HTTP_X_API_KEY='test-key',
             )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(captured.get('dedup_mode'), 'versioned')
-        self.assertEqual(captured.get('version_tag'), '2026-q1')
-        self.assertEqual(response.data.get('dedup_mode'), 'versioned')
-        self.assertEqual(response.data.get('version_tag'), '2026-q1')
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        mock_task.delay.assert_called_once()
+        call_kwargs = mock_task.delay.call_args.kwargs
+        self.assertEqual(call_kwargs.get('dedup_mode'), 'versioned')
+        self.assertEqual(call_kwargs.get('version_tag'), '2026-q1')
 
     @override_settings(AGENT_API_KEY='test-key')
     def test_oncology_evidence_search_passes_year_filters_and_returns_rerank_score(self):
@@ -4060,4 +4022,159 @@ class SecurityAuditEndpointTests(APITestCase):
         self.assertNotIn('"text":', content)
         self.assertNotIn('"patient_name":', content)
         self.assertNotIn('"original_text":', content)
+
+
+@override_settings(
+    AGENT_API_KEY='test-key',
+    CACHES={
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'tests-ingestion-job',
+        }
+    },
+)
+class IngestionJobTests(APITestCase):
+    """Tests for async corpus ingestion job tracking (IngestionJob model + status endpoint)."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.user = User.objects.create_user(username='job-tester', password='pass')
+
+    # ── Train endpoints return 202 ────────────────────────────────────────────
+
+    def test_oncology_train_returns_202_with_job_id(self):
+        with patch('api.tasks.ingest_corpus') as mock_task:
+            mock_task.delay.return_value = None
+            response = self.client.post(
+                '/api/v1/agent/oncology/train/',
+                {
+                    'corpus_name': 'test-corpus',
+                    'documents': [{'source': 'doc-1', 'text': 'Oncology data.'}],
+                },
+                format='json',
+                HTTP_X_API_KEY='test-key',
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertIn('job_id', response.data)
+        self.assertEqual(response.data['status'], 'pending')
+        self.assertEqual(response.data['domain'], 'oncology')
+        self.assertIn('status_url', response.data)
+        mock_task.delay.assert_called_once()
+
+    def test_medical_train_returns_202_with_job_id(self):
+        with patch('api.tasks.ingest_corpus') as mock_task:
+            mock_task.delay.return_value = None
+            response = self.client.post(
+                '/api/v1/agent/medical/train/',
+                {
+                    'domain': 'neurology',
+                    'corpus_name': 'neuro-corpus',
+                    'documents': [{'source': 'doc-1', 'text': 'Neurology research.'}],
+                },
+                format='json',
+                HTTP_X_API_KEY='test-key',
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertIn('job_id', response.data)
+        self.assertEqual(response.data['domain'], 'neurology')
+        mock_task.delay.assert_called_once()
+
+    # ── IngestionJob model created on POST ───────────────────────────────────
+
+    def test_ingestion_job_model_created_after_train(self):
+        from api.models import IngestionJob
+        count_before = IngestionJob.objects.count()
+        with patch('api.tasks.ingest_corpus') as mock_task:
+            mock_task.delay.return_value = None
+            self.client.post(
+                '/api/v1/agent/oncology/train/',
+                {
+                    'corpus_name': 'audit-corpus',
+                    'documents': [{'source': 'doc-1', 'text': 'Data.'}],
+                },
+                format='json',
+                HTTP_X_API_KEY='test-key',
+            )
+
+        self.assertEqual(IngestionJob.objects.count(), count_before + 1)
+        job = IngestionJob.objects.latest('created_at')
+        self.assertEqual(job.domain, 'oncology')
+        self.assertEqual(job.status, 'pending')
+
+    # ── Job status endpoint ───────────────────────────────────────────────────
+
+    def test_job_status_returns_pending_for_new_job(self):
+        import uuid
+        from api.models import IngestionJob
+        job = IngestionJob.objects.create(
+            domain='oncology',
+            corpus_name='test-corpus',
+            submitted_by='job-tester',
+        )
+        response = self.client.get(
+            f'/api/v1/jobs/{job.job_id}/',
+            HTTP_X_API_KEY='test-key',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'pending')
+        self.assertEqual(response.data['domain'], 'oncology')
+        self.assertEqual(str(response.data['job_id']), str(job.job_id))
+
+    def test_job_status_not_found_returns_404(self):
+        import uuid
+        fake_id = uuid.uuid4()
+        response = self.client.get(
+            f'/api/v1/jobs/{fake_id}/',
+            HTTP_X_API_KEY='test-key',
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn('error', response.data)
+
+    def test_job_status_unauthenticated_returns_401(self):
+        import uuid
+        from api.models import IngestionJob
+        job = IngestionJob.objects.create(
+            domain='oncology',
+            corpus_name='test-corpus',
+            submitted_by='job-tester',
+        )
+        response = self.client.get(f'/api/v1/jobs/{job.job_id}/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_job_status_reflects_completed_state(self):
+        from api.models import IngestionJob
+        job = IngestionJob.objects.create(
+            domain='cardiology',
+            corpus_name='cardio-corpus',
+            status=IngestionJob.STATUS_COMPLETED,
+            result={'documents_indexed': 5},
+            submitted_by='job-tester',
+        )
+        response = self.client.get(
+            f'/api/v1/jobs/{job.job_id}/',
+            HTTP_X_API_KEY='test-key',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'completed')
+        self.assertEqual(response.data['result']['documents_indexed'], 5)
+
+    def test_job_status_reflects_failed_state(self):
+        from api.models import IngestionJob
+        job = IngestionJob.objects.create(
+            domain='oncology',
+            corpus_name='bad-corpus',
+            status=IngestionJob.STATUS_FAILED,
+            error='vector store unavailable',
+            submitted_by='job-tester',
+        )
+        response = self.client.get(
+            f'/api/v1/jobs/{job.job_id}/',
+            HTTP_X_API_KEY='test-key',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'failed')
+        self.assertEqual(response.data['error'], 'vector store unavailable')
 

@@ -49,6 +49,53 @@ class PatientCaseSession(models.Model):
 		return f"PatientCaseSession({self.session_id}, {self.created_at:%Y-%m-%d})"
 
 
+class IngestionJob(models.Model):
+	"""Tracks the lifecycle of an async corpus ingestion task submitted to Celery."""
+
+	STATUS_PENDING = 'pending'
+	STATUS_RUNNING = 'running'
+	STATUS_COMPLETED = 'completed'
+	STATUS_FAILED = 'failed'
+	STATUS_CHOICES = [
+		(STATUS_PENDING, 'Pending'),
+		(STATUS_RUNNING, 'Running'),
+		(STATUS_COMPLETED, 'Completed'),
+		(STATUS_FAILED, 'Failed'),
+	]
+
+	job_id = models.UUIDField(
+		primary_key=True,
+		default=uuid.uuid4,
+		editable=False,
+		help_text='Unique job identifier returned to the API caller.',
+	)
+	# Celery task ID for correlation with broker state.
+	task_id = models.CharField(max_length=255, blank=True, default='')
+	status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_PENDING, db_index=True)
+	domain = models.CharField(max_length=64, blank=True, default='')
+	subdomain = models.CharField(max_length=128, blank=True, default='')
+	corpus_name = models.CharField(max_length=128, blank=True, default='')
+	# JSON-serialised result summary populated when status=completed.
+	result = models.JSONField(null=True, blank=True)
+	# Human-readable error message populated when status=failed.
+	error = models.TextField(blank=True, default='')
+	# ID of the user who submitted the job (non-PHI).
+	submitted_by = models.CharField(max_length=128, blank=True, default='anonymous')
+	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
+
+	class Meta:
+		ordering = ['-created_at']
+		verbose_name = 'Ingestion Job'
+		verbose_name_plural = 'Ingestion Jobs'
+		indexes = [
+			models.Index(fields=['status', '-created_at']),
+		]
+
+	def __str__(self) -> str:
+		return f'IngestionJob({self.job_id}, {self.domain}, {self.status})'
+
+
 class AgentChatSession(models.Model):
 	"""Persistent user chat thread for Agent Query, scoped to tenant and user."""
 
