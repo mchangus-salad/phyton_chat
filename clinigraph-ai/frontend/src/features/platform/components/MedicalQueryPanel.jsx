@@ -12,18 +12,33 @@ function sanitizeDisplayText(text) {
 }
 
 const DOMAINS = [
-  { value: 'cardiology', label: 'domainCardiology' },
-  { value: 'neurology', label: 'domainNeurology' },
-  { value: 'oncology', label: 'domainOncology' },
-  { value: 'gastroenterology', label: 'domainGastroenterology' },
-  { value: 'pulmonology', label: 'domainPulmonology' },
+  { value: 'general',                  label: 'domainGeneral' },
+  { value: 'cardiology',               label: 'domainCardiology' },
+  { value: 'dermatology',              label: 'domainDermatology' },
+  { value: 'emergency-medicine',       label: 'domainEmergencyMedicine' },
+  { value: 'endocrinology',            label: 'domainEndocrinology' },
+  { value: 'gastroenterology',         label: 'domainGastroenterology' },
+  { value: 'geriatrics',               label: 'domainGeriatrics' },
+  { value: 'hematology',               label: 'domainHematology' },
+  { value: 'infectious-diseases',      label: 'domainInfectiousDiseases' },
+  { value: 'nephrology',               label: 'domainNephrology' },
+  { value: 'neurology',                label: 'domainNeurology' },
+  { value: 'obstetrics-gynecology',    label: 'domainObstetricsGynecology' },
+  { value: 'oncology',                 label: 'domainOncology' },
+  { value: 'ophthalmology',            label: 'domainOphthalmology' },
+  { value: 'orthopedics',              label: 'domainOrthopedics' },
+  { value: 'pediatrics',               label: 'domainPediatrics' },
+  { value: 'psychiatry',               label: 'domainPsychiatry' },
+  { value: 'pulmonology',              label: 'domainPulmonology' },
+  { value: 'rheumatology',             label: 'domainRheumatology' },
+  { value: 'urology',                  label: 'domainUrology' },
 ];
 
 export function MedicalQueryPanel({ authToken, tenantId }) {
   const { t } = useI18n();
   const { navigateTo, logout } = useAppShell();
   const [question, setQuestion] = useState('');
-  const [domain, setDomain] = useState('cardiology');
+  const [domain, setDomain] = useState('general');
   const { status, data, error, errorCode, query } = useMedicalQuery();
   const rawAnswer = data?.answer || data?.message || (data ? JSON.stringify(data) : '');
   const translationInput = status === 'success' ? rawAnswer : '';
